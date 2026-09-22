@@ -1,0 +1,23 @@
+<Solution>
+  <Folder Name="/src/" />
+  <Folder Name="/src/Core/">
+    <Project Path="src/Core/HealthERP.Application/HealthERP.Application.csproj" />
+    <Project Path="src/Core/HealthERP.Domain/HealthERP.Domain.csproj" />
+  </Folder>
+  <Folder Name="/src/Infrastructure/">
+    <Project Path="src/Infrastructure/HealthERP.Infrastructure/HealthERP.Infrastructure.csproj" />
+  </Folder>
+  <Folder Name="/src/Presentation/">
+    <Project Path="src/Presentation/HealthERP.Api.Contracts/HealthERP.Api.Contracts.csproj" />
+    <Project Path="src/Presentation/HealthERP.Api/HealthERP.Api.csproj" />
+  </Folder>
+  <Folder Name="/src/SharedKernel/">
+    <Project Path="src/SharedKernel/HealthERP.SharedKernel/HealthERP.SharedKernel.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/HealthERP.Api.FunctionalTests/HealthERP.Api.FunctionalTests.csproj" />
+    <Project Path="tests/HealthERP.Api.IntegrationTests/HealthERP.Api.IntegrationTests.csproj" />
+    <Project Path="tests/HealthERP.Application.UnitTests/HealthERP.Application.UnitTests.csproj" />
+    <Project Path="tests/HealthERP.Domain.UnitTests/HealthERP.Domain.UnitTests.csproj" />
+  </Folder>
+</Solution>
