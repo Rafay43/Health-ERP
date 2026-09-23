@@ -1,0 +1,60 @@
+﻿<div class="flex h-screen bg-[var(--color-bg)]">
+  <!-- Sidebar -->
+  <aside
+    class="bg-[var(--color-surface)] border-r border-[var(--color-border)] transition-all duration-200 flex flex-col"
+    [class.w-64]="!sidebarCollapsed"
+    [class.w-16]="sidebarCollapsed"
+  >
+    <div class="h-16 flex items-center justify-between px-4 border-b border-[var(--color-border)]">
+      @if (!sidebarCollapsed) {
+        <span class="font-bold text-lg text-[var(--color-primary)]">Health ERP</span>
+      }
+      <p-button
+        icon="pi pi-bars"
+        [text]="true"
+        [rounded]="true"
+        (onClick)="toggleSidebar()"
+      ></p-button>
+    </div>
+
+    <nav class="flex-1 overflow-y-auto py-4">
+      @for (item of navItems; track item.route) {
+        <a
+          [routerLink]="item.route"
+          routerLinkActive="bg-[var(--color-primary)]/10 text-[var(--color-primary)] border-r-2 border-[var(--color-primary)]"
+          [routerLinkActiveOptions]="{ exact: false }"
+          class="flex items-center gap-3 px-4 py-3 text-[var(--color-text-secondary)] hover:bg-[var(--color-bg)] transition-colors"
+        >
+          <i [class]="item.icon" class="text-lg"></i>
+          @if (!sidebarCollapsed) {
+            <span class="text-sm font-medium">{{ item.label }}</span>
+          }
+        </a>
+      }
+    </nav>
+  </aside>
+
+  <!-- Main content area -->
+  <div class="flex-1 flex flex-col overflow-hidden">
+    <!-- Top bar -->
+    <header class="h-16 bg-[var(--color-surface)] border-b border-[var(--color-border)] flex items-center justify-between px-6">
+      <div class="flex items-center gap-2 text-[var(--color-text-secondary)]">
+        <i class="pi pi-search"></i>
+        <span class="text-sm">Search patients, appointments...</span>
+      </div>
+
+      <div class="flex items-center gap-4">
+        <p-button icon="pi pi-bell" [text]="true" [rounded]="true">
+          <p-badge value="3" severity="danger"></p-badge>
+        </p-button>
+        <p-avatar label="A" shape="circle" style="background-color: var(--color-primary); color: white;"></p-avatar>
+      </div>
+    </header>
+
+    <!-- Routed content -->
+    <main class="flex-1 overflow-y-auto p-6">
+      <router-outlet></router-outlet>
+    </main>
+  </div>
+</div>
+
