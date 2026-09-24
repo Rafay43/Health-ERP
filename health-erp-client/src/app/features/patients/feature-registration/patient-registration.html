@@ -14,11 +14,8 @@
         pInputText
         formControlName="medicalRecordNumber"
         class="w-full"
-        placeholder="e.g. MRN-0001"
+        [placeholder]="loadingMrn() ? 'Generating...' : ''"
       />
-      @if (form.get('medicalRecordNumber')?.invalid && form.get('medicalRecordNumber')?.touched) {
-        <span class="text-xs text-[var(--color-danger)]">Medical record number is required.</span>
-      }
     </div>
 
     <div>

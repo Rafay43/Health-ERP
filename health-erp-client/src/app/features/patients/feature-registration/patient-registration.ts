@@ -1,4 +1,4 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, inject, signal, OnInit } from '@angular/core';
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
 import { InputTextModule } from 'primeng/inputtext';
@@ -13,20 +13,33 @@ import { PatientService } from '../data-access/patient.service';
   imports: [ReactiveFormsModule, InputTextModule, DatePickerModule, ButtonModule, MessageModule],
   templateUrl: './patient-registration.html',
 })
-export class PatientRegistration {
+export class PatientRegistration implements OnInit {
   private fb = inject(FormBuilder);
   private patientService = inject(PatientService);
   private router = inject(Router);
 
   submitting = signal(false);
   errorMessage = signal<string | null>(null);
+  loadingMrn = signal(true);
 
   form = this.fb.group({
-    medicalRecordNumber: ['', [Validators.required, Validators.maxLength(20)]],
+    medicalRecordNumber: [{ value: '', disabled: true }, [Validators.required]],
     firstName: ['', [Validators.required, Validators.maxLength(100)]],
     lastName: ['', [Validators.required, Validators.maxLength(100)]],
     dateOfBirth: [null as Date | null, [Validators.required]],
   });
+
+  ngOnInit() {
+    this.patientService.getNextMrn().subscribe({
+      next: (res) => {
+        this.form.patchValue({ medicalRecordNumber: res.medicalRecordNumber });
+        this.loadingMrn.set(false);
+      },
+      error: () => {
+        this.loadingMrn.set(false);
+      },
+    });
+  }
 
   onSubmit() {
     if (this.form.invalid) {
@@ -40,12 +53,17 @@ export class PatientRegistration {
     const raw = this.form.getRawValue();
     const dob = raw.dateOfBirth as Date;
 
+    const year = dob.getFullYear();
+    const month = String(dob.getMonth() + 1).padStart(2, '0');
+    const day = String(dob.getDate()).padStart(2, '0');
+    const dateOfBirthString = `${year}-${month}-${day}`;
+
     this.patientService
       .registerPatient({
         medicalRecordNumber: raw.medicalRecordNumber!,
         firstName: raw.firstName!,
         lastName: raw.lastName!,
-        dateOfBirth: dob.toISOString().split('T')[0],
+        dateOfBirth: dateOfBirthString,
       })
       .subscribe({
         next: () => {

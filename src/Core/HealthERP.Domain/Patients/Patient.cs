@@ -36,27 +36,30 @@ public class Patient : BaseEntity<PatientId>, IAuditable
         DateOfBirth = dateOfBirth;
     }
 
-    public static Patient Register(
-        string medicalRecordNumber,
-        string firstName,
-        string lastName,
-        DateOnly dateOfBirth)
-    {
-        if (string.IsNullOrWhiteSpace(firstName))
-            throw new ArgumentException("First name is required.", nameof(firstName));
+   public static Patient Register(
+    string medicalRecordNumber,
+    string firstName,
+    string lastName,
+    DateOnly dateOfBirth)
+{
+    if (string.IsNullOrWhiteSpace(medicalRecordNumber))
+        throw new ArgumentException("Medical record number is required.", nameof(medicalRecordNumber));
 
-        if (string.IsNullOrWhiteSpace(lastName))
-            throw new ArgumentException("Last name is required.", nameof(lastName));
+    if (string.IsNullOrWhiteSpace(firstName))
+        throw new ArgumentException("First name is required.", nameof(firstName));
 
-        if (dateOfBirth > DateOnly.FromDateTime(DateTime.UtcNow))
-            throw new ArgumentException("Date of birth cannot be in the future.", nameof(dateOfBirth));
+    if (string.IsNullOrWhiteSpace(lastName))
+        throw new ArgumentException("Last name is required.", nameof(lastName));
 
-        var patient = new Patient(PatientId.New(), medicalRecordNumber, firstName, lastName, dateOfBirth);
+    if (dateOfBirth > DateOnly.FromDateTime(DateTime.UtcNow))
+        throw new ArgumentException("Date of birth cannot be in the future.", nameof(dateOfBirth));
 
-        patient.AddDomainEvent(new PatientRegisteredEvent(patient.Id, patient.MedicalRecordNumber));
+    var patient = new Patient(PatientId.New(), medicalRecordNumber, firstName, lastName, dateOfBirth);
 
-        return patient;
-    }
+    patient.AddDomainEvent(new PatientRegisteredEvent(patient.Id, patient.MedicalRecordNumber));
+
+    return patient;
+}
 
     public void UpdateContactInfo(string? phoneNumber, string? email)
     {
