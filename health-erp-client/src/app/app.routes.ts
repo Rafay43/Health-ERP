@@ -12,7 +12,18 @@ export const routes: Routes = [
         loadComponent: () =>
           import('./features/dashboard/dashboard').then((m) => m.Dashboard),
       },
-      // more feature routes added here as we build them
+      {
+        path: 'patients',
+        loadComponent: () =>
+          import('./features/patients/patient-list').then((m) => m.PatientList),
+      },
+      {
+        path: 'patients/register',
+        loadComponent: () =>
+          import('./features/patients/feature-registration/patient-registration').then(
+            (m) => m.PatientRegistration
+          ),
+      },
     ],
   },
 ];

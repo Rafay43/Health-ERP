@@ -1,0 +1,66 @@
+<div class="max-w-xl">
+  <h1 class="text-2xl font-bold text-[var(--color-text-primary)] mb-6">Register Patient</h1>
+
+  @if (errorMessage()) {
+    <p-message severity="error" [text]="errorMessage()!" styleClass="mb-4 w-full"></p-message>
+  }
+
+  <form [formGroup]="form" (ngSubmit)="onSubmit()" class="flex flex-col gap-4">
+    <div>
+      <label class="block text-sm font-medium text-[var(--color-text-secondary)] mb-1">
+        Medical Record Number
+      </label>
+      <input
+        pInputText
+        formControlName="medicalRecordNumber"
+        class="w-full"
+        placeholder="e.g. MRN-0001"
+      />
+      @if (form.get('medicalRecordNumber')?.invalid && form.get('medicalRecordNumber')?.touched) {
+        <span class="text-xs text-[var(--color-danger)]">Medical record number is required.</span>
+      }
+    </div>
+
+    <div>
+      <label class="block text-sm font-medium text-[var(--color-text-secondary)] mb-1">
+        First Name
+      </label>
+      <input pInputText formControlName="firstName" class="w-full" placeholder="John" />
+      @if (form.get('firstName')?.invalid && form.get('firstName')?.touched) {
+        <span class="text-xs text-[var(--color-danger)]">First name is required.</span>
+      }
+    </div>
+
+    <div>
+      <label class="block text-sm font-medium text-[var(--color-text-secondary)] mb-1">
+        Last Name
+      </label>
+      <input pInputText formControlName="lastName" class="w-full" placeholder="Doe" />
+      @if (form.get('lastName')?.invalid && form.get('lastName')?.touched) {
+        <span class="text-xs text-[var(--color-danger)]">Last name is required.</span>
+      }
+    </div>
+
+    <div>
+      <label class="block text-sm font-medium text-[var(--color-text-secondary)] mb-1">
+        Date of Birth
+      </label>
+      <p-datepicker
+        formControlName="dateOfBirth"
+        dateFormat="yy-mm-dd"
+        [showIcon]="true"
+        class="w-full"
+      ></p-datepicker>
+      @if (form.get('dateOfBirth')?.invalid && form.get('dateOfBirth')?.touched) {
+        <span class="text-xs text-[var(--color-danger)]">Date of birth is required.</span>
+      }
+    </div>
+
+    <p-button
+      type="submit"
+      label="Register Patient"
+      [loading]="submitting()"
+      styleClass="mt-2"
+    ></p-button>
+  </form>
+</div>
