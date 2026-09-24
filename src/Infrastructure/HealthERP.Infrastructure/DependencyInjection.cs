@@ -1,9 +1,13 @@
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using HealthERP.Infrastructure.Persistence;
 using HealthERP.Infrastructure.Persistence.Interceptors;
+using HealthERP.Infrastructure.Identity;
+using HealthERP.Infrastructure.Services;
 using HealthERP.Application.Common.Interfaces;
+using HealthERP.Application.Common.Configurations;
 
 namespace HealthERP.Infrastructure;
 
@@ -13,7 +17,15 @@ public static class DependencyInjection
         this IServiceCollection services,
         IConfiguration configuration)
     {
-        services.AddSingleton<AuditableEntitySaveChangesInterceptor>();
+        services.Configure<JwtSettings>(configuration.GetSection(JwtSettings.SectionName));
+
+        services.AddHttpContextAccessor();
+        services.AddScoped<ICurrentUserService, CurrentUserService>();
+        services.AddSingleton<IJwtTokenGenerator, JwtTokenGenerator>();
+        services.AddTransient<IIdentityService, IdentityService>();
+
+        services.AddScoped<AuditableEntitySaveChangesInterceptor>();
+        services.AddScoped<ApplicationDbContextInitialiser>();
 
         services.AddDbContext<ApplicationDbContext>((sp, options) =>
         {
@@ -23,6 +35,16 @@ public static class DependencyInjection
 
         services.AddScoped<IApplicationDbContext>(provider =>
             provider.GetRequiredService<ApplicationDbContext>());
+
+        services.AddIdentityCore<ApplicationUser>(options =>
+        {
+            options.Password.RequiredLength = 8;
+            options.Password.RequireNonAlphanumeric = false;
+            options.User.RequireUniqueEmail = true;
+        })
+        .AddRoles<ApplicationRole>()
+        .AddEntityFrameworkStores<ApplicationDbContext>()
+        .AddDefaultTokenProviders();
 
         return services;
     }

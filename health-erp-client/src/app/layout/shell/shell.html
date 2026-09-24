@@ -1,4 +1,4 @@
-﻿<div class="flex h-screen bg-[var(--color-bg)]">
+<div class="flex h-screen bg-[var(--color-bg)]">
   <!-- Sidebar -->
   <aside
     class="bg-[var(--color-surface)] border-r border-[var(--color-border)] transition-all duration-200 flex flex-col"
@@ -47,7 +47,24 @@
         <p-button icon="pi pi-bell" [text]="true" [rounded]="true">
           <p-badge value="3" severity="danger"></p-badge>
         </p-button>
-        <p-avatar label="A" shape="circle" style="background-color: var(--color-primary); color: white;"></p-avatar>
+
+        @if (currentUser()) {
+          <div class="flex items-center gap-3 border-l border-[var(--color-border)] pl-4">
+            <p-avatar [label]="userInitials" shape="circle" styleClass="bg-[var(--color-primary)] text-white"></p-avatar>
+            <div class="hidden sm:flex flex-col">
+              <span class="text-sm font-semibold leading-tight text-white">{{ currentUser()?.firstName }} {{ currentUser()?.lastName }}</span>
+              <span class="text-xs text-slate-400">{{ currentUser()?.email }}</span>
+            </div>
+            <p-button
+              icon="pi pi-sign-out"
+              [text]="true"
+              [rounded]="true"
+              severity="secondary"
+              pTooltip="Sign Out"
+              (onClick)="logout()"
+            ></p-button>
+          </div>
+        }
       </div>
     </header>
 
@@ -57,4 +74,3 @@
     </main>
   </div>
 </div>
-

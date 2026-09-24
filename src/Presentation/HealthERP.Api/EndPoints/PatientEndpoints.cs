@@ -10,7 +10,8 @@ public static class PatientEndpoints
     public static void MapPatientEndpoints(this IEndpointRouteBuilder app)
     {
         var group = app.MapGroup("/api/v1/patients")
-            .WithTags("Patients");
+            .WithTags("Patients")
+            .RequireAuthorization();
 
         group.MapPost("/", async (RegisterPatientCommand command, IMediator mediator) =>
         {

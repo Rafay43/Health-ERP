@@ -1,17 +1,23 @@
-import { Component } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { RouterOutlet, RouterLink, RouterLinkActive } from '@angular/router';
+import { CommonModule } from '@angular/common';
 import { ButtonModule } from 'primeng/button';
 import { AvatarModule } from 'primeng/avatar';
 import { BadgeModule } from 'primeng/badge';
+import { AuthService } from '../../core/services/auth.service';
 
 @Component({
   selector: 'app-shell',
   standalone: true,
-  imports: [RouterOutlet, RouterLink, RouterLinkActive, ButtonModule, AvatarModule, BadgeModule],
+  imports: [CommonModule, RouterOutlet, RouterLink, RouterLinkActive, ButtonModule, AvatarModule, BadgeModule],
   templateUrl: './shell.html',
   styleUrl: './shell.scss',
 })
 export class Shell {
+  private authService = inject(AuthService);
+
+  readonly currentUser = this.authService.currentUser;
+
   navItems = [
     { label: 'Dashboard', icon: 'pi pi-home', route: '/dashboard' },
     { label: 'Patients', icon: 'pi pi-users', route: '/patients' },
@@ -28,5 +34,15 @@ export class Shell {
 
   toggleSidebar() {
     this.sidebarCollapsed = !this.sidebarCollapsed;
+  }
+
+  logout() {
+    this.authService.logout();
+  }
+
+  get userInitials(): string {
+    const u = this.currentUser();
+    if (!u) return 'U';
+    return `${u.firstName?.[0] || ''}${u.lastName?.[0] || ''}`.toUpperCase() || 'U';
   }
 }
