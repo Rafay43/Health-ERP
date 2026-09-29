@@ -1,8 +1,10 @@
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using HealthERP.Domain.Patients;
+using StaffEntity = HealthERP.Domain.StaffMembers.StaffMembers;
 using HealthERP.Application.Common.Interfaces;
 using HealthERP.Infrastructure.Identity;
+using HealthERP.Domain.Appointments;
 
 namespace HealthERP.Infrastructure.Persistence;
 
@@ -15,6 +17,8 @@ public class ApplicationDbContext
     }
 
     public DbSet<Patient> Patients => Set<Patient>();
+    public DbSet<StaffEntity> Staff => Set<StaffEntity>();
+    public DbSet<Appointment> Appointments => Set<Appointment>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

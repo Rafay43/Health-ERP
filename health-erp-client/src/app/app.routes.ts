@@ -34,6 +34,30 @@ export const routes: Routes = [
             (m) => m.PatientRegistration
           ),
       },
+      {
+        path: 'staff',
+        loadComponent: () =>
+          import('./features/staff/staff-list').then((m) => m.StaffList),
+      },
+      {
+        path: 'staff/register',
+        loadComponent: () =>
+          import('./features/staff/feature-registration/staff-registration').then(
+            (m) => m.StaffRegistration
+          ),
+      },
+      {
+        path: 'appointments',
+        loadComponent: () =>
+          import('./features/appointments/appointment-list').then((m) => m.AppointmentList),
+      },
+      {
+        path: 'appointments/book',
+        loadComponent: () =>
+          import('./features/appointments/feature-booking/book-appointment').then(
+            (m) => m.BookAppointment
+          ),
+      },
     ],
   },
   { path: '**', redirectTo: '' },

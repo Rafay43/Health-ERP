@@ -71,5 +71,7 @@ app.UseHttpsRedirection();
 
 app.MapAuthEndpoints();
 app.MapPatientEndpoints();
+app.MapStaffEndpoints();
+app.MapAppointmentEndpoints();
 
 app.Run();
