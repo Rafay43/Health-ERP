@@ -9,6 +9,7 @@ using HealthERP.Domain.Billing;
 using HealthERP.Domain.Pharmacy;
 using HealthERP.Domain.Laboratory;
 using HealthERP.Domain.Inpatient;
+using HealthERP.Domain.Triage;
 
 namespace HealthERP.Infrastructure.Persistence;
 
@@ -31,6 +32,7 @@ public class ApplicationDbContext
     public DbSet<ClinicalNote> ClinicalNotes => Set<ClinicalNote>();
     public DbSet<Bed> Beds => Set<Bed>();
     public DbSet<Admission> Admissions => Set<Admission>();
+    public DbSet<TriageRecord> TriageRecords => Set<TriageRecord>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

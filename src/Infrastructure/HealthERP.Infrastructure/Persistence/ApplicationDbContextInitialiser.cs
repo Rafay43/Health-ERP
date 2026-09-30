@@ -158,5 +158,43 @@ public class ApplicationDbContextInitialiser
             await _context.SaveChangesAsync();
             _logger.LogInformation("Initial hospital beds catalog seeded successfully.");
         }
+
+        // 6. Seed Initial Emergency Triage Cases
+        if (!await _context.TriageRecords.AnyAsync())
+        {
+            var firstPatient = await _context.Patients.FirstOrDefaultAsync();
+            if (firstPatient != null)
+            {
+                var initialTriage = new[]
+                {
+                    HealthERP.Domain.Triage.TriageRecord.Create(
+                        firstPatient.Id,
+                        "Severe Chest Pain radiating to left arm",
+                        "150/95",
+                        110,
+                        94,
+                        37.5m,
+                        22,
+                        HealthERP.Domain.Triage.TriageSeverity.Level1_Resuscitation,
+                        "Nurse Clara Barton",
+                        "Trauma Bay 01"),
+                    HealthERP.Domain.Triage.TriageRecord.Create(
+                        firstPatient.Id,
+                        "Acute shortness of breath and wheezing",
+                        "135/85",
+                        98,
+                        92,
+                        38.1m,
+                        24,
+                        HealthERP.Domain.Triage.TriageSeverity.Level2_Emergent,
+                        "Nurse Clara Barton",
+                        "ER Bay 03")
+                };
+
+                await _context.TriageRecords.AddRangeAsync(initialTriage);
+                await _context.SaveChangesAsync();
+                _logger.LogInformation("Initial emergency triage cases seeded successfully.");
+            }
+        }
     }
 }

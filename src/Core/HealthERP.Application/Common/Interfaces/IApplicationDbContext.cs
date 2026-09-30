@@ -6,6 +6,7 @@ using HealthERP.Domain.Billing;
 using HealthERP.Domain.Pharmacy;
 using HealthERP.Domain.Laboratory;
 using HealthERP.Domain.Inpatient;
+using HealthERP.Domain.Triage;
 
 namespace HealthERP.Application.Common.Interfaces;
 
@@ -22,5 +23,6 @@ public interface IApplicationDbContext
     DbSet<ClinicalNote> ClinicalNotes { get; }
     DbSet<Bed> Beds { get; }
     DbSet<Admission> Admissions { get; }
+    DbSet<TriageRecord> TriageRecords { get; }
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }

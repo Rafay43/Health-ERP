@@ -780,6 +780,87 @@ namespace HealthERP.Infrastructure.Persistence.Migrations
                     b.ToTable("staff", "staff");
                 });
 
+            modelBuilder.Entity("HealthERP.Domain.Triage.TriageRecord", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("ArrivalDateUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("AssignedBay")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("AttendingPhysicianName")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<string>("BloodPressure")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<decimal>("BodyTemperatureCelsius")
+                        .HasColumnType("numeric");
+
+                    b.Property<string>("ChiefComplaint")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("CreatedBy")
+                        .HasColumnType("text");
+
+                    b.Property<DateTime?>("DispositionDateUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("HeartRateBpm")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime?>("ModifiedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("ModifiedBy")
+                        .HasColumnType("text");
+
+                    b.Property<int>("OxygenSaturationSpO2")
+                        .HasColumnType("integer");
+
+                    b.Property<Guid>("PatientId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("RespiratoryRateBpm")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("Severity")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("integer");
+
+                    b.Property<Guid?>("TransferredBedId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("TriageNurseName")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PatientId");
+
+                    b.HasIndex("Severity");
+
+                    b.HasIndex("Status");
+
+                    b.ToTable("triage_records", "triage");
+                });
+
             modelBuilder.Entity("HealthERP.Infrastructure.Identity.ApplicationRole", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1106,6 +1187,17 @@ namespace HealthERP.Infrastructure.Persistence.Migrations
                         .IsRequired();
 
                     b.Navigation("Drug");
+
+                    b.Navigation("Patient");
+                });
+
+            modelBuilder.Entity("HealthERP.Domain.Triage.TriageRecord", b =>
+                {
+                    b.HasOne("HealthERP.Domain.Patients.Patient", "Patient")
+                        .WithMany()
+                        .HasForeignKey("PatientId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
 
                     b.Navigation("Patient");
                 });

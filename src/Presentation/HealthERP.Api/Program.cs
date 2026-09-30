@@ -80,6 +80,7 @@ app.MapBillingEndpoints();
 app.MapPharmacyEndpoints();
 app.MapLaboratoryEndpoints();
 app.MapInpatientEndpoints();
+app.MapEmergencyEndpoints();
 app.MapReportsEndpoints();
 app.MapAdminEndpoints();
 app.MapHub<HealthERP.Api.Hubs.AppointmentHub>(HealthERP.Api.Hubs.AppointmentHub.HubUrl);
