@@ -8,6 +8,7 @@ using HealthERP.Domain.Appointments;
 using HealthERP.Domain.Billing;
 using HealthERP.Domain.Pharmacy;
 using HealthERP.Domain.Laboratory;
+using HealthERP.Domain.Inpatient;
 
 namespace HealthERP.Infrastructure.Persistence;
 
@@ -28,6 +29,8 @@ public class ApplicationDbContext
     public DbSet<LabTest> LabTests => Set<LabTest>();
     public DbSet<LabOrder> LabOrders => Set<LabOrder>();
     public DbSet<ClinicalNote> ClinicalNotes => Set<ClinicalNote>();
+    public DbSet<Bed> Beds => Set<Bed>();
+    public DbSet<Admission> Admissions => Set<Admission>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

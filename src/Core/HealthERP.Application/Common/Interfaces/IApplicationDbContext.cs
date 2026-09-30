@@ -5,6 +5,7 @@ using HealthERP.Domain.Appointments;
 using HealthERP.Domain.Billing;
 using HealthERP.Domain.Pharmacy;
 using HealthERP.Domain.Laboratory;
+using HealthERP.Domain.Inpatient;
 
 namespace HealthERP.Application.Common.Interfaces;
 
@@ -19,5 +20,7 @@ public interface IApplicationDbContext
     DbSet<LabTest> LabTests { get; }
     DbSet<LabOrder> LabOrders { get; }
     DbSet<ClinicalNote> ClinicalNotes { get; }
+    DbSet<Bed> Beds { get; }
+    DbSet<Admission> Admissions { get; }
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }

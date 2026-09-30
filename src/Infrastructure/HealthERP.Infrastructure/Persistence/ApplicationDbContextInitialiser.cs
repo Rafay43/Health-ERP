@@ -138,5 +138,25 @@ public class ApplicationDbContextInitialiser
             await _context.SaveChangesAsync();
             _logger.LogInformation("Initial laboratory test catalog seeded successfully.");
         }
+
+        // 5. Seed Initial Hospital Wards & Beds Catalog
+        if (!await _context.Beds.AnyAsync())
+        {
+            var initialBeds = new[]
+            {
+                HealthERP.Domain.Inpatient.Bed.Create("ICU Ward", "ICU-101", "Bed-A", "ICU Special Bed", 350.00m),
+                HealthERP.Domain.Inpatient.Bed.Create("ICU Ward", "ICU-101", "Bed-B", "ICU Special Bed", 350.00m),
+                HealthERP.Domain.Inpatient.Bed.Create("General Ward A", "GW-201", "Bed-01", "Standard Hospital Bed", 100.00m),
+                HealthERP.Domain.Inpatient.Bed.Create("General Ward A", "GW-201", "Bed-02", "Standard Hospital Bed", 100.00m),
+                HealthERP.Domain.Inpatient.Bed.Create("General Ward A", "GW-202", "Bed-01", "Standard Hospital Bed", 100.00m),
+                HealthERP.Domain.Inpatient.Bed.Create("Private Suite", "PS-301", "Bed-VIP", "Luxury Electric Bed", 500.00m),
+                HealthERP.Domain.Inpatient.Bed.Create("Pediatric Ward", "PED-102", "Bed-01", "Pediatric Safety Bed", 120.00m),
+                HealthERP.Domain.Inpatient.Bed.Create("Surgical Suite", "SURG-401", "Bed-01", "Post-Op Recovery Bed", 250.00m)
+            };
+
+            await _context.Beds.AddRangeAsync(initialBeds);
+            await _context.SaveChangesAsync();
+            _logger.LogInformation("Initial hospital beds catalog seeded successfully.");
+        }
     }
 }
