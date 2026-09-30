@@ -15,4 +15,12 @@ public interface IIdentityService
         string email,
         string password,
         CancellationToken cancellationToken = default);
+
+    Task<List<HealthERP.Application.Admin.Models.UserAccountDto>> GetUserAccountsAsync(CancellationToken cancellationToken = default);
+
+    Task<HealthERP.Application.Admin.Models.UserAccountDto> UpdateUserRoleAsync(Guid userId, string roleName, CancellationToken cancellationToken = default);
+
+    Task<HealthERP.Application.Admin.Models.UserAccountDto> ToggleUserAccountStatusAsync(Guid userId, bool enableAccount, CancellationToken cancellationToken = default);
+
+    Task<HealthERP.Application.Admin.Models.SystemHealthDto> GetSystemHealthAsync(CancellationToken cancellationToken = default);
 }
