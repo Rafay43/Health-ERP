@@ -7,6 +7,7 @@ using HealthERP.Domain.Pharmacy;
 using HealthERP.Domain.Laboratory;
 using HealthERP.Domain.Inpatient;
 using HealthERP.Domain.Triage;
+using HealthERP.Domain.Notifications;
 
 namespace HealthERP.Application.Common.Interfaces;
 
@@ -24,5 +25,6 @@ public interface IApplicationDbContext
     DbSet<Bed> Beds { get; }
     DbSet<Admission> Admissions { get; }
     DbSet<TriageRecord> TriageRecords { get; }
+    DbSet<Notification> Notifications { get; }
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }

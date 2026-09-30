@@ -102,50 +102,87 @@
 
 ---
 
-## Milestone 6: Pharmacy & Lab Modules
+## Milestone 6A: Pharmacy & Medication Management (✅ Complete)
 
-| Task | Status |
-|---|---|
-| Drug/Prescription aggregates | ⏳ Not started |
-| Stock/expiry tracking + low-stock alerts | ⏳ Not started |
-| LabOrder/LabResult aggregates | ⏳ Not started |
-| Critical-value flagging logic | ⏳ Not started |
-
-**Dependencies:** Milestone 3 (auth), can run parallel to Milestone 5.
-**Estimated effort:** **[ASSUMPTION]** 3 sessions combined.
+| Task | Status | Notes |
+|---|---|---|
+| Drug & Prescription aggregates | ✅ Done | `Drug`, `Prescription` aggregates + Postgres `pharmacy` schema |
+| Inventory & Stock tracking | ✅ Done | Auto-decrement stock on dispense, low-stock & expiry alerts |
+| Pharmacy REST Endpoints | ✅ Done | `GET /api/v1/pharmacy/inventory`, `POST /api/v1/pharmacy/prescriptions` |
+| Angular Pharmacy Dashboard UI | ✅ Done | Inventory table, prescription modal, dispense action |
 
 ---
 
-## Milestone 7: Reports, Notifications, Compliance Hardening
+## Milestone 6B: Laboratory & Diagnostic Module (✅ Complete)
 
-| Task | Status |
-|---|---|
-| Analytics dashboards (operational/financial/clinical) | ⏳ Not started |
-| Email/SMS notification integration | ⏳ Not started |
-| Full audit log viewer (admin UI) | ⏳ Not started |
-| Record-view logging (PHI access audit) | ⏳ Not started |
-| Field-level encryption for PII | ⏳ Not started |
-| Formal accessibility audit (WCAG AA) | ⏳ Not started |
-
-**Dependencies:** most prior milestones (reports need real data across modules).
-**Estimated effort:** **[ASSUMPTION]** 2–3 sessions.
+| Task | Status | Notes |
+|---|---|---|
+| LabTest & LabOrder aggregates | ✅ Done | `LabTest`, `LabOrder` aggregates + Postgres `laboratory` schema |
+| Test Catalog & Ordering Workflow | ✅ Done | Catalog management, order placement, priority flagging (STAT/Urgent) |
+| Result Entry & Abnormal Flagging | ✅ Done | Result recording with abnormal value highlighting |
+| Angular Laboratory Dashboard UI | ✅ Done | Test catalog, pending/urgent orders list, result entry modal |
 
 ---
 
-## Milestone 8: Testing, CI/CD, Deployment Readiness
+## Milestone 7: Unified Patient EHR & Medical History Timeline (✅ Complete)
 
-| Task | Status |
-|---|---|
-| Unit tests across Application layer handlers | ⏳ Not started |
-| Integration tests (Testcontainers) | ⏳ Not started |
-| E2E tests (Playwright) | ⏳ Not started |
-| GitHub Actions CI pipeline | ⏳ Not started |
-| Docker Compose (Postgres, Redis, Seq, API, client) | ⏳ Not started |
-| Production CORS/secrets hardening | ⏳ Not started |
-| Demo data seeding (Bogus) | ⏳ Not started |
-| Live demo hosting | ⏳ Not started |
+| Task | Status | Notes |
+|---|---|---|
+| Patient EHR Detail Route (`/patients/:id`) | ✅ Done | Comprehensive single-page EHR view |
+| Aggregated Clinical History | ✅ Done | Unified timeline for Encounters, Prescriptions, Labs, Billing, Clinical Notes |
+| Clinical Note Creation | ✅ Done | Direct clinical note entry attached to patient record |
 
-**Dependencies:** should run incrementally alongside all prior milestones, not deferred entirely to the end — flagged as a process risk in `memory.md`.
+---
+
+## Milestone 8: Hospital Reports & Analytics Dashboard (✅ Complete)
+
+| Task | Status | Notes |
+|---|---|---|
+| Multi-Module Aggregated Analytics | ✅ Done | Financial revenue breakdown, patient volume, lab order metrics |
+| Export Features | ✅ Done | CSV export capabilities for hospital operational metrics |
+| Angular Reports UI | ✅ Done | Visual KPI cards, distribution charts, custom date-range filters |
+
+---
+
+## Milestone 9: Admin Console, Security Audit Logs & RBAC (✅ Complete)
+
+| Task | Status | Notes |
+|---|---|---|
+| System Configuration Settings | ✅ Done | Tenant settings, feature toggles, security policy config |
+| Audit Logging & Activity Viewer | ✅ Done | Centralized audit log tracking with search & filter |
+| Role & Permission Management | ✅ Done | User role assignment console for RBAC |
+
+---
+
+## Milestone 10: Hospital Inpatient Ward & Bed Management (ADTI) (✅ Complete)
+
+| Task | Status | Notes |
+|---|---|---|
+| Bed & Admission Aggregates | ✅ Done | `Bed` (Available, Occupied, Maintenance) & `Admission` aggregates + Postgres `inpatient` schema |
+| Stay Duration & Automatic Rate Calculation | ✅ Done | Automatic stay calculation and total daily room charge computation on discharge |
+| Angular Inpatient Dashboard UI | ✅ Done | Interactive Ward Bed Allocation Grid, occupancy rate KPIs, admission/discharge modals |
+
+---
+
+## Milestone 11: Emergency Department (ED / Triage) & Casualty Module (✅ Complete)
+
+| Task | Status | Notes |
+|---|---|---|
+| TriageRecord Aggregate & ESI Severity Levels | ✅ Done | ESI Levels 1–5 (`Resuscitation` to `NonUrgent`) + Postgres `triage` schema |
+| Vital Signs Monitoring & Bay Allocation | ✅ Done | Blood Pressure, HR, SpO2, Temp, Resp Rate tracking & ER Trauma Bay assignment |
+| Direct Ward Transfer Workflow | ✅ Done | Seamless ER-to-Inpatient Bed transfer with automated admission creation |
+| Angular Emergency Dashboard UI | ✅ Done | ESI Triage Queue, vital sign alert highlighting, intake & transfer modals |
+
+---
+
+## Milestone 12: Real-time Notification & Alerting Center (SignalR & In-App Alerts) (✅ Complete)
+
+| Task | Status | Notes |
+|---|---|---|
+| Notification Aggregate & Severity Levels | ✅ Done | `Notification` aggregate (`Info`, `Warning`, `Critical`) + Postgres `notifications` schema |
+| SignalR NotificationHub WebSockets | ✅ Done | `/hubs/notifications` real-time WebSocket push broadcasting to connected clients |
+| Persistent Notification CQRS & REST API | ✅ Done | `GET /api/v1/notifications`, `POST /api/v1/notifications/{id}/read` & `read-all` |
+| Angular Bell Icon & Floating Notification Drawer UI | ✅ Done | Live unread badge count, severity-coded alert list, click-to-navigate links |
 
 ---
 

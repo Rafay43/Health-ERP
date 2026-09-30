@@ -83,6 +83,8 @@ app.MapInpatientEndpoints();
 app.MapEmergencyEndpoints();
 app.MapReportsEndpoints();
 app.MapAdminEndpoints();
+app.MapNotificationEndpoints();
 app.MapHub<HealthERP.Api.Hubs.AppointmentHub>(HealthERP.Api.Hubs.AppointmentHub.HubUrl);
+app.MapHub<HealthERP.Api.Hubs.NotificationHub>(HealthERP.Api.Hubs.NotificationHub.HubUrl);
 
 app.Run();

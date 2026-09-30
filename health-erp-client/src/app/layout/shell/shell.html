@@ -35,18 +35,78 @@
   </aside>
 
   <!-- Main content area -->
-  <div class="flex-1 flex flex-col overflow-hidden">
+  <div class="flex-1 flex flex-col overflow-hidden relative">
     <!-- Top bar -->
-    <header class="h-16 bg-[var(--color-surface)] border-b border-[var(--color-border)] flex items-center justify-between px-6">
+    <header class="h-16 bg-[var(--color-surface)] border-b border-[var(--color-border)] flex items-center justify-between px-6 z-20">
       <div class="flex items-center gap-2 text-[var(--color-text-secondary)]">
         <i class="pi pi-search"></i>
-        <span class="text-sm">Search patients, appointments...</span>
+        <span class="text-sm">Search patients, appointments, emergency triage...</span>
       </div>
 
       <div class="flex items-center gap-4">
-        <p-button icon="pi pi-bell" [text]="true" [rounded]="true">
-          <p-badge value="3" severity="danger"></p-badge>
-        </p-button>
+        <!-- Notification Bell & Badge -->
+        <div class="relative">
+          <button
+            class="p-2 rounded-full hover:bg-slate-100 relative transition-colors"
+            (click)="toggleNotificationDrawer()"
+          >
+            <i class="pi pi-bell text-xl text-slate-700"></i>
+            <span
+              *ngIf="notificationService.unreadCount() > 0"
+              class="absolute -top-1 -right-1 bg-rose-600 text-white text-3xs font-bold rounded-full h-5 w-5 flex items-center justify-center animate-bounce shadow-xs"
+            >
+              {{ notificationService.unreadCount() }}
+            </span>
+          </button>
+
+          <!-- Floating Notification Center Drawer -->
+          <div
+            *ngIf="showNotificationDrawer()"
+            class="absolute right-0 mt-3 w-80 sm:w-96 bg-white rounded-xl shadow-2xl border border-slate-200 z-50 overflow-hidden flex flex-col max-h-[500px]"
+          >
+            <div class="p-3.5 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
+              <div class="flex items-center gap-2">
+                <i class="pi pi-bell text-indigo-600 font-bold"></i>
+                <h3 class="font-bold text-slate-800 text-sm">System Alerts & Notifications</h3>
+              </div>
+              <button
+                *ngIf="notificationService.unreadCount() > 0"
+                class="text-2xs font-semibold text-indigo-600 hover:text-indigo-800 transition-colors"
+                (click)="markAllAsRead()"
+              >
+                Mark all read
+              </button>
+            </div>
+
+            <div class="flex-1 overflow-y-auto divide-y divide-slate-100">
+              <div *ngIf="notificationService.notifications().length === 0" class="p-8 text-center text-slate-400 text-xs">
+                <i class="pi pi-inbox text-3xl text-slate-300 block mb-2"></i>
+                No notifications right now.
+              </div>
+
+              <div
+                *ngFor="let n of notificationService.notifications()"
+                class="p-3.5 hover:bg-slate-50 transition-colors cursor-pointer flex flex-col gap-1 text-xs"
+                [ngClass]="getNotificationSeverityClass(n.severityName || n.severityValue)"
+                (click)="onNotificationClick(n)"
+              >
+                <div class="flex items-start justify-between gap-2">
+                  <span class="font-bold text-slate-800 leading-snug">{{ n.title }}</span>
+                  <span
+                    *ngIf="!n.isRead && !(n.IsRead)"
+                    class="w-2 h-2 rounded-full bg-indigo-600 shrink-0 mt-1"
+                    title="Unread"
+                  ></span>
+                </div>
+                <p class="text-slate-600 text-2xs leading-relaxed">{{ n.message }}</p>
+                <div class="flex items-center justify-between text-3xs text-slate-400 mt-1">
+                  <span>{{ n.createdAtUtc | date:'shortTime' }}</span>
+                  <span *ngIf="n.linkUrl" class="text-indigo-600 font-medium">View details &rarr;</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
 
         @if (currentUser()) {
           <div class="flex items-center gap-3 border-l border-[var(--color-border)] pl-4">
