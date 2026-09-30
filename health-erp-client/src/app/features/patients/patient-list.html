@@ -10,19 +10,29 @@
       <th>First Name</th>
       <th>Last Name</th>
       <th>Date of Birth</th>
+      <th class="text-center">Action</th>
     </tr>
   </ng-template>
   <ng-template pTemplate="body" let-patient>
     <tr>
-      <td>{{ patient.medicalRecordNumber }}</td>
+      <td class="font-mono font-bold text-indigo-600">{{ patient.medicalRecordNumber }}</td>
       <td>{{ patient.firstName }}</td>
       <td>{{ patient.lastName }}</td>
       <td>{{ patient.dateOfBirth }}</td>
+      <td class="text-center">
+        <a
+          pButton
+          icon="pi pi-history"
+          label="View EHR"
+          class="p-button-outlined p-button-sm p-button-primary"
+          [routerLink]="['/patients', patient.id]"
+        ></a>
+      </td>
     </tr>
   </ng-template>
   <ng-template pTemplate="emptymessage">
     <tr>
-      <td colspan="4" class="text-center text-[var(--color-text-secondary)] py-8">
+      <td colspan="5" class="text-center text-[var(--color-text-secondary)] py-8">
         No patients registered yet.
       </td>
     </tr>

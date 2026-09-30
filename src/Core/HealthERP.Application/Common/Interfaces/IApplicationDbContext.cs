@@ -18,5 +18,6 @@ public interface IApplicationDbContext
     DbSet<Prescription> Prescriptions { get; }
     DbSet<LabTest> LabTests { get; }
     DbSet<LabOrder> LabOrders { get; }
+    DbSet<ClinicalNote> ClinicalNotes { get; }
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }

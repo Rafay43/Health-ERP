@@ -345,6 +345,73 @@ namespace HealthERP.Infrastructure.Persistence.Migrations
                     b.ToTable("lab_tests", "laboratory");
                 });
 
+            modelBuilder.Entity("HealthERP.Domain.Patients.ClinicalNote", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("BloodPressure")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<string>("ChiefComplaint")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("CreatedBy")
+                        .HasColumnType("text");
+
+                    b.Property<string>("Diagnosis")
+                        .IsRequired()
+                        .HasMaxLength(300)
+                        .HasColumnType("character varying(300)");
+
+                    b.Property<string>("DoctorName")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<int?>("HeartRateBpm")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime?>("ModifiedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("ModifiedBy")
+                        .HasColumnType("text");
+
+                    b.Property<DateTime>("NoteDateUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Notes")
+                        .IsRequired()
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)");
+
+                    b.Property<Guid>("PatientId")
+                        .HasColumnType("uuid");
+
+                    b.Property<decimal?>("TemperatureCelsius")
+                        .HasPrecision(5, 2)
+                        .HasColumnType("numeric(5,2)");
+
+                    b.Property<decimal?>("WeightKg")
+                        .HasPrecision(5, 2)
+                        .HasColumnType("numeric(5,2)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("NoteDateUtc");
+
+                    b.HasIndex("PatientId");
+
+                    b.ToTable("clinical_notes", "patients");
+                });
+
             modelBuilder.Entity("HealthERP.Domain.Patients.Patient", b =>
                 {
                     b.Property<Guid>("Id")
@@ -872,6 +939,17 @@ namespace HealthERP.Infrastructure.Persistence.Migrations
                         .IsRequired();
 
                     b.Navigation("LabTest");
+
+                    b.Navigation("Patient");
+                });
+
+            modelBuilder.Entity("HealthERP.Domain.Patients.ClinicalNote", b =>
+                {
+                    b.HasOne("HealthERP.Domain.Patients.Patient", "Patient")
+                        .WithMany()
+                        .HasForeignKey("PatientId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
                     b.Navigation("Patient");
                 });

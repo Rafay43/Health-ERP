@@ -38,6 +38,11 @@ export const routes: Routes = [
           ),
       },
       {
+        path: 'patients/:id',
+        loadComponent: () =>
+          import('./features/patients/patient-ehr-detail').then((m) => m.PatientEhrDetailComponent),
+      },
+      {
         path: 'staff',
         loadComponent: () =>
           import('./features/staff/staff-list').then((m) => m.StaffList),

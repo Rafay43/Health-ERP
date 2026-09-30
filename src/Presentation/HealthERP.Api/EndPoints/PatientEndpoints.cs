@@ -37,5 +37,44 @@ public static class PatientEndpoints
         })
         .WithName("GetNextMedicalRecordNumber")
         .Produces(200);
+
+        group.MapGet("/{id:guid}/ehr", async (Guid id, IMediator mediator) =>
+        {
+            var ehr = await mediator.Send(new HealthERP.Application.Patients.Queries.GetPatientEhr.GetPatientEhrQuery(id));
+            return Results.Ok(ehr);
+        })
+        .WithName("GetPatientEhr")
+        .Produces<HealthERP.Application.Patients.Models.PatientEhrDto>(200)
+        .Produces(404);
+
+        group.MapPost("/{id:guid}/clinical-notes", async (Guid id, AddClinicalNoteRequest request, IMediator mediator) =>
+        {
+            var result = await mediator.Send(new HealthERP.Application.Patients.Commands.AddClinicalNote.AddClinicalNoteCommand(
+                id,
+                request.DoctorName,
+                request.ChiefComplaint,
+                request.Diagnosis,
+                request.Notes,
+                request.BloodPressure,
+                request.HeartRateBpm,
+                request.TemperatureCelsius,
+                request.WeightKg));
+            return Results.Created($"/api/v1/patients/{id}/clinical-notes/{result.Id}", result);
+        })
+        .WithName("AddClinicalNote")
+        .Produces<HealthERP.Application.Patients.Models.ClinicalNoteDto>(201)
+        .Produces(400)
+        .Produces(404);
     }
 }
+
+public record AddClinicalNoteRequest(
+    string DoctorName,
+    string ChiefComplaint,
+    string Diagnosis,
+    string Notes,
+    string? BloodPressure = null,
+    int? HeartRateBpm = null,
+    decimal? TemperatureCelsius = null,
+    decimal? WeightKg = null
+);
