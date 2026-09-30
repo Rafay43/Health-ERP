@@ -186,4 +186,18 @@
 
 ---
 
+## Milestone 13: UI Polish, SweetAlert2 Integration & System Audit Enhancements (✅ Complete)
+
+| Task | Status | Notes |
+|---|---|---|
+| Automated Notification Triggers | ✅ Done | Auto-emit system notifications on staff creation, appointment booking, and ER triage intake |
+| System Audit Trail User Resolution | ✅ Done | Resolved raw User GUIDs in "Performed By" column to human-readable user names/emails via `IIdentityService` |
+| SweetAlert2 Integration | ✅ Done | Replaced native alerts with SweetAlert2 popups across all 13 modules (Patients, Staff, Appointments, Billing, Pharmacy, Lab, Inpatient, ER, EHR, Admin, Auth) |
+| Angular `AlertService` | ✅ Done | Created `alert.service.ts` helper wrapping SweetAlert2 for consistent success, error, warning & confirm dialogs |
+| Search Bar & Form Layout UX Polish | ✅ Done | Fixed search icon overlap padding (`!pl-10`, `z-10`) and patient selector bindings in modal dialogs |
+| EF Core Concurrency & Entity Configurations | ✅ Done | Fixed `DbUpdateConcurrencyException` on payments via `.ValueGeneratedNever()` on `Payment.Id` |
+
+---
+
 *Related documents: `PRD.md`, `TRD.md`, `architecture.md`, `design.md`, `rules.md`, `memory.md`.*
+

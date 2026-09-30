@@ -38,14 +38,63 @@
   <div class="flex-1 flex flex-col overflow-hidden relative">
     <!-- Top bar -->
     <header class="h-16 bg-[var(--color-surface)] border-b border-[var(--color-border)] flex items-center justify-between px-6 z-20">
-      <div class="relative flex items-center w-64 sm:w-80">
+      <div class="relative flex items-center w-72 sm:w-96">
         <i class="pi pi-search absolute left-3 text-slate-400 z-10 pointer-events-none"></i>
         <input
           type="text"
           pInputText
-          placeholder="Search patients, appointments, triage..."
-          class="w-full !pl-10 !py-1.5 text-xs rounded-lg border border-slate-200 focus:ring-2 focus:ring-indigo-500"
+          placeholder="Search patients, appointments, ER triage, staff..."
+          class="w-full !pl-10 !pr-8 !py-1.5 text-xs rounded-lg border border-slate-200 focus:ring-2 focus:ring-indigo-500 bg-slate-50 focus:bg-white transition-all text-slate-800"
+          [value]="searchQuery()"
+          (input)="onSearchInput($event)"
+          (focus)="onSearchFocus()"
+          (keydown.escape)="clearSearch()"
         />
+        <button
+          *ngIf="searchQuery()"
+          class="absolute right-2 text-slate-400 hover:text-slate-600 z-10 text-xs"
+          (click)="clearSearch()"
+        >
+          <i class="pi pi-times"></i>
+        </button>
+
+        <!-- Live Quick-Search Dropdown -->
+        <div
+          *ngIf="showSearchDropdown() && searchQuery().trim().length > 0"
+          class="absolute top-full left-0 right-0 mt-2 bg-white rounded-xl shadow-2xl border border-slate-200 z-50 overflow-hidden flex flex-col max-h-[420px]"
+        >
+          <div class="p-2.5 bg-slate-50 border-b border-slate-200 flex items-center justify-between text-xs text-slate-500 font-medium">
+            <span>Search Results for "<strong class="text-slate-800">{{ searchQuery() }}</strong>"</span>
+            <span class="text-2xs font-semibold px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-600">{{ searchResults().length }} matches</span>
+          </div>
+
+          <div class="flex-1 overflow-y-auto divide-y divide-slate-100">
+            <div *ngIf="searchResults().length === 0" class="p-6 text-center text-slate-400 text-xs">
+              <i class="pi pi-search-minus text-2xl text-slate-300 block mb-1"></i>
+              No matching patients, appointments, ER triage or staff found.
+            </div>
+
+            <div
+              *ngFor="let res of searchResults()"
+              class="p-3 hover:bg-slate-50 transition-colors cursor-pointer flex items-center justify-between gap-3 text-xs"
+              (click)="selectSearchResult(res)"
+            >
+              <div class="flex items-center gap-3 min-w-0">
+                <div class="w-8 h-8 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center shrink-0">
+                  <i [class]="res.icon" class="text-sm"></i>
+                </div>
+                <div class="truncate">
+                  <div class="flex items-center gap-2">
+                    <span class="font-semibold text-slate-800 truncate">{{ res.title }}</span>
+                    <span class="text-3xs font-bold px-1.5 py-0.5 rounded-full bg-slate-100 text-slate-600 shrink-0">{{ res.type }}</span>
+                  </div>
+                  <p class="text-slate-500 text-2xs truncate mt-0.5">{{ res.subtitle }}</p>
+                </div>
+              </div>
+              <i class="pi pi-chevron-right text-slate-300 text-2xs shrink-0"></i>
+            </div>
+          </div>
+        </div>
       </div>
 
       <div class="flex items-center gap-4">
