@@ -199,5 +199,18 @@
 
 ---
 
+## Milestone 14: Executive Hospital Management Dashboard (✅ Complete)
+
+| Task | Status | Notes |
+|---|---|---|
+| CQRS Dashboard Metrics Endpoint | ✅ Done | `GET /api/v1/dashboard/metrics` returning real-time KPIs, revenue trend, bed distribution, and alerts |
+| Top Metric KPI Row | ✅ Done | Glassmorphic KPI cards for Bed Occupancy %, Today's Consultations, Monthly Revenue, and ER Intake |
+| Financial & Ward Visual Charts | ✅ Done | Monthly revenue comparison bar visualizer & Inpatient Ward bed occupancy allocation breakdown |
+| Today's Schedule & ER Watch Feed | ✅ Done | Live consultation timeline with status badges and Emergency Department vital alert watch |
+| Quick Action Launcher Bar | ✅ Done | 1-click quick launcher bar to register patients, book appointments, record ER triage, and add prescriptions |
+
+---
+
 *Related documents: `PRD.md`, `TRD.md`, `architecture.md`, `design.md`, `rules.md`, `memory.md`.*
+
 

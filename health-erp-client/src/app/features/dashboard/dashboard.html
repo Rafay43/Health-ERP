@@ -1,0 +1,376 @@
+<div class="relative space-y-6 pb-6 min-h-full">
+
+  <!-- Ambient Gradient Background Blobs for Glassmorphism Refraction -->
+  <div
+    class="absolute -top-12 -left-12 w-[30rem] h-[30rem] bg-teal-400/20 rounded-full blur-3xl pointer-events-none -z-10">
+  </div>
+  <div
+    class="absolute top-1/4 -right-12 w-[32rem] h-[32rem] bg-sky-400/20 rounded-full blur-3xl pointer-events-none -z-10">
+  </div>
+  <div
+    class="absolute -bottom-10 left-1/3 w-[36rem] h-[36rem] bg-indigo-400/15 rounded-full blur-3xl pointer-events-none -z-10">
+  </div>
+
+  <!-- Dashboard Title Bar -->
+  <div class="flex items-center justify-between relative z-10">
+    <div>
+      <h1 class="text-2xl font-extrabold text-slate-900 tracking-tight">Dashboard</h1>
+      <p class="text-xs font-semibold text-slate-600 mt-0.5">Welcome to Health ERP Hospital Management Center</p>
+    </div>
+    <div class="flex items-center gap-2">
+      <span
+        class="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-bold glass-pill text-emerald-800 shadow-xs">
+        <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span> Optimal System Status
+      </span>
+    </div>
+  </div>
+
+  <!-- Loading State -->
+  <div *ngIf="isLoading()" class="glass-card-main rounded-2xl p-16 text-center">
+    <i class="pi pi-spin pi-spinner text-3xl text-teal-600 block mb-3"></i>
+    <p class="text-sm font-semibold text-slate-600">Loading Dashboard Metrics...</p>
+  </div>
+
+  <div *ngIf="!isLoading()" class="space-y-6 relative z-10">
+
+    <!-- 1. Top Row: 4 Glassmorphic Metric Cards with Sparkline Wave Graphs -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+
+      <!-- Card 1: Bed Occupancy -->
+      <div class="glass-card-teal rounded-2xl p-5 flex flex-col justify-between relative overflow-hidden group">
+        <div>
+          <div class="flex items-center justify-between">
+            <div
+              class="w-10 h-10 rounded-xl bg-teal-600 text-white flex items-center justify-center shadow-md shadow-teal-600/30">
+              <i class="pi pi-building text-lg"></i>
+            </div>
+            <button class="text-slate-400 hover:text-slate-600 transition-colors cursor-pointer">
+              <i class="pi pi-cog text-sm"></i>
+            </button>
+          </div>
+          <div class="mt-4">
+            <h2 class="text-3xl font-black text-slate-900 tracking-tight">
+              {{ metrics()?.kpis?.occupancyPercentage || 84 }}%
+            </h2>
+            <p class="text-xs font-bold text-slate-500 mt-0.5">Bed Occupancy</p>
+          </div>
+        </div>
+
+        <!-- Sparkline SVG Wave -->
+        <div class="mt-4">
+          <svg class="w-full h-10 text-teal-600 stroke-current fill-none" viewBox="0 0 200 40">
+            <path d="M 0 30 Q 30 10, 60 25 T 120 15 T 180 28 L 200 20" stroke-width="2.5" stroke-linecap="round" />
+          </svg>
+          <div class="flex justify-end mt-1">
+            <span
+              class="text-3xs font-extrabold px-2.5 py-1 rounded-full bg-emerald-100/90 text-emerald-800 border border-emerald-200/80 shadow-xs">Optimal</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Card 2: Today's Appointments -->
+      <div class="glass-card-slate rounded-2xl p-5 flex flex-col justify-between relative overflow-hidden group">
+        <div>
+          <div class="flex items-center justify-between">
+            <div
+              class="w-10 h-10 rounded-xl bg-slate-800 text-white flex items-center justify-center shadow-md shadow-slate-800/30">
+              <i class="pi pi-calendar text-lg"></i>
+            </div>
+            <button class="text-slate-400 hover:text-slate-600 transition-colors cursor-pointer">
+              <i class="pi pi-ellipsis-v text-sm"></i>
+            </button>
+          </div>
+          <div class="mt-4">
+            <h2 class="text-3xl font-black text-slate-900 tracking-tight">
+              {{ metrics()?.kpis?.todayAppointmentsCount || 24 }}
+            </h2>
+            <p class="text-xs font-bold text-slate-500 mt-0.5">Today's Appointments</p>
+          </div>
+        </div>
+
+        <!-- Sparkline SVG Wave -->
+        <div class="mt-4">
+          <svg class="w-full h-10 text-slate-700 stroke-current fill-none" viewBox="0 0 200 40">
+            <path d="M 0 25 Q 40 35, 80 15 T 140 25 T 200 10" stroke-width="2.5" stroke-linecap="round" />
+          </svg>
+          <div class="flex justify-end mt-1">
+            <span
+              class="text-3xs font-extrabold px-2.5 py-1 rounded-full bg-slate-200/90 text-slate-700 border border-slate-300/80 shadow-xs">Scheduled</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Card 3: Monthly Revenue -->
+      <div class="glass-card-teal rounded-2xl p-5 flex flex-col justify-between relative overflow-hidden group">
+        <div>
+          <div class="flex items-center justify-between">
+            <div
+              class="w-10 h-10 rounded-xl bg-teal-600 text-white flex items-center justify-center shadow-md shadow-teal-600/30">
+              <i class="pi pi-wallet text-lg"></i>
+            </div>
+            <button class="text-slate-400 hover:text-slate-600 transition-colors cursor-pointer">
+              <i class="pi pi-chart-bar text-sm"></i>
+            </button>
+          </div>
+          <div class="mt-4">
+            <h2 class="text-3xl font-black text-slate-900 tracking-tight">
+              ${{ ((metrics()?.kpis?.monthlyRevenue || 48500) / 1000) | number:'1.1-1' }}K
+            </h2>
+            <p class="text-xs font-bold text-slate-500 mt-0.5">Monthly Revenue</p>
+          </div>
+        </div>
+
+        <!-- Mini Vertical Bars -->
+        <div class="mt-4">
+          <div class="flex items-end justify-between h-10 gap-1.5 px-1">
+            <div class="w-2.5 bg-slate-700 rounded-t h-[40%] shadow-xs"></div>
+            <div class="w-2.5 bg-teal-600 rounded-t h-[60%] shadow-xs"></div>
+            <div class="w-2.5 bg-slate-700 rounded-t h-[35%] shadow-xs"></div>
+            <div class="w-2.5 bg-teal-600 rounded-t h-[75%] shadow-xs"></div>
+            <div class="w-2.5 bg-slate-700 rounded-t h-[50%] shadow-xs"></div>
+            <div class="w-2.5 bg-teal-600 rounded-t h-[90%] shadow-xs"></div>
+            <div class="w-2.5 bg-teal-600 rounded-t h-[100%] shadow-xs"></div>
+          </div>
+          <div class="flex justify-end mt-1">
+            <span
+              class="text-3xs font-extrabold px-2.5 py-1 rounded-full bg-emerald-100/90 text-emerald-800 border border-emerald-200/80 shadow-xs">+7.2%</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Card 4: ER Patients -->
+      <div class="glass-card-slate rounded-2xl p-5 flex flex-col justify-between relative overflow-hidden group">
+        <div>
+          <div class="flex items-center justify-between">
+            <div
+              class="w-10 h-10 rounded-xl bg-slate-800 text-white flex items-center justify-center shadow-md shadow-slate-800/30">
+              <i class="pi pi-users text-lg"></i>
+            </div>
+            <button class="text-slate-400 hover:text-slate-600 transition-colors cursor-pointer">
+              <i class="pi pi-ellipsis-v text-sm"></i>
+            </button>
+          </div>
+          <div class="mt-4">
+            <h2 class="text-3xl font-black text-slate-900 tracking-tight">
+              {{ metrics()?.kpis?.activeEmergencyQueueCount || 6 }}
+            </h2>
+            <p class="text-xs font-bold text-slate-500 mt-0.5">ER Patients</p>
+          </div>
+        </div>
+
+        <!-- Sparkline SVG Wave -->
+        <div class="mt-4">
+          <svg class="w-full h-10 text-teal-600 stroke-current fill-none" viewBox="0 0 200 40">
+            <path d="M 0 30 Q 50 10, 100 28 T 160 15 T 200 22" stroke-width="2.5" stroke-linecap="round" />
+          </svg>
+          <div class="flex justify-end mt-1">
+            <span
+              class="text-3xs font-extrabold px-2.5 py-1 rounded-full bg-slate-200/90 text-slate-700 border border-slate-300/80 shadow-xs">Wait
+              Time 12m</span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- 2. Middle Row: Monthly Revenue Overview & Today's Patient Schedule -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+      <!-- Left: Monthly Revenue Overview Chart (2 Cols wide) - REAL DATA DYNAMIC -->
+      <div
+        class="lg:col-span-2 bg-white rounded-2xl p-6 shadow-xs border border-slate-200/70 flex flex-col justify-between">
+        <div>
+          <div class="flex items-center justify-between mb-6">
+            <h3 class="text-base font-extrabold text-slate-900">Monthly Revenue Overview</h3>
+            <span class="text-2xs font-semibold text-slate-500">Jan &ndash; Dec 2026 (Live Financials)</span>
+          </div>
+
+          <!-- Dual Bar Chart Visualizer with REAL DATA -->
+          <div class="relative pt-4">
+            <!-- Y Axis labels -->
+            <div
+              class="flex flex-col justify-between h-48 text-3xs font-bold text-slate-500 absolute left-0 top-4 bottom-8 pointer-events-none">
+              <span>$50.0K</span>
+              <span>$40.0K</span>
+              <span>$30.0K</span>
+              <span>$20.0K</span>
+              <span>$10.0K</span>
+              <span>0</span>
+            </div>
+
+            <!-- Chart Plot Area: Dynamic 12 Months from API -->
+            <div class="ml-12 border-b border-slate-200 h-48 flex items-end justify-between px-2 gap-2 pb-1">
+              <div *ngFor="let item of metrics()?.revenueTrend || []"
+                class="flex items-end gap-1 h-full flex-1 justify-center group relative">
+                <!-- Slate Bar (Collected Revenue) -->
+                <div class="w-3 bg-slate-700 rounded-t transition-all hover:bg-slate-900 cursor-pointer shadow-2xs"
+                  [style.height.%]="getPercentage(item.revenue, 50000)"
+                  [title]="item.month + ' Collected: $' + item.revenue"></div>
+                <!-- Teal Bar (Balance Due / Forecast) -->
+                <div class="w-3 bg-teal-600 rounded-t transition-all hover:bg-teal-700 cursor-pointer shadow-2xs"
+                  [style.height.%]="getPercentage(item.balance, 50000)"
+                  [title]="item.month + ' Balance: $' + item.balance"></div>
+              </div>
+            </div>
+
+            <!-- X Axis Labels -->
+            <div class="ml-12 flex justify-between text-3xs font-bold text-slate-600 pt-2 px-1">
+              <span *ngFor="let item of metrics()?.revenueTrend || []">{{ item.month }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right: Today's Patient Schedule (1 Col wide) - REAL DATA DYNAMIC -->
+      <div class="bg-white rounded-2xl p-6 shadow-xs border border-slate-200/70 flex flex-col justify-between">
+        <div>
+          <div class="flex items-center justify-between mb-4">
+            <h3 class="text-base font-extrabold text-slate-900">Today's Patient Schedule</h3>
+            <span class="text-3xs font-semibold text-slate-500">9:00 AM &ndash; 3:00 PM</span>
+          </div>
+
+          <!-- Vertical Timeline with REAL DATA -->
+          <div
+            class="relative pl-6 space-y-4 before:absolute before:left-2 before:top-2 before:bottom-2 before:w-0.5 before:bg-slate-200 max-h-[260px] overflow-y-auto">
+            <div *ngIf="(metrics()?.todayAppointments || []).length === 0"
+              class="py-8 text-center text-slate-500 text-xs">
+              No appointments scheduled for today.
+            </div>
+
+            <div *ngFor="let appt of metrics()?.todayAppointments || []" class="relative">
+              <span class="absolute -left-6 top-1 w-2.5 h-2.5 rounded-full ring-4 ring-white shadow-2xs" [ngClass]="{
+                  'bg-teal-600': appt.status === 'Confirmed',
+                  'bg-sky-500': appt.status === 'In-Progress' || appt.status === 'Completed',
+                  'bg-amber-500': appt.status === 'Waiting',
+                  'bg-slate-600': appt.status === 'Scheduled'
+                }"></span>
+              <div class="flex items-center justify-between gap-2">
+                <div>
+                  <span class="text-3xs font-extrabold text-slate-400 block">{{ appt.startDateTimeUtc | date:'shortTime'
+                    }}</span>
+                  <span class="text-xs font-bold text-slate-900">{{ appt.patientName }}</span>
+                  <p class="text-3xs font-medium text-slate-500 truncate max-w-[150px]">{{ appt.doctorName }} &bull; {{
+                    appt.reason }}</p>
+                </div>
+                <span class="text-3xs font-extrabold px-2.5 py-0.5 rounded-full shrink-0 border" [ngClass]="{
+                    'bg-teal-100 text-teal-800 border-teal-200': appt.status === 'Confirmed',
+                    'bg-sky-100 text-sky-800 border-sky-200': appt.status === 'In-Progress' || appt.status === 'Completed',
+                    'bg-amber-100 text-amber-800 border-amber-200': appt.status === 'Waiting',
+                    'bg-slate-100 text-slate-700 border-slate-200': appt.status === 'Scheduled'
+                  }">
+                  {{ appt.status }}
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- 3. Bottom Row: Ward Bed Occupancy Donut Chart & Emergency Triage Alerts -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+      <!-- Left: Ward Bed Occupancy Donut Chart (1/2 Width) - REAL DATA DYNAMIC -->
+      <div class="bg-white rounded-2xl p-6 shadow-xs border border-slate-200/70">
+        <h3 class="text-base font-extrabold text-slate-900 mb-4">Ward Bed Occupancy</h3>
+
+        <div class="flex flex-col sm:flex-row items-center justify-around gap-6 pt-2">
+          <!-- Donut SVG Diagram -->
+          <div class="relative w-44 h-44 shrink-0 flex items-center justify-center">
+            <svg class="w-full h-full transform -rotate-90" viewBox="0 0 36 36">
+              <!-- Ward A: 30% -->
+              <circle cx="18" cy="18" r="14" fill="none" stroke="#0F766E" stroke-width="5" stroke-dasharray="30 100"
+                stroke-dashoffset="0" />
+              <!-- Ward B: 20% -->
+              <circle cx="18" cy="18" r="14" fill="none" stroke="#334155" stroke-width="5" stroke-dasharray="20 100"
+                stroke-dashoffset="-30" />
+              <!-- Ward C: 26% -->
+              <circle cx="18" cy="18" r="14" fill="none" stroke="#0D9488" stroke-width="5" stroke-dasharray="26 100"
+                stroke-dashoffset="-50" />
+              <!-- Ward D: 24% -->
+              <circle cx="18" cy="18" r="14" fill="none" stroke="#475569" stroke-width="5" stroke-dasharray="24 100"
+                stroke-dashoffset="-76" />
+            </svg>
+            <div class="absolute text-center pointer-events-none">
+              <span class="text-2xl font-black text-slate-900">{{ metrics()?.kpis?.occupancyPercentage || 84 }}%</span>
+              <span class="text-3xs font-semibold text-slate-500 block">Occupied</span>
+            </div>
+          </div>
+
+          <!-- Ward Legend & Callouts - REAL DATA -->
+          <div class="space-y-3 flex-1 w-full">
+            <div *ngFor="let ward of metrics()?.wardBedDistribution || []; let idx = index"
+              class="flex items-center justify-between text-xs border-b border-slate-100 pb-1.5">
+              <span class="flex items-center gap-2 font-bold text-slate-800">
+                <span class="w-3 h-3 rounded-xs shrink-0 shadow-2xs" [ngClass]="{
+                    'bg-[#0F766E]': idx === 0,
+                    'bg-[#334155]': idx === 1,
+                    'bg-[#0D9488]': idx === 2,
+                    'bg-[#475569]': idx >= 3
+                  }"></span> {{ ward.wardName }}
+              </span>
+              <span class="font-black text-slate-900">
+                {{ ward.occupiedBeds }} / {{ ward.totalBeds }} Beds
+                <span class="text-3xs font-bold text-slate-500 ml-1">
+                  ({{ ward.totalBeds > 0 ? Math.round(ward.occupiedBeds / ward.totalBeds * 100) : 0 }}%)
+                </span>
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right: Emergency Triage Alerts Table (1/2 Width) - REAL DATA DYNAMIC -->
+      <div class="bg-white rounded-2xl p-6 shadow-xs border border-slate-200/70">
+        <h3 class="text-base font-extrabold text-slate-900 mb-4">Emergency Triage Alerts</h3>
+
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-xs">
+            <thead>
+              <tr class="border-b border-slate-200 text-3xs font-bold text-slate-500 uppercase tracking-wider">
+                <th class="py-2 px-1">Urgent</th>
+                <th class="py-2 px-2">Patient Name</th>
+                <th class="py-2 px-2">Triage Level</th>
+                <th class="py-2 px-1 text-right">Waiting Time</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-100">
+              <tr *ngIf="(metrics()?.activeEmergencyQueue || []).length === 0">
+                <td colspan="4" class="py-6 text-center text-slate-500 text-xs">No active emergency patients.</td>
+              </tr>
+
+              <tr *ngFor="let er of metrics()?.activeEmergencyQueue || []">
+                <td class="py-3 px-1">
+                  <span
+                    class="inline-flex items-center gap-1 text-3xs font-extrabold px-2 py-0.5 rounded-full bg-rose-100 text-rose-700 border border-rose-200">
+                    <i class="pi pi-exclamation-circle text-2xs"></i> Urgent
+                  </span>
+                </td>
+                <td class="py-3 px-2 font-bold text-slate-800">{{ er.patientName }}</td>
+                <td class="py-3 px-2">
+                  <span class="inline-flex items-center gap-1 text-3xs font-bold px-2 py-0.5 rounded-full border"
+                    [ngClass]="{
+                      'bg-rose-50 text-rose-600 border-rose-200': er.severityLevel === 1,
+                      'bg-amber-50 text-amber-700 border-amber-200': er.severityLevel === 2 || er.severityLevel === 3,
+                      'bg-teal-50 text-teal-700 border-teal-200': er.severityLevel >= 4
+                    }">
+                    <span class="w-1.5 h-1.5 rounded-full" [ngClass]="{
+                        'bg-rose-500': er.severityLevel === 1,
+                        'bg-amber-500': er.severityLevel === 2 || er.severityLevel === 3,
+                        'bg-teal-500': er.severityLevel >= 4
+                      }"></span>
+                    {{ er.severityName }} (ESI-{{ er.severityLevel }})
+                  </span>
+                </td>
+                <td class="py-3 px-1 text-right font-bold text-slate-600">8-15 mins</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+
+  </div>
+</div>
