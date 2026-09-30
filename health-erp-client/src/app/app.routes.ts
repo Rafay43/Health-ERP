@@ -66,6 +66,16 @@ export const routes: Routes = [
         loadComponent: () =>
           import('./features/billing/billing-list').then((m) => m.BillingList),
       },
+      {
+        path: 'pharmacy',
+        loadComponent: () =>
+          import('./features/pharmacy/pharmacy-list').then((m) => m.PharmacyListComponent),
+      },
+      {
+        path: 'laboratory',
+        loadComponent: () =>
+          import('./features/laboratory/laboratory-list').then((m) => m.LaboratoryListComponent),
+      },
     ],
   },
   { path: '**', redirectTo: '' },

@@ -6,6 +6,8 @@ using HealthERP.Application.Common.Interfaces;
 using HealthERP.Infrastructure.Identity;
 using HealthERP.Domain.Appointments;
 using HealthERP.Domain.Billing;
+using HealthERP.Domain.Pharmacy;
+using HealthERP.Domain.Laboratory;
 
 namespace HealthERP.Infrastructure.Persistence;
 
@@ -21,6 +23,10 @@ public class ApplicationDbContext
     public DbSet<StaffEntity> Staff => Set<StaffEntity>();
     public DbSet<Appointment> Appointments => Set<Appointment>();
     public DbSet<Invoice> Invoices => Set<Invoice>();
+    public DbSet<Drug> Drugs => Set<Drug>();
+    public DbSet<Prescription> Prescriptions => Set<Prescription>();
+    public DbSet<LabTest> LabTests => Set<LabTest>();
+    public DbSet<LabOrder> LabOrders => Set<LabOrder>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

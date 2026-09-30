@@ -101,5 +101,42 @@ public class ApplicationDbContextInitialiser
                 _logger.LogInformation("Default Admin user created successfully: {Email}", adminEmail);
             }
         }
+
+        // 3. Seed Initial Pharmacy Inventory
+        if (!await _context.Drugs.AnyAsync())
+        {
+            var initialDrugs = new[]
+            {
+                HealthERP.Domain.Pharmacy.Drug.Create("Amoxicillin 500mg", "Amoxicillin", "Antibiotics", 150, 30, DateTime.UtcNow.AddMonths(18), 12.50m),
+                HealthERP.Domain.Pharmacy.Drug.Create("Paracetamol 500mg", "Acetaminophen", "Analgesics", 500, 100, DateTime.UtcNow.AddMonths(24), 5.00m),
+                HealthERP.Domain.Pharmacy.Drug.Create("Metformin 850mg", "Metformin Hydrochloride", "Antidiabetics", 20, 50, DateTime.UtcNow.AddMonths(12), 18.00m), // Low stock
+                HealthERP.Domain.Pharmacy.Drug.Create("Atorvastatin 20mg", "Atorvastatin Calcium", "Cardiovascular", 80, 25, DateTime.UtcNow.AddDays(15), 24.00m), // Expiring soon
+                HealthERP.Domain.Pharmacy.Drug.Create("Omeprazole 20mg", "Omeprazole", "Gastrointestinal", 200, 40, DateTime.UtcNow.AddMonths(20), 15.00m),
+                HealthERP.Domain.Pharmacy.Drug.Create("Lisinopril 10mg", "Lisinopril", "Cardiovascular", 120, 30, DateTime.UtcNow.AddMonths(14), 11.00m),
+                HealthERP.Domain.Pharmacy.Drug.Create("Albuterol Inhaler 90mcg", "Salbutamol", "Respiratory", 15, 20, DateTime.UtcNow.AddMonths(10), 32.50m) // Low stock
+            };
+
+            await _context.Drugs.AddRangeAsync(initialDrugs);
+            await _context.SaveChangesAsync();
+            _logger.LogInformation("Initial pharmacy inventory seeded successfully.");
+        }
+
+        // 4. Seed Initial Laboratory Test Catalog
+        if (!await _context.LabTests.AnyAsync())
+        {
+            var initialLabTests = new[]
+            {
+                HealthERP.Domain.Laboratory.LabTest.Create("Complete Blood Count (CBC)", "CBC-01", "Hematology", "4.5-11.0 x10^3/uL", "cells/uL", 45.00m, "Whole Blood"),
+                HealthERP.Domain.Laboratory.LabTest.Create("Comprehensive Metabolic Panel (CMP)", "CMP-02", "Biochemistry", "70-99 mg/dL", "mg/dL", 65.00m, "Serum"),
+                HealthERP.Domain.Laboratory.LabTest.Create("Lipid Profile Panel", "LIP-03", "Biochemistry", "< 200 mg/dL", "mg/dL", 55.00m, "Serum"),
+                HealthERP.Domain.Laboratory.LabTest.Create("Glycated Hemoglobin (HbA1c)", "HBA1C-04", "Endocrinology", "< 5.7 %", "%", 40.00m, "Whole Blood"),
+                HealthERP.Domain.Laboratory.LabTest.Create("Thyroid Stimulating Hormone (TSH)", "TSH-05", "Endocrinology", "0.4-4.0 mIU/L", "mIU/L", 50.00m, "Serum"),
+                HealthERP.Domain.Laboratory.LabTest.Create("Urinalysis Routine", "UA-06", "Urinalysis", "Clear/Yellow", "N/A", 25.00m, "Urine")
+            };
+
+            await _context.LabTests.AddRangeAsync(initialLabTests);
+            await _context.SaveChangesAsync();
+            _logger.LogInformation("Initial laboratory test catalog seeded successfully.");
+        }
     }
 }
