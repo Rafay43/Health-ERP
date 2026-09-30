@@ -12,6 +12,9 @@ import { MessageModule } from 'primeng/message';
 
 import { LaboratoryService } from './data-access/laboratory.service';
 import { LabTest, LabOrder } from './data-access/laboratory.model';
+import { PatientService } from '../patients/data-access/patient.service';
+import { Patient } from '../patients/data-access/patient.model';
+import Swal from 'sweetalert2';
 
 @Component({
   selector: 'app-laboratory-list',
@@ -239,13 +242,13 @@ import { LabTest, LabOrder } from './data-access/laboratory.model';
         <!-- Test Catalog Tab Content -->
         <div *ngIf="activeTab() === 'catalog'" class="p-4 flex flex-col gap-4">
           <div class="flex items-center justify-between gap-4">
-            <div class="relative w-full sm:w-80">
-              <i class="pi pi-search absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"></i>
+            <div class="relative flex items-center w-full sm:w-80">
+              <i class="pi pi-search absolute left-3 text-slate-400 z-10 pointer-events-none"></i>
               <input
                 type="text"
                 pInputText
                 placeholder="Search test name or code..."
-                class="w-full pl-9"
+                class="w-full !pl-10"
                 [value]="catalogSearchTerm()"
                 (input)="onCatalogSearchInput($event)"
               />
@@ -378,6 +381,19 @@ import { LabTest, LabOrder } from './data-access/laboratory.model';
       >
         <form [formGroup]="addOrderForm" (ngSubmit)="saveOrder()" class="flex flex-col gap-4 mt-2">
           <div class="flex flex-col gap-1">
+            <label class="text-xs font-semibold text-slate-700">Select Patient *</label>
+            <select
+              formControlName="patientId"
+              class="w-full p-2 border border-slate-300 rounded-md bg-white text-sm"
+            >
+              <option value="" disabled>-- Select Registered Patient --</option>
+              <option *ngFor="let p of patientList()" [value]="p.id">
+                {{ p.firstName }} {{ p.lastName }} (MRN: {{ p.medicalRecordNumber }})
+              </option>
+            </select>
+          </div>
+
+          <div class="flex flex-col gap-1">
             <label class="text-xs font-semibold text-slate-700">Select Test Catalog (Optional)</label>
             <select
               formControlName="labTestId"
@@ -493,11 +509,13 @@ import { LabTest, LabOrder } from './data-access/laboratory.model';
 })
 export class LaboratoryListComponent implements OnInit {
   private labService = inject(LaboratoryService);
+  private patientService = inject(PatientService);
   private fb = inject(FormBuilder);
 
   // State Signals
   catalog = signal<LabTest[]>([]);
   orders = signal<LabOrder[]>([]);
+  patientList = signal<Patient[]>([]);
   loading = signal<boolean>(false);
   submitting = signal<boolean>(false);
 
@@ -526,6 +544,7 @@ export class LaboratoryListComponent implements OnInit {
   });
 
   addOrderForm = this.fb.group({
+    patientId: ['', Validators.required],
     labTestId: [''],
     testName: ['', Validators.required],
     testCode: ['CUSTOM'],
@@ -595,6 +614,12 @@ export class LaboratoryListComponent implements OnInit {
         this.orders.set(ordersList);
       }
     });
+
+    this.patientService.getPatients().subscribe({
+      next: (patientsList) => {
+        this.patientList.set(patientsList);
+      }
+    });
   }
 
   onCatalogSearchInput(event: Event): void {
@@ -643,6 +668,14 @@ export class LaboratoryListComponent implements OnInit {
         this.catalog.update(list => [newTest, ...list]);
         this.displayAddTestDialog = false;
         this.submitting.set(false);
+        Swal.fire({
+          title: 'Successful!',
+          text: `Lab test ${newTest.name} added to catalog.`,
+          icon: 'success',
+          confirmButtonColor: '#10b981',
+          timer: 2500,
+          timerProgressBar: true
+        });
       },
       error: () => this.submitting.set(false)
     });
@@ -650,6 +683,7 @@ export class LaboratoryListComponent implements OnInit {
 
   openAddOrderDialog(): void {
     this.addOrderForm.reset({
+      patientId: this.patientList().length > 0 ? this.patientList()[0].id : '',
       labTestId: '',
       testName: '',
       testCode: 'CUSTOM',
@@ -679,7 +713,7 @@ export class LaboratoryListComponent implements OnInit {
     const val = this.addOrderForm.value;
 
     const req = {
-      patientId: '00000000-0000-0000-0000-000000000001',
+      patientId: val.patientId!,
       labTestId: val.labTestId || undefined,
       orderingDoctorName: val.orderingDoctorName!,
       testName: val.testName!,
@@ -692,6 +726,14 @@ export class LaboratoryListComponent implements OnInit {
         this.orders.update(list => [newOrder, ...list]);
         this.displayAddOrderDialog = false;
         this.submitting.set(false);
+        Swal.fire({
+          title: 'Successful!',
+          text: `Lab order for ${newOrder.testName} created successfully.`,
+          icon: 'success',
+          confirmButtonColor: '#10b981',
+          timer: 2500,
+          timerProgressBar: true
+        });
       },
       error: () => this.submitting.set(false)
     });
@@ -725,6 +767,14 @@ export class LaboratoryListComponent implements OnInit {
         this.orders.update(list => list.map(o => o.id === updatedOrder.id ? updatedOrder : o));
         this.displayRecordResultDialog = false;
         this.submitting.set(false);
+        Swal.fire({
+          title: 'Successful!',
+          text: `Result for ${updatedOrder.testName} recorded successfully.`,
+          icon: 'success',
+          confirmButtonColor: '#10b981',
+          timer: 2500,
+          timerProgressBar: true
+        });
       },
       error: () => this.submitting.set(false)
     });

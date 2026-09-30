@@ -12,6 +12,7 @@ import { MessageModule } from 'primeng/message';
 
 import { EhrService } from './data-access/ehr.service';
 import { PatientEhr, EhrTimelineEvent } from './data-access/ehr.model';
+import Swal from 'sweetalert2';
 
 @Component({
   selector: 'app-patient-ehr-detail',
@@ -395,6 +396,14 @@ export class PatientEhrDetailComponent implements OnInit {
       next: () => {
         this.displayAddNoteDialog = false;
         this.submitting.set(false);
+        Swal.fire({
+          title: 'Successful!',
+          text: 'Clinical note added to EHR successfully.',
+          icon: 'success',
+          confirmButtonColor: '#10b981',
+          timer: 2500,
+          timerProgressBar: true
+        });
         // Refresh timeline
         this.loadEhr(patient.patientId);
       },

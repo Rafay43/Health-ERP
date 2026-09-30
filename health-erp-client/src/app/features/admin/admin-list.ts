@@ -11,6 +11,7 @@ import { DialogModule } from 'primeng/dialog';
 
 import { AdminService } from './data-access/admin.service';
 import { UserAccount, AuditLogEntry, SystemHealth } from './data-access/admin.model';
+import Swal from 'sweetalert2';
 
 @Component({
   selector: 'app-admin-list',
@@ -383,6 +384,14 @@ export class AdminListComponent implements OnInit {
         this.users.update(list => list.map(u => u.id === updatedUser.id ? updatedUser : u));
         this.displayAssignRoleDialog = false;
         this.submitting.set(false);
+        Swal.fire({
+          title: 'Successful!',
+          text: `Role for ${updatedUser.userName || updatedUser.email} updated to ${this.selectedRoleName}.`,
+          icon: 'success',
+          confirmButtonColor: '#10b981',
+          timer: 2500,
+          timerProgressBar: true
+        });
       },
       error: () => this.submitting.set(false)
     });
@@ -393,6 +402,14 @@ export class AdminListComponent implements OnInit {
     this.adminService.toggleUserStatus(user.id, newStatus).subscribe({
       next: (updatedUser) => {
         this.users.update(list => list.map(u => u.id === updatedUser.id ? updatedUser : u));
+        Swal.fire({
+          title: 'Successful!',
+          text: `Account for ${updatedUser.userName || updatedUser.email} has been ${updatedUser.isActive ? 'enabled' : 'disabled'}.`,
+          icon: 'success',
+          confirmButtonColor: '#10b981',
+          timer: 2500,
+          timerProgressBar: true
+        });
       }
     });
   }

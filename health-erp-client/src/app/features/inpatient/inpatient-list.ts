@@ -14,6 +14,7 @@ import { InpatientService } from './data-access/inpatient.service';
 import { Bed, Admission } from './data-access/inpatient.model';
 import { PatientService } from '../patients/data-access/patient.service';
 import { Patient } from '../patients/data-access/patient.model';
+import Swal from 'sweetalert2';
 
 @Component({
   selector: 'app-inpatient-list',
@@ -588,8 +589,23 @@ export class InpatientListComponent implements OnInit {
       next: () => {
         this.showAddBedDialog.set(false);
         this.loadBeds();
+        Swal.fire({
+          title: 'Successful!',
+          text: `Bed ${val.bedNumber} in ${val.wardName} created successfully.`,
+          icon: 'success',
+          confirmButtonColor: '#10b981',
+          timer: 2500,
+          timerProgressBar: true
+        });
       },
-      error: (err) => alert(err.error?.detail || err.error || 'Failed to create bed')
+      error: (err) => {
+        Swal.fire({
+          title: 'Error',
+          text: err.error?.detail || err.error?.message || 'Failed to create bed.',
+          icon: 'error',
+          confirmButtonColor: '#ef4444'
+        });
+      }
     });
   }
 
@@ -627,8 +643,23 @@ export class InpatientListComponent implements OnInit {
         this.showAdmitDialog.set(false);
         this.loadBeds();
         this.loadAdmissions();
+        Swal.fire({
+          title: 'Successful!',
+          text: 'Patient admitted successfully.',
+          icon: 'success',
+          confirmButtonColor: '#10b981',
+          timer: 2500,
+          timerProgressBar: true
+        });
       },
-      error: (err) => alert(err.error?.detail || err.error || 'Failed to admit patient')
+      error: (err) => {
+        Swal.fire({
+          title: 'Error',
+          text: err.error?.detail || err.error?.message || 'Failed to admit patient.',
+          icon: 'error',
+          confirmButtonColor: '#ef4444'
+        });
+      }
     });
   }
 
@@ -640,7 +671,7 @@ export class InpatientListComponent implements OnInit {
         this.selectedAdmissionForDischarge.set(adm);
         this.showDischargeDialog.set(true);
       } else {
-        alert('Could not locate active admission for this bed.');
+        Swal.fire({ title: 'Error', text: 'Could not locate active admission for this bed.', icon: 'error' });
       }
       return;
     }
@@ -667,8 +698,23 @@ export class InpatientListComponent implements OnInit {
         this.selectedAdmissionForDischarge.set(null);
         this.loadBeds();
         this.loadAdmissions();
+        Swal.fire({
+          title: 'Successful!',
+          text: 'Patient discharged successfully.',
+          icon: 'success',
+          confirmButtonColor: '#10b981',
+          timer: 2500,
+          timerProgressBar: true
+        });
       },
-      error: (err) => alert(err.error?.detail || err.error || 'Failed to discharge patient')
+      error: (err) => {
+        Swal.fire({
+          title: 'Error',
+          text: err.error?.detail || err.error?.message || 'Failed to discharge patient.',
+          icon: 'error',
+          confirmButtonColor: '#ef4444'
+        });
+      }
     });
   }
 }

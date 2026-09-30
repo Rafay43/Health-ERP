@@ -38,9 +38,14 @@
   <div class="flex-1 flex flex-col overflow-hidden relative">
     <!-- Top bar -->
     <header class="h-16 bg-[var(--color-surface)] border-b border-[var(--color-border)] flex items-center justify-between px-6 z-20">
-      <div class="flex items-center gap-2 text-[var(--color-text-secondary)]">
-        <i class="pi pi-search"></i>
-        <span class="text-sm">Search patients, appointments, emergency triage...</span>
+      <div class="relative flex items-center w-64 sm:w-80">
+        <i class="pi pi-search absolute left-3 text-slate-400 z-10 pointer-events-none"></i>
+        <input
+          type="text"
+          pInputText
+          placeholder="Search patients, appointments, triage..."
+          class="w-full !pl-10 !py-1.5 text-xs rounded-lg border border-slate-200 focus:ring-2 focus:ring-indigo-500"
+        />
       </div>
 
       <div class="flex items-center gap-4">

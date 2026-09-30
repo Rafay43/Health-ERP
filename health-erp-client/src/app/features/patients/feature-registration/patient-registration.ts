@@ -6,6 +6,7 @@ import { DatePickerModule } from 'primeng/datepicker';
 import { ButtonModule } from 'primeng/button';
 import { MessageModule } from 'primeng/message';
 import { PatientService } from '../data-access/patient.service';
+import Swal from 'sweetalert2';
 
 @Component({
   selector: 'app-patient-registration',
@@ -68,6 +69,14 @@ export class PatientRegistration implements OnInit {
       .subscribe({
         next: () => {
           this.submitting.set(false);
+          Swal.fire({
+            title: 'Successful!',
+            text: `Patient ${raw.firstName} ${raw.lastName} registered successfully with MRN ${raw.medicalRecordNumber}.`,
+            icon: 'success',
+            confirmButtonColor: '#10b981',
+            timer: 2500,
+            timerProgressBar: true
+          });
           this.router.navigate(['/patients']);
         },
         error: (err) => {

@@ -30,7 +30,9 @@ public class GetAuditLogsQueryHandlerTests
         contextMock.Setup(c => c.Invoices).Returns(invoices.Object);
         contextMock.Setup(c => c.ClinicalNotes).Returns(notes.Object);
 
-        var handler = new GetAuditLogsQueryHandler(contextMock.Object);
+        var identityServiceMock = new Mock<IIdentityService>();
+
+        var handler = new GetAuditLogsQueryHandler(contextMock.Object, identityServiceMock.Object);
 
         // Act
         var result = await handler.Handle(new GetAuditLogsQuery(), CancellationToken.None);

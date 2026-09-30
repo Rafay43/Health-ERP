@@ -78,7 +78,7 @@ public class Invoice : BaseEntity<InvoiceId>, IAuditable
         RecalculateTotal();
     }
 
-    public void RecordPayment(decimal amount, PaymentMethod paymentMethod, string? referenceNumber = null, string? notes = null)
+    public Payment RecordPayment(decimal amount, PaymentMethod paymentMethod, string? referenceNumber = null, string? notes = null)
     {
         if (amount > BalanceDue)
             throw new InvalidOperationException($"Payment amount exceeds balance due.");
@@ -96,6 +96,8 @@ public class Invoice : BaseEntity<InvoiceId>, IAuditable
         {
             Status = InvoiceStatus.PartiallyPaid;
         }
+
+        return payment;
     }
 
     public void Cancel()

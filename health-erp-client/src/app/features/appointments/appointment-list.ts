@@ -15,6 +15,7 @@ import { Appointment } from './data-access/appointment.model';
 import { StaffService } from '../staff/data-access/staff.service';
 import { Staff } from '../staff/data-access/staff.model';
 import { AppointmentSignalRService } from '../../core/services/appointment-signalr.service';
+import Swal from 'sweetalert2';
 
 @Component({
   selector: 'app-appointment-list',
@@ -74,14 +75,14 @@ import { AppointmentSignalRService } from '../../core/services/appointment-signa
       <div class="bg-[var(--color-surface)] p-4 rounded-lg border border-[var(--color-border)] flex flex-wrap items-center gap-4">
         <!-- Search Input -->
         <div class="flex-1 min-w-[200px]">
-          <div class="relative">
-            <i class="pi pi-search absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"></i>
+          <div class="relative flex items-center">
+            <i class="pi pi-search absolute left-3 text-slate-400 z-10 pointer-events-none"></i>
             <input
               type="text"
               pInputText
               [(ngModel)]="searchQuery"
               placeholder="Search patient, doctor, or reason..."
-              class="w-full pl-9 text-sm"
+              class="w-full !pl-10 text-sm"
             />
           </div>
         </div>
@@ -364,7 +365,17 @@ export class AppointmentList implements OnInit, OnDestroy {
 
   onUpdateStatus(id: string, status: number): void {
     this.appointmentService.updateStatus(id, status).subscribe({
-      next: () => this.loadAppointments(),
+      next: () => {
+        Swal.fire({
+          title: 'Successful!',
+          text: 'Appointment status updated successfully.',
+          icon: 'success',
+          confirmButtonColor: '#10b981',
+          timer: 2000,
+          timerProgressBar: true
+        });
+        this.loadAppointments();
+      },
     });
   }
 

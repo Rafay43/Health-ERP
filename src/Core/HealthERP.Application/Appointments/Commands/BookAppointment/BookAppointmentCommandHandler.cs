@@ -48,6 +48,19 @@ public class BookAppointmentCommandHandler : IRequestHandler<BookAppointmentComm
             request.Notes);
 
         _context.Appointments.Add(appointment);
+
+        var patient = await _context.Patients.FirstOrDefaultAsync(p => p.Id == patientId, cancellationToken);
+        var patientName = patient != null ? $"{patient.FirstName} {patient.LastName}" : "Patient";
+
+        var notification = HealthERP.Domain.Notifications.Notification.Create(
+            "New Appointment Booked",
+            $"Appointment scheduled for {patientName} (Reason: {request.Reason}).",
+            HealthERP.Domain.Notifications.NotificationType.AppointmentReminder,
+            HealthERP.Domain.Notifications.NotificationSeverity.Info,
+            "/appointments"
+        );
+        _context.Notifications.Add(notification);
+
         await _context.SaveChangesAsync(cancellationToken);
 
         await _notificationService.NotifyAppointmentChangedAsync(cancellationToken);

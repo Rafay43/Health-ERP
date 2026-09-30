@@ -13,6 +13,7 @@ import { PatientService } from '../../patients/data-access/patient.service';
 import { StaffService } from '../../staff/data-access/staff.service';
 import { Patient } from '../../patients/data-access/patient.model';
 import { Staff } from '../../staff/data-access/staff.model';
+import Swal from 'sweetalert2';
 
 @Component({
   selector: 'app-book-appointment',
@@ -183,6 +184,14 @@ export class BookAppointment implements OnInit {
       .subscribe({
         next: () => {
           this.isLoading.set(false);
+          Swal.fire({
+            title: 'Successful!',
+            text: 'Appointment scheduled successfully.',
+            icon: 'success',
+            confirmButtonColor: '#10b981',
+            timer: 2500,
+            timerProgressBar: true
+          });
           this.router.navigate(['/appointments']);
         },
         error: (err) => {

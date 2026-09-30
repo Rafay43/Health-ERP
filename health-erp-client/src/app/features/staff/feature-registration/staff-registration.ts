@@ -9,6 +9,7 @@ import { ButtonModule } from 'primeng/button';
 import { MessageModule } from 'primeng/message';
 
 import { StaffService } from '../data-access/staff.service';
+import Swal from 'sweetalert2';
 
 @Component({
     selector: 'app-staff-registration',
@@ -127,6 +128,14 @@ export class StaffRegistration {
             .subscribe({
                 next: () => {
                     this.isLoading.set(false);
+                    Swal.fire({
+                        title: 'Successful!',
+                        text: `Staff member ${formValue.firstName} ${formValue.lastName} registered successfully.`,
+                        icon: 'success',
+                        confirmButtonColor: '#10b981',
+                        timer: 2500,
+                        timerProgressBar: true
+                    });
                     this.router.navigate(['/staff']);
                 },
                 error: (err) => {

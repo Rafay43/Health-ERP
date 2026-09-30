@@ -52,6 +52,20 @@ public class CreateTriageRecordCommandHandler : IRequestHandler<CreateTriageReco
         );
 
         _context.TriageRecords.Add(triageRecord);
+
+        var patient = await _context.Patients.FirstOrDefaultAsync(p => p.Id == patientId, cancellationToken);
+        var patientName = patient != null ? $"{patient.FirstName} {patient.LastName}" : "Emergency Patient";
+        var isCritical = request.Severity == TriageSeverity.Level1_Resuscitation || request.Severity == TriageSeverity.Level2_Emergent;
+
+        var notification = HealthERP.Domain.Notifications.Notification.Create(
+            $"Emergency Triage Alert (ESI Level {(int)request.Severity})",
+            $"{patientName} arrived with '{request.ChiefComplaint}' (SpO2: {request.OxygenSaturationSpO2}%, HR: {request.HeartRateBpm} BPM).",
+            HealthERP.Domain.Notifications.NotificationType.EmergencyAlert,
+            isCritical ? HealthERP.Domain.Notifications.NotificationSeverity.Critical : HealthERP.Domain.Notifications.NotificationSeverity.Warning,
+            "/emergency"
+        );
+        _context.Notifications.Add(notification);
+
         await _context.SaveChangesAsync(cancellationToken);
 
         return triageRecord.Id.Value;

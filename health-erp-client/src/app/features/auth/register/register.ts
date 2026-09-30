@@ -10,6 +10,7 @@ import { ButtonModule } from 'primeng/button';
 import { MessageModule } from 'primeng/message';
 
 import { AuthService } from '../../../core/services/auth.service';
+import Swal from 'sweetalert2';
 
 @Component({
   selector: 'app-register',
@@ -125,6 +126,14 @@ export class Register {
       .subscribe({
         next: () => {
           this.isLoading.set(false);
+          Swal.fire({
+            title: 'Successful!',
+            text: `Welcome ${firstName}! Your account was created successfully.`,
+            icon: 'success',
+            confirmButtonColor: '#10b981',
+            timer: 2500,
+            timerProgressBar: true
+          });
           this.router.navigate(['/dashboard']);
         },
         error: (err) => {

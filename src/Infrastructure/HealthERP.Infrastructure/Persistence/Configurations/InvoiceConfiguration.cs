@@ -91,6 +91,9 @@ public class PaymentConfiguration : IEntityTypeConfiguration<Payment>
 
         builder.HasKey(p => p.Id);
 
+        builder.Property(p => p.Id)
+            .ValueGeneratedNever();
+
         builder.Property(p => p.InvoiceId)
             .HasConversion(id => id.Value, value => new InvoiceId(value))
             .IsRequired();

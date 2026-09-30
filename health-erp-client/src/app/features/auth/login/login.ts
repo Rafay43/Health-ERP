@@ -10,6 +10,7 @@ import { ButtonModule } from 'primeng/button';
 import { MessageModule } from 'primeng/message';
 
 import { AuthService } from '../../../core/services/auth.service';
+import Swal from 'sweetalert2';
 
 @Component({
   selector: 'app-login',
@@ -104,8 +105,16 @@ export class Login {
     const { email, password } = this.loginForm.value;
 
     this.authService.login({ email: email!, password: password! }).subscribe({
-      next: () => {
+      next: (res) => {
         this.isLoading.set(false);
+        Swal.fire({
+          title: 'Successful!',
+          text: `Welcome back, ${res?.firstName || 'User'}!`,
+          icon: 'success',
+          confirmButtonColor: '#10b981',
+          timer: 2000,
+          timerProgressBar: true
+        });
         this.router.navigate(['/dashboard']);
       },
       error: (err) => {

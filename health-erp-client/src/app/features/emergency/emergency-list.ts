@@ -16,6 +16,7 @@ import { PatientService } from '../patients/data-access/patient.service';
 import { Patient } from '../patients/data-access/patient.model';
 import { InpatientService } from '../inpatient/data-access/inpatient.service';
 import { Bed } from '../inpatient/data-access/inpatient.model';
+import Swal from 'sweetalert2';
 
 @Component({
   selector: 'app-emergency-list',
@@ -570,8 +571,23 @@ export class EmergencyListComponent implements OnInit {
       next: () => {
         this.showTriageDialog.set(false);
         this.loadEmergencyQueue();
+        Swal.fire({
+          title: 'Successful!',
+          text: 'Emergency triage record saved successfully.',
+          icon: 'success',
+          confirmButtonColor: '#10b981',
+          timer: 2500,
+          timerProgressBar: true
+        });
       },
-      error: (err) => alert(err.error?.detail || err.error || 'Failed to create ER triage')
+      error: (err) => {
+        Swal.fire({
+          title: 'Error',
+          text: err.error?.detail || err.error?.message || 'Failed to create ER triage.',
+          icon: 'error',
+          confirmButtonColor: '#ef4444'
+        });
+      }
     });
   }
 
@@ -597,8 +613,23 @@ export class EmergencyListComponent implements OnInit {
         this.showAssignBayDialog.set(false);
         this.selectedTriageForBay.set(null);
         this.loadEmergencyQueue();
+        Swal.fire({
+          title: 'Successful!',
+          text: `Assigned to ${val.bayName} successfully.`,
+          icon: 'success',
+          confirmButtonColor: '#10b981',
+          timer: 2500,
+          timerProgressBar: true
+        });
       },
-      error: (err) => alert(err.error?.detail || err.error || 'Failed to assign bay')
+      error: (err) => {
+        Swal.fire({
+          title: 'Error',
+          text: err.error?.detail || err.error?.message || 'Failed to assign bay.',
+          icon: 'error',
+          confirmButtonColor: '#ef4444'
+        });
+      }
     });
   }
 
@@ -627,17 +658,59 @@ export class EmergencyListComponent implements OnInit {
         this.selectedTriageForTransfer.set(null);
         this.loadEmergencyQueue();
         this.loadBeds();
+        Swal.fire({
+          title: 'Successful!',
+          text: 'Patient transferred to inpatient ward successfully.',
+          icon: 'success',
+          confirmButtonColor: '#10b981',
+          timer: 2500,
+          timerProgressBar: true
+        });
       },
-      error: (err) => alert(err.error?.detail || err.error || 'Failed to transfer patient to ward')
+      error: (err) => {
+        Swal.fire({
+          title: 'Error',
+          text: err.error?.detail || err.error?.message || 'Failed to transfer patient to ward.',
+          icon: 'error',
+          confirmButtonColor: '#ef4444'
+        });
+      }
     });
   }
 
   dischargeFromER(rec: TriageRecord) {
-    if (!confirm(`Discharge patient ${rec.patientName} from Emergency Department?`)) return;
-
-    this.emergencyService.dischargeFromEmergency(rec.id).subscribe({
-      next: () => this.loadEmergencyQueue(),
-      error: (err) => alert(err.error?.detail || err.error || 'Failed to discharge patient from ER')
+    Swal.fire({
+      title: 'Discharge Patient?',
+      text: `Discharge ${rec.patientName} from Emergency Department?`,
+      icon: 'question',
+      showCancelButton: true,
+      confirmButtonColor: '#ef4444',
+      cancelButtonColor: '#6b7280',
+      confirmButtonText: 'Yes, Discharge'
+    }).then((result) => {
+      if (result.isConfirmed) {
+        this.emergencyService.dischargeFromEmergency(rec.id).subscribe({
+          next: () => {
+            this.loadEmergencyQueue();
+            Swal.fire({
+              title: 'Successful!',
+              text: 'Patient discharged from Emergency Department.',
+              icon: 'success',
+              confirmButtonColor: '#10b981',
+              timer: 2500,
+              timerProgressBar: true
+            });
+          },
+          error: (err) => {
+            Swal.fire({
+              title: 'Error',
+              text: err.error?.detail || err.error?.message || 'Failed to discharge patient from ER.',
+              icon: 'error',
+              confirmButtonColor: '#ef4444'
+            });
+          }
+        });
+      }
     });
   }
 }

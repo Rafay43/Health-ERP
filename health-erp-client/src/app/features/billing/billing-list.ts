@@ -12,6 +12,7 @@ import { MessageModule } from 'primeng/message';
 
 import { BillingService } from './data-access/billing.service';
 import { Invoice } from './data-access/billing.model';
+import Swal from 'sweetalert2';
 
 @Component({
   selector: 'app-billing-list',
@@ -84,14 +85,14 @@ import { Invoice } from './data-access/billing.model';
       <!-- Filters & Actions -->
       <div class="bg-[var(--color-surface)] p-4 rounded-lg border border-[var(--color-border)] flex flex-wrap items-center gap-4">
         <div class="flex-1 min-w-[200px]">
-          <div class="relative">
-            <i class="pi pi-search absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"></i>
+          <div class="relative flex items-center">
+            <i class="pi pi-search absolute left-3 text-slate-400 z-10 pointer-events-none"></i>
             <input
               type="text"
               pInputText
               [(ngModel)]="searchQuery"
               placeholder="Search by invoice # or patient name..."
-              class="w-full pl-9 text-sm"
+              class="w-full !pl-10 text-sm"
             />
           </div>
         </div>
@@ -437,6 +438,14 @@ export class BillingList implements OnInit {
         next: () => {
           this.isSubmittingPayment.set(false);
           this.showPaymentDialog = false;
+          Swal.fire({
+            title: 'Successful!',
+            text: `Payment of $${val.amount} recorded successfully.`,
+            icon: 'success',
+            confirmButtonColor: '#10b981',
+            timer: 2500,
+            timerProgressBar: true
+          });
           this.loadInvoices();
         },
         error: (err) => {

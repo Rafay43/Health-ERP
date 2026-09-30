@@ -13,6 +13,9 @@ import { TabsModule } from 'primeng/tabs';
 
 import { PharmacyService } from './data-access/pharmacy.service';
 import { Drug, Prescription } from './data-access/pharmacy.model';
+import { PatientService } from '../patients/data-access/patient.service';
+import { Patient } from '../patients/data-access/patient.model';
+import Swal from 'sweetalert2';
 
 @Component({
   selector: 'app-pharmacy-list',
@@ -128,13 +131,13 @@ import { Drug, Prescription } from './data-access/pharmacy.model';
         <!-- Inventory Tab Content -->
         <div *ngIf="activeTab() === 'inventory'" class="p-4 flex flex-col gap-4">
           <div class="flex flex-col sm:flex-row items-center justify-between gap-4">
-            <div class="relative w-full sm:w-80">
-              <i class="pi pi-search absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"></i>
+            <div class="relative flex items-center w-full sm:w-80">
+              <i class="pi pi-search absolute left-3 text-slate-400 z-10 pointer-events-none"></i>
               <input
                 type="text"
                 pInputText
                 placeholder="Search medication name or category..."
-                class="w-full pl-9"
+                class="w-full !pl-10"
                 [value]="searchTerm()"
                 (input)="onSearchInput($event)"
               />
@@ -442,6 +445,19 @@ import { Drug, Prescription } from './data-access/pharmacy.model';
       >
         <form [formGroup]="addPrescriptionForm" (ngSubmit)="savePrescription()" class="flex flex-col gap-4 mt-2">
           <div class="flex flex-col gap-1">
+            <label class="text-xs font-semibold text-slate-700">Select Patient *</label>
+            <select
+              formControlName="patientId"
+              class="w-full p-2 border border-slate-300 rounded-md bg-white text-sm"
+            >
+              <option value="" disabled>-- Select Registered Patient --</option>
+              <option *ngFor="let p of patientList()" [value]="p.id">
+                {{ p.firstName }} {{ p.lastName }} (MRN: {{ p.medicalRecordNumber }})
+              </option>
+            </select>
+          </div>
+
+          <div class="flex flex-col gap-1">
             <label class="text-xs font-semibold text-slate-700">Select Medication (Optional SKU link)</label>
             <select
               formControlName="drugId"
@@ -517,11 +533,13 @@ import { Drug, Prescription } from './data-access/pharmacy.model';
 })
 export class PharmacyListComponent implements OnInit {
   private pharmacyService = inject(PharmacyService);
+  private patientService = inject(PatientService);
   private fb = inject(FormBuilder);
 
   // State Signals
   drugs = signal<Drug[]>([]);
   prescriptions = signal<Prescription[]>([]);
+  patientList = signal<Patient[]>([]);
   loading = signal<boolean>(false);
   submitting = signal<boolean>(false);
 
@@ -552,6 +570,7 @@ export class PharmacyListComponent implements OnInit {
   });
 
   addPrescriptionForm = this.fb.group({
+    patientId: ['', Validators.required],
     drugId: [''],
     doctorName: ['Sarah Jenkins', Validators.required],
     medicationName: ['', Validators.required],
@@ -621,6 +640,12 @@ export class PharmacyListComponent implements OnInit {
         this.prescriptions.set(rxs);
       }
     });
+
+    this.patientService.getPatients().subscribe({
+      next: (pts) => {
+        this.patientList.set(pts);
+      }
+    });
   }
 
   onSearchInput(event: Event): void {
@@ -673,6 +698,14 @@ export class PharmacyListComponent implements OnInit {
         this.drugs.update(list => [newDrug, ...list]);
         this.displayAddDrugDialog = false;
         this.submitting.set(false);
+        Swal.fire({
+          title: 'Successful!',
+          text: `Drug ${newDrug.name} added to inventory.`,
+          icon: 'success',
+          confirmButtonColor: '#10b981',
+          timer: 2500,
+          timerProgressBar: true
+        });
       },
       error: () => this.submitting.set(false)
     });
@@ -693,6 +726,14 @@ export class PharmacyListComponent implements OnInit {
         this.drugs.update(list => list.map(d => d.id === updated.id ? updated : d));
         this.displayAdjustStockDialog = false;
         this.submitting.set(false);
+        Swal.fire({
+          title: 'Successful!',
+          text: `Stock for ${updated.name} updated to ${updated.stockQuantity} units.`,
+          icon: 'success',
+          confirmButtonColor: '#10b981',
+          timer: 2500,
+          timerProgressBar: true
+        });
       },
       error: () => this.submitting.set(false)
     });
@@ -700,6 +741,7 @@ export class PharmacyListComponent implements OnInit {
 
   openAddPrescriptionDialog(): void {
     this.addPrescriptionForm.reset({
+      patientId: this.patientList().length > 0 ? this.patientList()[0].id : '',
       drugId: '',
       doctorName: 'Sarah Jenkins',
       medicationName: '',
@@ -730,9 +772,8 @@ export class PharmacyListComponent implements OnInit {
     this.submitting.set(true);
     const val = this.addPrescriptionForm.value;
 
-    // Use dummy/first patient ID if available, or generate Guid
     const req = {
-      patientId: '00000000-0000-0000-0000-000000000001',
+      patientId: val.patientId!,
       drugId: val.drugId || undefined,
       doctorName: val.doctorName!,
       medicationName: val.medicationName!,
@@ -748,6 +789,14 @@ export class PharmacyListComponent implements OnInit {
         this.prescriptions.update(list => [newRx, ...list]);
         this.displayAddPrescriptionDialog = false;
         this.submitting.set(false);
+        Swal.fire({
+          title: 'Successful!',
+          text: `Prescription for ${newRx.medicationName} created successfully.`,
+          icon: 'success',
+          confirmButtonColor: '#10b981',
+          timer: 2500,
+          timerProgressBar: true
+        });
       },
       error: () => this.submitting.set(false)
     });
@@ -759,6 +808,14 @@ export class PharmacyListComponent implements OnInit {
         this.prescriptions.update(list => list.map(p => p.id === dispensedRx.id ? dispensedRx : p));
         // Refresh inventory to reflect deducted stock
         this.loadData();
+        Swal.fire({
+          title: 'Successful!',
+          text: `Prescription for ${dispensedRx.medicationName} dispensed successfully.`,
+          icon: 'success',
+          confirmButtonColor: '#10b981',
+          timer: 2500,
+          timerProgressBar: true
+        });
       }
     });
   }
