@@ -15,4 +15,8 @@ export class AppointmentService {
     bookAppointment(request: BookAppointmentRequest): Observable<{ id: string }> {
         return this.http.post<{ id: string }>(this.baseUrl, request);
     }
+
+    updateStatus(id: string, status: number): Observable<void> {
+        return this.http.patch<void>(`${this.baseUrl}/${id}/status`, { status });
+    }
 }

@@ -37,6 +37,8 @@ builder.Services.AddAuthentication(options =>
 });
 
 builder.Services.AddAuthorization();
+builder.Services.AddSignalR();
+builder.Services.AddScoped<HealthERP.Application.Common.Interfaces.IAppointmentNotificationService, HealthERP.Api.Services.AppointmentNotificationService>();
 
 builder.Services.AddCors(options =>
 {
@@ -44,7 +46,8 @@ builder.Services.AddCors(options =>
     {
         policy.WithOrigins("http://localhost:4200")
               .AllowAnyMethod()
-              .AllowAnyHeader();
+              .AllowAnyHeader()
+              .AllowCredentials();
     });
 });
 
@@ -73,5 +76,7 @@ app.MapAuthEndpoints();
 app.MapPatientEndpoints();
 app.MapStaffEndpoints();
 app.MapAppointmentEndpoints();
+app.MapBillingEndpoints();
+app.MapHub<HealthERP.Api.Hubs.AppointmentHub>(HealthERP.Api.Hubs.AppointmentHub.HubUrl);
 
 app.Run();

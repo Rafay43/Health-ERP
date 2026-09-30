@@ -77,6 +77,7 @@ public class Appointment : BaseEntity<AppointmentId>, IAuditable
             notes);
     }
 
+    public void Confirm() => Status = AppointmentStatus.Confirmed;
     public void Complete() => Status = AppointmentStatus.Completed;
     public void Cancel() => Status = AppointmentStatus.Cancelled;
     public void MarkNoShow() => Status = AppointmentStatus.NoShow;

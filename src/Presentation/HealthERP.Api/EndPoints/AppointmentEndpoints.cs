@@ -1,5 +1,6 @@
 using MediatR;
 using HealthERP.Application.Appointments.Commands.BookAppointment;
+using HealthERP.Application.Appointments.Commands.UpdateAppointmentStatus;
 using HealthERP.Application.Appointments.Queries.GetAppointments;
 using HealthERP.Application.Appointments.Models;
 
@@ -29,5 +30,17 @@ public static class AppointmentEndpoints
         })
         .WithName("GetAppointments")
         .Produces<List<AppointmentDto>>(200);
+
+        group.MapPatch("/{id:guid}/status", async (Guid id, UpdateAppointmentStatusRequest request, IMediator mediator) =>
+        {
+            await mediator.Send(new UpdateAppointmentStatusCommand(id, request.Status));
+            return Results.NoContent();
+        })
+        .WithName("UpdateAppointmentStatus")
+        .Produces(204)
+        .Produces(400)
+        .Produces(404);
     }
 }
+
+public record UpdateAppointmentStatusRequest(HealthERP.Domain.Appointments.AppointmentStatus Status);

@@ -76,6 +76,125 @@ namespace HealthERP.Infrastructure.Persistence.Migrations
                     b.ToTable("appointments", "scheduling");
                 });
 
+            modelBuilder.Entity("HealthERP.Domain.Billing.Invoice", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("AppointmentId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("CreatedBy")
+                        .HasColumnType("text");
+
+                    b.Property<DateTime>("DueDateUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("InvoiceNumber")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<DateTime>("IssueDateUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("ModifiedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("ModifiedBy")
+                        .HasColumnType("text");
+
+                    b.Property<decimal>("PaidAmount")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)");
+
+                    b.Property<Guid>("PatientId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("integer");
+
+                    b.Property<decimal>("TotalAmount")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AppointmentId");
+
+                    b.HasIndex("InvoiceNumber")
+                        .IsUnique();
+
+                    b.HasIndex("PatientId");
+
+                    b.ToTable("invoices", "billing");
+                });
+
+            modelBuilder.Entity("HealthERP.Domain.Billing.InvoiceLineItem", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasMaxLength(300)
+                        .HasColumnType("character varying(300)");
+
+                    b.Property<Guid>("InvoiceId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("Quantity")
+                        .HasColumnType("integer");
+
+                    b.Property<decimal>("UnitPrice")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("InvoiceId");
+
+                    b.ToTable("invoice_line_items", "billing");
+                });
+
+            modelBuilder.Entity("HealthERP.Domain.Billing.Payment", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<decimal>("Amount")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)");
+
+                    b.Property<Guid>("InvoiceId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Notes")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<DateTime>("PaymentDateUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("PaymentMethod")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("ReferenceNumber")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("InvoiceId");
+
+                    b.ToTable("payments", "billing");
+                });
+
             modelBuilder.Entity("HealthERP.Domain.Patients.Patient", b =>
                 {
                     b.Property<Guid>("Id")
@@ -426,6 +545,42 @@ namespace HealthERP.Infrastructure.Persistence.Migrations
                     b.Navigation("Staff");
                 });
 
+            modelBuilder.Entity("HealthERP.Domain.Billing.Invoice", b =>
+                {
+                    b.HasOne("HealthERP.Domain.Appointments.Appointment", "Appointment")
+                        .WithMany()
+                        .HasForeignKey("AppointmentId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("HealthERP.Domain.Patients.Patient", "Patient")
+                        .WithMany()
+                        .HasForeignKey("PatientId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Appointment");
+
+                    b.Navigation("Patient");
+                });
+
+            modelBuilder.Entity("HealthERP.Domain.Billing.InvoiceLineItem", b =>
+                {
+                    b.HasOne("HealthERP.Domain.Billing.Invoice", null)
+                        .WithMany("LineItems")
+                        .HasForeignKey("InvoiceId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("HealthERP.Domain.Billing.Payment", b =>
+                {
+                    b.HasOne("HealthERP.Domain.Billing.Invoice", null)
+                        .WithMany("Payments")
+                        .HasForeignKey("InvoiceId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<System.Guid>", b =>
                 {
                     b.HasOne("HealthERP.Infrastructure.Identity.ApplicationRole", null)
@@ -475,6 +630,13 @@ namespace HealthERP.Infrastructure.Persistence.Migrations
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+                });
+
+            modelBuilder.Entity("HealthERP.Domain.Billing.Invoice", b =>
+                {
+                    b.Navigation("LineItems");
+
+                    b.Navigation("Payments");
                 });
 #pragma warning restore 612, 618
         }

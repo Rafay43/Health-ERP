@@ -23,6 +23,7 @@ public static class DependencyInjection
         services.AddScoped<ICurrentUserService, CurrentUserService>();
         services.AddSingleton<IJwtTokenGenerator, JwtTokenGenerator>();
         services.AddTransient<IIdentityService, IdentityService>();
+        services.AddHostedService<NoShowTrackingWorker>();
 
         services.AddScoped<AuditableEntitySaveChangesInterceptor>();
         services.AddScoped<ApplicationDbContextInitialiser>();

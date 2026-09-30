@@ -5,6 +5,7 @@ using StaffEntity = HealthERP.Domain.StaffMembers.StaffMembers;
 using HealthERP.Application.Common.Interfaces;
 using HealthERP.Infrastructure.Identity;
 using HealthERP.Domain.Appointments;
+using HealthERP.Domain.Billing;
 
 namespace HealthERP.Infrastructure.Persistence;
 
@@ -19,6 +20,7 @@ public class ApplicationDbContext
     public DbSet<Patient> Patients => Set<Patient>();
     public DbSet<StaffEntity> Staff => Set<StaffEntity>();
     public DbSet<Appointment> Appointments => Set<Appointment>();
+    public DbSet<Invoice> Invoices => Set<Invoice>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

@@ -1,14 +1,17 @@
 import { Routes } from '@angular/router';
 import { Shell } from './layout/shell/shell';
 import { authGuard } from './core/guards/auth.guard';
+import { guestGuard } from './core/guards/guest.guard';
 
 export const routes: Routes = [
   {
     path: 'login',
+    canActivate: [guestGuard],
     loadComponent: () => import('./features/auth/login/login').then((m) => m.Login),
   },
   {
     path: 'register',
+    canActivate: [guestGuard],
     loadComponent: () => import('./features/auth/register/register').then((m) => m.Register),
   },
   {
@@ -57,6 +60,11 @@ export const routes: Routes = [
           import('./features/appointments/feature-booking/book-appointment').then(
             (m) => m.BookAppointment
           ),
+      },
+      {
+        path: 'billing',
+        loadComponent: () =>
+          import('./features/billing/billing-list').then((m) => m.BillingList),
       },
     ],
   },

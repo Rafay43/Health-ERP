@@ -57,6 +57,16 @@ public class GlobalExceptionHandlingMiddleware
                 "Invalid Argument",
                 argEx.Message),
 
+            InvalidOperationException invEx => (
+                HttpStatusCode.Conflict,
+                "Scheduling Conflict",
+                invEx.Message),
+
+            KeyNotFoundException keyEx => (
+                HttpStatusCode.NotFound,
+                "Resource Not Found",
+                keyEx.Message),
+
             _ => (
                 HttpStatusCode.InternalServerError,
                 "An unexpected error occurred",
