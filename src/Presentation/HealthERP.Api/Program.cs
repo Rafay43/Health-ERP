@@ -79,6 +79,7 @@ app.MapAppointmentEndpoints();
 app.MapBillingEndpoints();
 app.MapPharmacyEndpoints();
 app.MapLaboratoryEndpoints();
+app.MapReportsEndpoints();
 app.MapHub<HealthERP.Api.Hubs.AppointmentHub>(HealthERP.Api.Hubs.AppointmentHub.HubUrl);
 
 app.Run();
