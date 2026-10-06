@@ -1,0 +1,1043 @@
+<div class="min-h-screen bg-[#F8FAFC] text-[#0F172A] selection:bg-[#0F766E]/20 selection:text-[#0F766E] font-sans antialiased">
+
+  <!-- ================================================== -->
+  <!-- 1. NAVIGATION BAR (Sticky & Blurred Glassmorphism)  -->
+  <!-- ================================================== -->
+  <header
+    class="fixed top-0 left-0 right-0 z-50 transition-all duration-200"
+    [ngClass]="{
+      'bg-white/90 backdrop-blur-md border-b border-slate-200/80 shadow-xs py-3': isScrolled(),
+      'bg-transparent py-5': !isScrolled()
+    }"
+  >
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between">
+      
+      <!-- Brand Logo + Wordmark -->
+      <a routerLink="/" class="flex items-center gap-2.5 group cursor-pointer">
+        <div class="w-9 h-9 rounded-xl bg-[#0F766E] text-white flex items-center justify-center font-black text-lg shadow-2xs group-hover:scale-105 transition-transform">
+          <i class="pi pi-plus-circle text-lg"></i>
+        </div>
+        <div class="flex flex-col">
+          <span class="font-extrabold text-lg sm:text-xl text-[#0F172A] tracking-tight group-hover:text-[#0F766E] transition-colors">
+            Health <span class="text-[#0F766E]">ERP</span>
+          </span>
+          <span class="text-[10px] font-semibold text-[#64748B] uppercase tracking-widest -mt-1 hidden sm:inline">Hospital Management System</span>
+        </div>
+      </a>
+
+      <!-- Center Desktop Navigation Links -->
+      <nav class="hidden md:flex items-center gap-8 text-xs sm:text-sm font-semibold text-[#475569]">
+        <a (click)="scrollToSection('hero', $event)" href="#hero" class="hover:text-[#0F766E] transition-colors cursor-pointer">Home</a>
+        <a (click)="scrollToSection('solutions', $event)" href="#solutions" class="hover:text-[#0F766E] transition-colors cursor-pointer">Solutions</a>
+        <a (click)="scrollToSection('features', $event)" href="#features" class="hover:text-[#0F766E] transition-colors cursor-pointer">Features</a>
+        <a (click)="scrollToSection('analytics', $event)" href="#analytics" class="hover:text-[#0F766E] transition-colors cursor-pointer">Analytics</a>
+        <a (click)="scrollToSection('about', $event)" href="#about" class="hover:text-[#0F766E] transition-colors cursor-pointer">About</a>
+        <a (click)="scrollToSection('contact', $event)" href="#contact" class="hover:text-[#0F766E] transition-colors cursor-pointer">Contact</a>
+      </nav>
+
+      <!-- Right Desktop Actions -->
+      <div class="hidden sm:flex items-center gap-3">
+        <!-- If logged in: Go to Console -->
+        <button
+          *ngIf="isAuthenticated()"
+          (click)="navigateToLogin()"
+          class="px-4 py-2 rounded-xl bg-[#0F766E] hover:bg-[#0D655E] text-white text-xs sm:text-sm font-bold shadow-2xs transition-all flex items-center gap-1.5 cursor-pointer"
+        >
+          <span>Go to Console</span>
+          <i class="pi pi-arrow-right text-xs"></i>
+        </button>
+
+        <!-- If guest: Sign In & Request Demo -->
+        <ng-container *ngIf="!isAuthenticated()">
+          <button
+            (click)="navigateToLogin()"
+            class="px-4 py-2 rounded-xl border border-slate-200 hover:bg-slate-100 text-slate-800 text-xs sm:text-sm font-semibold transition-all cursor-pointer"
+          >
+            Sign In
+          </button>
+
+          <button
+            (click)="scrollToSection('contact', $event)"
+            class="px-4.5 py-2 rounded-xl bg-[#0F766E] hover:bg-[#0D655E] text-white text-xs sm:text-sm font-bold shadow-2xs transition-all flex items-center gap-1.5 cursor-pointer"
+          >
+            <span>Request Demo</span>
+            <i class="pi pi-chevron-right text-[10px]"></i>
+          </button>
+        </ng-container>
+      </div>
+
+      <!-- Mobile Hamburger Button -->
+      <button
+        type="button"
+        (click)="toggleMobileMenu()"
+        class="md:hidden w-9 h-9 rounded-lg border border-slate-200 flex items-center justify-center text-slate-700 hover:bg-slate-100 transition-colors"
+      >
+        <i class="pi" [ngClass]="mobileMenuOpen() ? 'pi-times' : 'pi-bars'"></i>
+      </button>
+    </div>
+
+    <!-- Mobile Navigation Drawer -->
+    <div
+      *ngIf="mobileMenuOpen()"
+      class="md:hidden bg-white border-b border-slate-200 px-4 pt-3 pb-5 space-y-3 animate-in fade-in slide-in-from-top-2 duration-150"
+    >
+      <div class="flex flex-col gap-2.5 text-sm font-semibold text-[#475569]">
+        <a (click)="scrollToSection('hero', $event)" href="#hero" class="py-2 border-b border-slate-100 hover:text-[#0F766E]">Home</a>
+        <a (click)="scrollToSection('solutions', $event)" href="#solutions" class="py-2 border-b border-slate-100 hover:text-[#0F766E]">Solutions</a>
+        <a (click)="scrollToSection('features', $event)" href="#features" class="py-2 border-b border-slate-100 hover:text-[#0F766E]">Features</a>
+        <a (click)="scrollToSection('analytics', $event)" href="#analytics" class="py-2 border-b border-slate-100 hover:text-[#0F766E]">Analytics</a>
+        <a (click)="scrollToSection('about', $event)" href="#about" class="py-2 border-b border-slate-100 hover:text-[#0F766E]">About</a>
+        <a (click)="scrollToSection('contact', $event)" href="#contact" class="py-2 border-b border-slate-100 hover:text-[#0F766E]">Contact</a>
+      </div>
+
+      <div class="pt-2 flex flex-col gap-2">
+        <button
+          (click)="navigateToLogin()"
+          class="w-full py-2.5 rounded-xl border border-slate-200 font-semibold text-xs text-slate-800 text-center"
+        >
+          {{ isAuthenticated() ? 'Go to Console' : 'Sign In' }}
+        </button>
+        <button
+          (click)="scrollToSection('contact', $event)"
+          class="w-full py-2.5 rounded-xl bg-[#0F766E] text-white font-bold text-xs text-center"
+        >
+          Request a Demo
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- ================================================== -->
+  <!-- 2. HERO SECTION                                    -->
+  <!-- ================================================== -->
+  <section id="hero" class="relative pt-28 sm:pt-36 pb-16 sm:pb-24 overflow-hidden">
+    
+    <!-- Background Glow & Grid Atmosphere -->
+    <div class="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-7xl h-[600px] pointer-events-none -z-10 overflow-hidden">
+      <div class="absolute -top-32 left-1/4 w-[500px] h-[500px] bg-teal-400/10 rounded-full blur-3xl"></div>
+      <div class="absolute top-20 right-10 w-[400px] h-[400px] bg-cyan-400/10 rounded-full blur-3xl"></div>
+      <div class="absolute inset-0 bg-[radial-gradient(#e2e8f0_1px,transparent_1px)] [background-size:24px_24px] opacity-40"></div>
+    </div>
+
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-8 items-center">
+        
+        <!-- Hero Left Text Content -->
+        <div class="lg:col-span-6 space-y-6 text-center lg:text-left">
+          
+          <!-- Eyebrow Pill -->
+          <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#0F766E]/10 border border-[#0F766E]/20 text-[#0F766E] text-xs font-bold shadow-2xs">
+            <span class="w-2 h-2 rounded-full bg-[#0F766E] animate-pulse"></span>
+            <span>Smarter Healthcare Operations</span>
+          </div>
+
+          <!-- Headline -->
+          <h1 class="text-3xl sm:text-5xl lg:text-6xl font-black text-[#0F172A] tracking-tight leading-[1.12]">
+            One Platform.<br />
+            <span class="bg-gradient-to-r from-[#0F766E] via-[#0D655E] to-[#14B8A6] bg-clip-text text-transparent">
+              Complete Hospital Management.
+            </span>
+          </h1>
+
+          <!-- Paragraph -->
+          <p class="text-sm sm:text-base lg:text-lg font-normal text-[#475569] leading-relaxed max-w-xl mx-auto lg:mx-0">
+            Health ERP brings patient care, appointments, pharmacy, laboratory, inpatient wards, emergency services, billing, staff management and analytics together in one connected platform.
+          </p>
+
+          <!-- CTAs -->
+          <div class="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-3.5 pt-2">
+            <button
+              type="button"
+              (click)="scrollToSection('contact', $event)"
+              class="w-full sm:w-auto px-6 py-3.5 rounded-xl bg-[#0F766E] hover:bg-[#0D655E] text-white text-xs sm:text-sm font-bold shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2 cursor-pointer"
+            >
+              <span>Request a Demo</span>
+              <i class="pi pi-calendar text-xs"></i>
+            </button>
+
+            <button
+              type="button"
+              (click)="scrollToSection('solutions', $event)"
+              class="w-full sm:w-auto px-6 py-3.5 rounded-xl border border-slate-200 hover:bg-slate-100 bg-white text-slate-800 text-xs sm:text-sm font-bold shadow-2xs transition-all flex items-center justify-center gap-2 cursor-pointer"
+            >
+              <span>Explore Solutions</span>
+              <i class="pi pi-arrow-right text-xs"></i>
+            </button>
+          </div>
+
+          <!-- Trust Line -->
+          <div class="pt-2 flex items-center justify-center lg:justify-start gap-2 text-xs font-semibold text-[#64748B]">
+            <i class="pi pi-shield-check text-[#0F766E] text-sm"></i>
+            <span>Built for connected, efficient and data-driven healthcare operations.</span>
+          </div>
+        </div>
+
+        <!-- Hero Right Side: Stylized Real Application Interface Preview -->
+        <div class="lg:col-span-6 relative">
+          
+          <!-- Decorative Floating Badges -->
+          <div class="hidden sm:flex absolute -top-4 -left-4 z-20 bg-white/90 backdrop-blur-md px-3.5 py-2 rounded-xl border border-slate-200/80 shadow-md items-center gap-2 animate-bounce-slow">
+            <div class="w-7 h-7 rounded-lg bg-teal-50 text-[#0F766E] flex items-center justify-center font-bold">
+              <i class="pi pi-id-card text-xs"></i>
+            </div>
+            <div>
+              <p class="text-[10px] font-bold text-[#64748B] uppercase">Patient Records</p>
+              <p class="text-xs font-bold text-[#0F172A]">Secure & Connected</p>
+            </div>
+          </div>
+
+          <div class="hidden sm:flex absolute -bottom-4 -right-4 z-20 bg-white/90 backdrop-blur-md px-3.5 py-2 rounded-xl border border-slate-200/80 shadow-md items-center gap-2">
+            <div class="w-7 h-7 rounded-lg bg-rose-50 text-rose-600 flex items-center justify-center font-bold">
+              <i class="pi pi-heart-fill text-xs"></i>
+            </div>
+            <div>
+              <p class="text-[10px] font-bold text-[#64748B] uppercase">Emergency Care</p>
+              <p class="text-xs font-bold text-rose-700">Real-time Triage</p>
+            </div>
+          </div>
+
+          <!-- Main Product Showcase Window Mockup -->
+          <div class="relative rounded-2xl border border-slate-200/80 shadow-[0_20px_50px_rgba(15,23,42,0.12)] bg-white overflow-hidden group">
+            
+            <!-- Browser Header -->
+            <div class="bg-slate-100/90 border-b border-slate-200 px-4 py-2.5 flex items-center justify-between">
+              <div class="flex items-center gap-1.5">
+                <span class="w-3 h-3 rounded-full bg-rose-400 inline-block"></span>
+                <span class="w-3 h-3 rounded-full bg-amber-400 inline-block"></span>
+                <span class="w-3 h-3 rounded-full bg-emerald-400 inline-block"></span>
+              </div>
+              <div class="px-3 py-1 bg-white rounded-md text-[11px] font-mono text-slate-500 border border-slate-200 flex items-center gap-1.5">
+                <i class="pi pi-lock text-[10px] text-emerald-600"></i>
+                <span>app.healtherp.com/dashboard</span>
+              </div>
+              <div class="w-10"></div>
+            </div>
+
+            <!-- Dashboard Mockup Content -->
+            <div class="p-4 sm:p-5 space-y-4 bg-slate-50/50">
+              
+              <!-- Mini KPI Row -->
+              <div class="grid grid-cols-4 gap-2.5">
+                <div class="bg-white p-2.5 rounded-xl border border-slate-200/80 shadow-2xs">
+                  <p class="text-[9px] font-bold text-slate-400 uppercase">Gross Revenue</p>
+                  <p class="text-xs font-black text-slate-800 mt-0.5">$300.00</p>
+                </div>
+                <div class="bg-white p-2.5 rounded-xl border border-slate-200/80 shadow-2xs">
+                  <p class="text-[9px] font-bold text-slate-400 uppercase">Active Patients</p>
+                  <p class="text-xs font-black text-[#0F766E] mt-0.5">6 Registered</p>
+                </div>
+                <div class="bg-white p-2.5 rounded-xl border border-slate-200/80 shadow-2xs">
+                  <p class="text-[9px] font-bold text-slate-400 uppercase">Ward Beds</p>
+                  <p class="text-xs font-black text-blue-600 mt-0.5">4/5 Occupied</p>
+                </div>
+                <div class="bg-white p-2.5 rounded-xl border border-slate-200/80 shadow-2xs">
+                  <p class="text-[9px] font-bold text-slate-400 uppercase">Active ER</p>
+                  <p class="text-xs font-black text-rose-600 mt-0.5">4 Waiting</p>
+                </div>
+              </div>
+
+              <!-- Mini Chart + Schedule Split -->
+              <div class="grid grid-cols-12 gap-3">
+                <div class="col-span-7 bg-white p-3 rounded-xl border border-slate-200/80 shadow-2xs space-y-2">
+                  <div class="flex items-center justify-between">
+                    <span class="text-[10px] font-bold text-slate-700 flex items-center gap-1">
+                      <i class="pi pi-chart-line text-[#0F766E]"></i> Revenue Trend
+                    </span>
+                    <span class="text-[9px] font-bold text-emerald-600">100% Rate</span>
+                  </div>
+                  <!-- Bars -->
+                  <div class="flex items-end justify-between h-20 gap-1.5 pt-2 border-b border-slate-100">
+                    <div class="flex-1 bg-indigo-500/20 rounded-t h-1/2"></div>
+                    <div class="flex-1 bg-[#0F766E] rounded-t h-3/4"></div>
+                    <div class="flex-1 bg-indigo-500/30 rounded-t h-2/3"></div>
+                    <div class="flex-1 bg-emerald-500 rounded-t h-full"></div>
+                  </div>
+                </div>
+
+                <div class="col-span-5 bg-white p-3 rounded-xl border border-slate-200/80 shadow-2xs space-y-2">
+                  <span class="text-[10px] font-bold text-slate-700 flex items-center gap-1">
+                    <i class="pi pi-clock text-blue-600"></i> Active Queue
+                  </span>
+                  <div class="space-y-1.5">
+                    <div class="p-1.5 bg-rose-50 rounded border border-rose-100 text-[10px] flex items-center justify-between">
+                      <span class="font-bold text-rose-800">ESI 1 · Resuscitation</span>
+                      <span class="font-mono text-rose-700">12 min</span>
+                    </div>
+                    <div class="p-1.5 bg-orange-50 rounded border border-orange-100 text-[10px] flex items-center justify-between">
+                      <span class="font-bold text-orange-800">ESI 2 · Emergent</span>
+                      <span class="font-mono text-orange-700">24 min</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- ================================================== -->
+  <!-- 3. PLATFORM CAPABILITY STRIP                       -->
+  <!-- ================================================== -->
+  <section class="py-10 bg-white border-y border-slate-200/80">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="text-center mb-6">
+        <p class="text-xs font-bold text-[#64748B] uppercase tracking-wider">Everything Your Hospital Needs, Connected</p>
+      </div>
+
+      <div class="flex flex-wrap items-center justify-center gap-3 sm:gap-4">
+        <div class="px-4 py-2 rounded-xl bg-slate-50 border border-slate-200/80 text-xs font-bold text-slate-700 flex items-center gap-2">
+          <i class="pi pi-users text-[#0F766E]"></i> Patient Care & EHR
+        </div>
+        <div class="px-4 py-2 rounded-xl bg-slate-50 border border-slate-200/80 text-xs font-bold text-slate-700 flex items-center gap-2">
+          <i class="pi pi-calendar text-blue-600"></i> Appointments
+        </div>
+        <div class="px-4 py-2 rounded-xl bg-slate-50 border border-slate-200/80 text-xs font-bold text-slate-700 flex items-center gap-2">
+          <i class="pi pi-heart-fill text-pink-600"></i> Pharmacy
+        </div>
+        <div class="px-4 py-2 rounded-xl bg-slate-50 border border-slate-200/80 text-xs font-bold text-slate-700 flex items-center gap-2">
+          <i class="pi pi-compass text-violet-600"></i> Laboratory
+        </div>
+        <div class="px-4 py-2 rounded-xl bg-slate-50 border border-slate-200/80 text-xs font-bold text-slate-700 flex items-center gap-2">
+          <i class="pi pi-building text-amber-600"></i> Inpatient Wards
+        </div>
+        <div class="px-4 py-2 rounded-xl bg-slate-50 border border-slate-200/80 text-xs font-bold text-slate-700 flex items-center gap-2">
+          <i class="pi pi-bolt text-rose-600"></i> Emergency Department
+        </div>
+        <div class="px-4 py-2 rounded-xl bg-slate-50 border border-slate-200/80 text-xs font-bold text-slate-700 flex items-center gap-2">
+          <i class="pi pi-credit-card text-emerald-600"></i> Billing & Payments
+        </div>
+        <div class="px-4 py-2 rounded-xl bg-slate-50 border border-slate-200/80 text-xs font-bold text-slate-700 flex items-center gap-2">
+          <i class="pi pi-chart-bar text-indigo-600"></i> Executive BI Analytics
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================================================== -->
+  <!-- 4. INTRODUCTION SECTION (#about)                   -->
+  <!-- ================================================== -->
+  <section id="about" class="py-20 sm:py-28">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      
+      <div class="text-center max-w-3xl mx-auto space-y-4">
+        <p class="text-xs font-bold uppercase tracking-wider text-[#0F766E] border-b border-[#0F766E]/20 pb-1 inline-block">
+          ONE CONNECTED PLATFORM
+        </p>
+        <h2 class="text-2xl sm:text-4xl font-extrabold text-[#0F172A] tracking-tight">
+          Run Your Hospital From One Intelligent Workspace
+        </h2>
+        <p class="text-sm sm:text-base text-[#475569] leading-relaxed">
+          Health ERP connects clinical, operational and financial workflows so hospital teams can spend less time switching between disconnected systems and more time focusing on patient care.
+        </p>
+      </div>
+
+      <!-- 3 Key Benefit Cards -->
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8 mt-14">
+        
+        <!-- Benefit 1 -->
+        <div class="bg-white p-6 sm:p-8 rounded-2xl border border-slate-200/80 shadow-2xs hover:shadow-md hover:-translate-y-1 transition-all space-y-4 group">
+          <div class="w-12 h-12 rounded-xl bg-teal-50 border border-teal-100 flex items-center justify-center text-[#0F766E] group-hover:scale-110 transition-transform">
+            <i class="pi pi-sitemap text-xl font-bold"></i>
+          </div>
+          <h3 class="text-lg font-bold text-[#0F172A]">Connected Operations</h3>
+          <p class="text-xs sm:text-sm text-[#475569] leading-relaxed">
+            Bring clinical and administrative workflows into one unified system, ensuring seamless communication across all hospital departments.
+          </p>
+        </div>
+
+        <!-- Benefit 2 -->
+        <div class="bg-white p-6 sm:p-8 rounded-2xl border border-slate-200/80 shadow-2xs hover:shadow-md hover:-translate-y-1 transition-all space-y-4 group">
+          <div class="w-12 h-12 rounded-xl bg-blue-50 border border-blue-100 flex items-center justify-center text-blue-600 group-hover:scale-110 transition-transform">
+            <i class="pi pi-eye text-xl font-bold"></i>
+          </div>
+          <h3 class="text-lg font-bold text-[#0F172A]">Real-Time Visibility</h3>
+          <p class="text-xs sm:text-sm text-[#475569] leading-relaxed">
+            Monitor live hospital activity, patient flow, bed occupancy and financial performance from one centralized operations dashboard.
+          </p>
+        </div>
+
+        <!-- Benefit 3 -->
+        <div class="bg-white p-6 sm:p-8 rounded-2xl border border-slate-200/80 shadow-2xs hover:shadow-md hover:-translate-y-1 transition-all space-y-4 group">
+          <div class="w-12 h-12 rounded-xl bg-indigo-50 border border-indigo-100 flex items-center justify-center text-indigo-600 group-hover:scale-110 transition-transform">
+            <i class="pi pi-[#0F766E] pi-chart-line text-xl font-bold"></i>
+          </div>
+          <h3 class="text-lg font-bold text-[#0F172A]">Better Decisions</h3>
+          <p class="text-xs sm:text-sm text-[#475569] leading-relaxed">
+            Turn operational data into clear dashboards and actionable insights to improve clinical outcomes and resource utilization.
+          </p>
+        </div>
+
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ================================================== -->
+  <!-- 5. SERVICES & MODULES GRID (#solutions)            -->
+  <!-- ================================================== -->
+  <section id="solutions" class="py-20 sm:py-28 bg-slate-100/60 border-y border-slate-200/80">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      
+      <div class="text-center max-w-3xl mx-auto space-y-4 mb-16">
+        <p class="text-xs font-bold uppercase tracking-wider text-[#0F766E]">COMPLETE HEALTHCARE MODULES</p>
+        <h2 class="text-2xl sm:text-4xl font-extrabold text-[#0F172A] tracking-tight">
+          Everything You Need to Manage Modern Healthcare
+        </h2>
+        <p class="text-sm sm:text-base text-[#475569]">
+          From patient registration to emergency care and financial reporting, Health ERP connects every essential hospital workflow.
+        </p>
+      </div>
+
+      <!-- Module Grid -->
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        
+        <!-- Module 1: Patient Care & EHR -->
+        <div class="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-2xs hover:shadow-md hover:-translate-y-1 transition-all space-y-3">
+          <div class="w-10 h-10 rounded-xl bg-teal-50 text-[#0F766E] flex items-center justify-center font-bold">
+            <i class="pi pi-id-card text-lg"></i>
+          </div>
+          <h3 class="text-base font-bold text-[#0F172A]">Patient Management & EHR</h3>
+          <p class="text-xs text-[#475569] leading-relaxed">
+            Maintain centralized patient records with medical history, encounters, vital signs, prescriptions and diagnostics.
+          </p>
+          <ul class="text-[11px] font-semibold text-slate-600 space-y-1 pt-2 border-t border-slate-100">
+            <li class="flex items-center gap-1.5"><i class="pi pi-check text-[10px] text-[#0F766E]"></i> Patient Registration & MRNs</li>
+            <li class="flex items-center gap-1.5"><i class="pi pi-check text-[10px] text-[#0F766E]"></i> Unified Clinical Timeline</li>
+            <li class="flex items-center gap-1.5"><i class="pi pi-check text-[10px] text-[#0F766E]"></i> Recorded Vital Signs</li>
+          </ul>
+        </div>
+
+        <!-- Module 2: Appointments -->
+        <div class="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-2xs hover:shadow-md hover:-translate-y-1 transition-all space-y-3">
+          <div class="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center font-bold">
+            <i class="pi pi-calendar text-lg"></i>
+          </div>
+          <h3 class="text-base font-bold text-[#0F172A]">Appointments & Scheduling</h3>
+          <p class="text-xs text-[#475569] leading-relaxed">
+            Coordinate patient consultations and doctor agendas through flexible table and schedule views.
+          </p>
+          <ul class="text-[11px] font-semibold text-slate-600 space-y-1 pt-2 border-t border-slate-100">
+            <li class="flex items-center gap-1.5"><i class="pi pi-check text-[10px] text-blue-600"></i> In-page Booking Modal</li>
+            <li class="flex items-center gap-1.5"><i class="pi pi-check text-[10px] text-blue-600"></i> Doctor Agendas</li>
+            <li class="flex items-center gap-1.5"><i class="pi pi-check text-[10px] text-blue-600"></i> Daily Schedule Grid</li>
+          </ul>
+        </div>
+
+        <!-- Module 3: Pharmacy -->
+        <div class="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-2xs hover:shadow-md hover:-translate-y-1 transition-all space-y-3">
+          <div class="w-10 h-10 rounded-xl bg-pink-50 text-pink-600 flex items-center justify-center font-bold">
+            <i class="pi pi-heart-fill text-lg"></i>
+          </div>
+          <h3 class="text-base font-bold text-[#0F172A]">Pharmacy & Medication</h3>
+          <p class="text-xs text-[#475569] leading-relaxed">
+            Manage medication inventory, prescriptions and dispensing from one connected pharmacy workspace.
+          </p>
+          <ul class="text-[11px] font-semibold text-slate-600 space-y-1 pt-2 border-t border-slate-100">
+            <li class="flex items-center gap-1.5"><i class="pi pi-check text-[10px] text-pink-600"></i> Medication Catalog</li>
+            <li class="flex items-center gap-1.5"><i class="pi pi-check text-[10px] text-pink-600"></i> Low-Stock Detection</li>
+            <li class="flex items-center gap-1.5"><i class="pi pi-check text-[10px] text-pink-600"></i> Expiry Date Alerts</li>
+          </ul>
+        </div>
+
+        <!-- Module 4: Laboratory -->
+        <div class="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-2xs hover:shadow-md hover:-translate-y-1 transition-all space-y-3">
+          <div class="w-10 h-10 rounded-xl bg-violet-50 text-violet-600 flex items-center justify-center font-bold">
+            <i class="pi pi-compass text-lg"></i>
+          </div>
+          <h3 class="text-base font-bold text-[#0F172A]">Laboratory & Diagnostics</h3>
+          <p class="text-xs text-[#475569] leading-relaxed">
+            Manage diagnostic test catalogs, patient lab orders and clinical results with status tracking.
+          </p>
+          <ul class="text-[11px] font-semibold text-slate-600 space-y-1 pt-2 border-t border-slate-100">
+            <li class="flex items-center gap-1.5"><i class="pi pi-check text-[10px] text-violet-600"></i> Test Catalog & Ranges</li>
+            <li class="flex items-center gap-1.5"><i class="pi pi-check text-[10px] text-violet-600"></i> Result Entry Modals</li>
+            <li class="flex items-center gap-1.5"><i class="pi pi-check text-[10px] text-violet-600"></i> STAT Urgent Flags</li>
+          </ul>
+        </div>
+
+        <!-- Module 5: Inpatient Wards -->
+        <div class="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-2xs hover:shadow-md hover:-translate-y-1 transition-all space-y-3">
+          <div class="w-10 h-10 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center font-bold">
+            <i class="pi pi-building text-lg"></i>
+          </div>
+          <h3 class="text-base font-bold text-[#0F172A]">Inpatient Wards & Beds</h3>
+          <p class="text-xs text-[#475569] leading-relaxed">
+            Monitor ward occupancy and manage patient admissions, transfers and discharges with bed visibility.
+          </p>
+          <ul class="text-[11px] font-semibold text-slate-600 space-y-1 pt-2 border-t border-slate-100">
+            <li class="flex items-center gap-1.5"><i class="pi pi-check text-[10px] text-amber-600"></i> Bed Allocation Grid</li>
+            <li class="flex items-center gap-1.5"><i class="pi pi-check text-[10px] text-amber-600"></i> Ward Occupancy Rate</li>
+            <li class="flex items-center gap-1.5"><i class="pi pi-check text-[10px] text-amber-600"></i> Admissions & Transfers</li>
+          </ul>
+        </div>
+
+        <!-- Module 6: Emergency & Triage (Rose Accent) -->
+        <div class="bg-white p-6 rounded-2xl border border-rose-200/80 shadow-2xs hover:shadow-md hover:-translate-y-1 transition-all space-y-3">
+          <div class="w-10 h-10 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center font-bold">
+            <i class="pi pi-bolt text-lg"></i>
+          </div>
+          <h3 class="text-base font-bold text-[#0F172A]">Emergency & Triage</h3>
+          <p class="text-xs text-[#475569] leading-relaxed">
+            Support rapid emergency intake using structured ESI triage levels, vital signs and bay allocation.
+          </p>
+          <ul class="text-[11px] font-semibold text-slate-600 space-y-1 pt-2 border-t border-rose-100">
+            <li class="flex items-center gap-1.5"><i class="pi pi-check text-[10px] text-rose-600"></i> Rapid ER Intake Modal</li>
+            <li class="flex items-center gap-1.5"><i class="pi pi-check text-[10px] text-rose-600"></i> ESI Levels 1–5 Priority</li>
+            <li class="flex items-center gap-1.5"><i class="pi pi-check text-[10px] text-rose-600"></i> ER Bay Assignments</li>
+          </ul>
+        </div>
+
+        <!-- Module 7: Billing & Financial -->
+        <div class="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-2xs hover:shadow-md hover:-translate-y-1 transition-all space-y-3">
+          <div class="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold">
+            <i class="pi pi-credit-card text-lg"></i>
+          </div>
+          <h3 class="text-base font-bold text-[#0F172A]">Billing & Payments</h3>
+          <p class="text-xs text-[#475569] leading-relaxed">
+            Track patient invoices, payment receipts, outstanding balances and financial billing statements.
+          </p>
+          <ul class="text-[11px] font-semibold text-slate-600 space-y-1 pt-2 border-t border-slate-100">
+            <li class="flex items-center gap-1.5"><i class="pi pi-check text-[10px] text-emerald-600"></i> Patient Statements</li>
+            <li class="flex items-center gap-1.5"><i class="pi pi-check text-[10px] text-emerald-600"></i> Payment Receipts</li>
+            <li class="flex items-center gap-1.5"><i class="pi pi-check text-[10px] text-emerald-600"></i> Balance Tracking</li>
+          </ul>
+        </div>
+
+        <!-- Module 8: Doctors & Staff -->
+        <div class="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-2xs hover:shadow-md hover:-translate-y-1 transition-all space-y-3">
+          <div class="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center font-bold">
+            <i class="pi pi-users text-lg"></i>
+          </div>
+          <h3 class="text-base font-bold text-[#0F172A]">Doctors & Staff Directory</h3>
+          <p class="text-xs text-[#475569] leading-relaxed">
+            Maintain a structured directory of doctors and staff with specialties, departments and licenses.
+          </p>
+          <ul class="text-[11px] font-semibold text-slate-600 space-y-1 pt-2 border-t border-slate-100">
+            <li class="flex items-center gap-1.5"><i class="pi pi-check text-[10px] text-indigo-600"></i> Doctor Directory</li>
+            <li class="flex items-center gap-1.5"><i class="pi pi-check text-[10px] text-indigo-600"></i> Specialty Assignments</li>
+            <li class="flex items-center gap-1.5"><i class="pi pi-check text-[10px] text-indigo-600"></i> License Records</li>
+          </ul>
+        </div>
+
+      </div>
+
+      <!-- Featured Command Center Card -->
+      <div class="mt-8 bg-gradient-to-r from-[#0F766E] to-[#0D655E] p-8 sm:p-10 rounded-3xl text-white shadow-md relative overflow-hidden flex flex-col md:flex-row items-center justify-between gap-8">
+        <div class="space-y-3 max-w-xl text-center md:text-left z-10">
+          <span class="px-3 py-1 rounded-full bg-white/10 text-white text-xs font-bold border border-white/20 inline-block">
+            FEATURED COMMAND CENTER
+          </span>
+          <h3 class="text-2xl sm:text-3xl font-extrabold tracking-tight">Hospital Operations Dashboard</h3>
+          <p class="text-xs sm:text-sm text-teal-100 leading-relaxed">
+            Get a real-time view of your hospital from one central console. Monitor bed occupancy, daily consultation agendas, gross revenue collections, ER queues, and emergency alerts.
+          </p>
+        </div>
+
+        <div class="shrink-0 z-10">
+          <button
+            (click)="navigateToLogin()"
+            class="px-6 py-3.5 rounded-xl bg-white text-[#0F766E] hover:bg-teal-50 text-xs sm:text-sm font-bold shadow-md transition-all cursor-pointer flex items-center gap-2"
+          >
+            <span>Launch Dashboard</span>
+            <i class="pi pi-arrow-right text-xs"></i>
+          </button>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ================================================== -->
+  <!-- 6. PRODUCT SHOWCASES (#features)                   -->
+  <!-- ================================================== -->
+  <section id="features" class="py-20 sm:py-28 space-y-24">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-24">
+      
+      <!-- Showcase 1: Unified Patient Records -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
+        <!-- Visual Left -->
+        <div class="lg:col-span-6 bg-white p-5 rounded-2xl border border-slate-200/80 shadow-md space-y-3">
+          <div class="p-3.5 bg-slate-50 rounded-xl border border-slate-200/80 flex items-center justify-between">
+            <div>
+              <span class="font-bold text-slate-900 text-sm">Maryum Ahmer</span>
+              <span class="text-xs text-slate-500 block font-mono">MRN: MRN-0006 · 31 yrs</span>
+            </div>
+            <span class="px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 text-xs font-bold border border-emerald-200">
+              Active Chart
+            </span>
+          </div>
+
+          <div class="grid grid-cols-4 gap-2 text-[10px] font-mono">
+            <div class="p-2 bg-slate-50 rounded border text-center">
+              <span class="text-slate-400 block">BP</span>
+              <span class="font-bold text-slate-800">120/80</span>
+            </div>
+            <div class="p-2 bg-slate-50 rounded border text-center">
+              <span class="text-slate-400 block">HR</span>
+              <span class="font-bold text-slate-800">72 bpm</span>
+            </div>
+            <div class="p-2 bg-slate-50 rounded border text-center">
+              <span class="text-slate-400 block">TEMP</span>
+              <span class="font-bold text-slate-800">37.0 °C</span>
+            </div>
+            <div class="p-2 bg-slate-50 rounded border text-center">
+              <span class="text-slate-400 block">WEIGHT</span>
+              <span class="font-bold text-slate-800">70 kg</span>
+            </div>
+          </div>
+
+          <div class="p-3 bg-slate-50 rounded-xl border border-slate-100 text-xs space-y-1">
+            <span class="text-[10px] font-bold text-[#0F766E] uppercase">Clinical Encounter History</span>
+            <p class="font-semibold text-slate-800">Routine Cardiology Follow-up</p>
+            <p class="text-slate-500 text-[11px]">Patient reported normal recovery with regular blood pressure readings.</p>
+          </div>
+        </div>
+
+        <!-- Text Right -->
+        <div class="lg:col-span-6 space-y-4">
+          <p class="text-xs font-bold uppercase tracking-wider text-[#0F766E]">UNIFIED EHR TIMELINE</p>
+          <h3 class="text-2xl sm:text-3xl font-extrabold text-[#0F172A]">
+            One Patient. One Complete Clinical Story.
+          </h3>
+          <p class="text-xs sm:text-sm text-[#475569] leading-relaxed">
+            Eliminate fragmented charts. Health ERP presents a unified timeline of patient encounters, vital sign observations, medication orders, diagnostic results, and billing history under a single Medical Record Number.
+          </p>
+          <ul class="space-y-2 text-xs font-semibold text-slate-700">
+            <li class="flex items-center gap-2"><i class="pi pi-check-circle text-[#0F766E]"></i> Longitudinal health records across visits</li>
+            <li class="flex items-center gap-2"><i class="pi pi-check-circle text-[#0F766E]"></i> Integrated vital signs and allergy records</li>
+            <li class="flex items-center gap-2"><i class="pi pi-check-circle text-[#0F766E]"></i> Direct link to billing & diagnostic orders</li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- Showcase 2: Real-Time Hospital Operations -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
+        <!-- Text Left -->
+        <div class="lg:col-span-6 space-y-4 order-2 lg:order-1">
+          <p class="text-xs font-bold uppercase tracking-wider text-amber-600">INPATIENT WARD OPERATIONS</p>
+          <h3 class="text-2xl sm:text-3xl font-extrabold text-[#0F172A]">
+            Know What's Happening Across Your Hospital.
+          </h3>
+          <p class="text-xs sm:text-sm text-[#475569] leading-relaxed">
+            Manage bed allocations across inpatient wards with real-time occupancy meters. Perform rapid admissions, bed transfers, and discharges while keeping billing records synchronized.
+          </p>
+          <ul class="space-y-2 text-xs font-semibold text-slate-700">
+            <li class="flex items-center gap-2"><i class="pi pi-check-circle text-amber-600"></i> Live Ward Occupancy Progress Meters</li>
+            <li class="flex items-center gap-2"><i class="pi pi-check-circle text-amber-600"></i> Interactive Bed Grid with Status Badges</li>
+            <li class="flex items-center gap-2"><i class="pi pi-check-circle text-amber-600"></i> Direct ER-to-Ward Patient Transfers</li>
+          </ul>
+        </div>
+
+        <!-- Visual Right -->
+        <div class="lg:col-span-6 bg-white p-5 rounded-2xl border border-slate-200/80 shadow-md space-y-3 order-1 lg:order-2">
+          <div class="p-3.5 bg-slate-50 rounded-xl border border-slate-200/80 flex items-center justify-between">
+            <span class="font-bold text-slate-900 text-sm">Inpatient Bed Grid — ICU & Wards</span>
+            <span class="text-xs font-bold text-blue-600">80% Occupied</span>
+          </div>
+
+          <div class="grid grid-cols-3 gap-2.5">
+            <div class="p-3 bg-blue-50 border border-blue-200 rounded-xl text-center">
+              <span class="text-[10px] font-bold text-blue-700 block">Bed 101</span>
+              <span class="text-xs font-bold text-slate-800">Occupied</span>
+            </div>
+            <div class="p-3 bg-emerald-50 border border-emerald-200 rounded-xl text-center">
+              <span class="text-[10px] font-bold text-emerald-700 block">Bed 102</span>
+              <span class="text-xs font-bold text-emerald-800">Available</span>
+            </div>
+            <div class="p-3 bg-blue-50 border border-blue-200 rounded-xl text-center">
+              <span class="text-[10px] font-bold text-blue-700 block">Bed 103</span>
+              <span class="text-xs font-bold text-slate-800">Occupied</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ================================================== -->
+  <!-- 7. ANALYTICS SHOWCASE (#analytics)                  -->
+  <!-- ================================================== -->
+  <section id="analytics" class="py-20 sm:py-28 bg-slate-100/60 border-y border-slate-200/80">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
+        <!-- Left Text -->
+        <div class="lg:col-span-5 space-y-5">
+          <p class="text-xs font-bold uppercase tracking-wider text-[#0F766E]">EXECUTIVE REPORTING PORTAL</p>
+          <h2 class="text-2xl sm:text-4xl font-extrabold text-[#0F172A] tracking-tight">
+            Executive Insights Without the Spreadsheet Chaos
+          </h2>
+          <p class="text-xs sm:text-sm text-[#475569] leading-relaxed">
+            Track revenue, collections, appointment outcomes, prescription activity and diagnostic trends through clear, real-time reports and one-click CSV data exports.
+          </p>
+
+          <div class="grid grid-cols-2 gap-3 pt-2">
+            <div class="p-3.5 bg-white rounded-xl border border-slate-200/80 shadow-2xs">
+              <i class="pi pi-dollar text-[#0F766E] font-bold text-lg"></i>
+              <h4 class="font-bold text-slate-800 text-xs mt-1">Financial Trends</h4>
+              <p class="text-[11px] text-slate-500">Gross billed vs collected</p>
+            </div>
+            <div class="p-3.5 bg-white rounded-xl border border-slate-200/80 shadow-2xs">
+              <i class="pi pi-chart-bar text-blue-600 font-bold text-lg"></i>
+              <h4 class="font-bold text-slate-800 text-xs mt-1">Visit Statistics</h4>
+              <p class="text-[11px] text-slate-500">Appointment status</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right BI Mockup -->
+        <div class="lg:col-span-7 bg-white p-6 rounded-2xl border border-slate-200/80 shadow-md space-y-4">
+          <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+            <span class="font-bold text-slate-900 text-sm flex items-center gap-2">
+              <i class="pi pi-chart-bar text-[#0F766E]"></i> Revenue & Collection Overview
+            </span>
+            <span class="px-2.5 py-1 bg-emerald-50 text-emerald-700 font-bold text-xs rounded-full border border-emerald-200">
+              100% Collection Rate
+            </span>
+          </div>
+
+          <div class="grid grid-cols-2 gap-3 text-xs">
+            <div class="p-3 bg-slate-50 rounded-xl border border-slate-200/80">
+              <span class="text-slate-500 block">Gross Billed</span>
+              <span class="text-base font-black text-slate-900">$300.00</span>
+            </div>
+            <div class="p-3 bg-emerald-50/50 rounded-xl border border-emerald-200">
+              <span class="text-emerald-700 block font-semibold">Cash Collected</span>
+              <span class="text-base font-black text-emerald-600">$300.00</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ================================================== -->
+  <!-- 8. WORKFLOW JOURNEY                                -->
+  <!-- ================================================== -->
+  <section class="py-20 sm:py-28">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      
+      <div class="text-center max-w-3xl mx-auto space-y-4 mb-16">
+        <p class="text-xs font-bold uppercase tracking-wider text-[#0F766E]">THE CONNECTED CARE JOURNEY</p>
+        <h2 class="text-2xl sm:text-4xl font-extrabold text-[#0F172A] tracking-tight">One Connected Journey</h2>
+        <p class="text-xs sm:text-sm text-[#475569]">
+          From initial registration to billing statement and analytics, Health ERP connects every step of the patient lifecycle.
+        </p>
+      </div>
+
+      <!-- Steps Flow -->
+      <div class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3 text-center">
+        <div class="p-4 bg-white rounded-2xl border border-slate-200/80 shadow-2xs space-y-2">
+          <span class="w-7 h-7 rounded-full bg-teal-50 text-[#0F766E] font-bold text-xs flex items-center justify-center mx-auto">01</span>
+          <h4 class="font-bold text-slate-800 text-xs">Register Patient</h4>
+        </div>
+        <div class="p-4 bg-white rounded-2xl border border-slate-200/80 shadow-2xs space-y-2">
+          <span class="w-7 h-7 rounded-full bg-blue-50 text-blue-600 font-bold text-xs flex items-center justify-center mx-auto">02</span>
+          <h4 class="font-bold text-slate-800 text-xs">Schedule Consultation</h4>
+        </div>
+        <div class="p-4 bg-white rounded-2xl border border-slate-200/80 shadow-2xs space-y-2">
+          <span class="w-7 h-7 rounded-full bg-indigo-50 text-indigo-600 font-bold text-xs flex items-center justify-center mx-auto">03</span>
+          <h4 class="font-bold text-slate-800 text-xs">Clinical Encounter</h4>
+        </div>
+        <div class="p-4 bg-white rounded-2xl border border-slate-200/80 shadow-2xs space-y-2">
+          <span class="w-7 h-7 rounded-full bg-pink-50 text-pink-600 font-bold text-xs flex items-center justify-center mx-auto">04</span>
+          <h4 class="font-bold text-slate-800 text-xs">Prescription / Lab</h4>
+        </div>
+        <div class="p-4 bg-white rounded-2xl border border-slate-200/80 shadow-2xs space-y-2">
+          <span class="w-7 h-7 rounded-full bg-amber-50 text-amber-600 font-bold text-xs flex items-center justify-center mx-auto">05</span>
+          <h4 class="font-bold text-slate-800 text-xs">Ward / Emergency</h4>
+        </div>
+        <div class="p-4 bg-white rounded-2xl border border-slate-200/80 shadow-2xs space-y-2">
+          <span class="w-7 h-7 rounded-full bg-emerald-50 text-emerald-600 font-bold text-xs flex items-center justify-center mx-auto">06</span>
+          <h4 class="font-bold text-slate-800 text-xs">Billing Statement</h4>
+        </div>
+        <div class="p-4 bg-white rounded-2xl border border-slate-200/80 shadow-2xs space-y-2 col-span-2 sm:col-span-1">
+          <span class="w-7 h-7 rounded-full bg-violet-50 text-violet-600 font-bold text-xs flex items-center justify-center mx-auto">07</span>
+          <h4 class="font-bold text-slate-800 text-xs">BI Analytics</h4>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ================================================== -->
+  <!-- 9. CUSTOMER SUPPORT / CONTACT FORM SECTION (#contact)-->
+  <!-- ================================================== -->
+  <section id="contact" class="py-20 sm:py-28 bg-slate-100/60 border-t border-slate-200/80">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      
+      <div class="text-center max-w-2xl mx-auto space-y-3 mb-14">
+        <p class="text-xs font-bold uppercase tracking-wider text-[#0F766E]">WE'RE HERE TO HELP</p>
+        <h2 class="text-2xl sm:text-4xl font-extrabold text-[#0F172A] tracking-tight">
+          Need Help or Want to Learn More?
+        </h2>
+        <p class="text-xs sm:text-sm text-[#475569]">
+          Whether you have a product question, need technical assistance or want to explore Health ERP for your organization, send us a message.
+        </p>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-12 items-start">
+        
+        <!-- Left Side Info Box -->
+        <div class="lg:col-span-5 space-y-6">
+          <div class="bg-white p-6 sm:p-8 rounded-2xl border border-slate-200/80 shadow-2xs space-y-6">
+            
+            <div class="flex items-start gap-4">
+              <div class="w-10 h-10 rounded-xl bg-teal-50 text-[#0F766E] flex items-center justify-center font-bold shrink-0">
+                <i class="pi pi-headphones text-lg"></i>
+              </div>
+              <div>
+                <h4 class="font-bold text-slate-900 text-sm">Customer Support</h4>
+                <p class="text-xs text-slate-500 leading-relaxed mt-0.5">
+                  Get assistance with Health ERP features, module configuration and technical support questions.
+                </p>
+              </div>
+            </div>
+
+            <div class="flex items-start gap-4 pt-4 border-t border-slate-100">
+              <div class="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center font-bold shrink-0">
+                <i class="pi pi-send text-lg"></i>
+              </div>
+              <div>
+                <h4 class="font-bold text-slate-900 text-sm">Product Enquiries</h4>
+                <p class="text-xs text-slate-500 leading-relaxed mt-0.5">
+                  Learn how Health ERP can support your hospital organization with unified operations.
+                </p>
+              </div>
+            </div>
+
+            <div class="flex items-start gap-4 pt-4 border-t border-slate-100">
+              <div class="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold shrink-0">
+                <i class="pi pi-clock text-lg"></i>
+              </div>
+              <div>
+                <h4 class="font-bold text-slate-900 text-sm">Prompt Response</h4>
+                <p class="text-xs text-slate-500 leading-relaxed mt-0.5">
+                  Our healthcare operations team will review your request and get back to you promptly.
+                </p>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- Right Side Contact Form -->
+        <div class="lg:col-span-7 bg-white p-6 sm:p-8 rounded-2xl border border-slate-200/80 shadow-md">
+          
+          <form [formGroup]="contactForm" (ngSubmit)="submitContactForm()" class="space-y-4">
+            
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <!-- Full Name -->
+              <div class="flex flex-col gap-1.5">
+                <label class="text-xs font-bold text-[#0F172A]">Full Name *</label>
+                <input
+                  type="text"
+                  formControlName="fullName"
+                  placeholder="Enter your full name"
+                  class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm font-medium text-[#0F172A] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0F766E]/20 focus:border-[#0F766E]"
+                />
+                <span *ngIf="contactSubmitted() && contactForm.get('fullName')?.errors?.['required']" class="text-[11px] font-semibold text-rose-600">
+                  Please enter your name.
+                </span>
+              </div>
+
+              <!-- Email Address -->
+              <div class="flex flex-col gap-1.5">
+                <label class="text-xs font-bold text-[#0F172A]">Email Address *</label>
+                <input
+                  type="email"
+                  formControlName="email"
+                  placeholder="name@organization.com"
+                  class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm font-medium text-[#0F172A] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0F766E]/20 focus:border-[#0F766E]"
+                />
+                <span *ngIf="contactSubmitted() && contactForm.get('email')?.errors?.['required']" class="text-[11px] font-semibold text-rose-600">
+                  Please enter your email address.
+                </span>
+                <span *ngIf="contactSubmitted() && contactForm.get('email')?.errors?.['email']" class="text-[11px] font-semibold text-rose-600">
+                  Please enter a valid email address.
+                </span>
+              </div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <!-- Organization -->
+              <div class="flex flex-col gap-1.5">
+                <label class="text-xs font-bold text-[#0F172A]">Organization / Hospital</label>
+                <input
+                  type="text"
+                  formControlName="organization"
+                  placeholder="Hospital or organization name"
+                  class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm font-medium text-[#0F172A] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0F766E]/20 focus:border-[#0F766E]"
+                />
+              </div>
+
+              <!-- Request Type -->
+              <div class="flex flex-col gap-1.5">
+                <label class="text-xs font-bold text-[#0F172A]">Request Type *</label>
+                <select
+                  formControlName="requestType"
+                  class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm font-medium text-[#0F172A] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0F766E]/20 focus:border-[#0F766E] cursor-pointer"
+                >
+                  <option value="Product Demo">Product Demo</option>
+                  <option value="General Enquiry">General Enquiry</option>
+                  <option value="Technical Support">Technical Support</option>
+                  <option value="Billing Question">Billing Question</option>
+                  <option value="Feature Question">Feature Question</option>
+                  <option value="Other">Other</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- Subject -->
+            <div class="flex flex-col gap-1.5">
+              <label class="text-xs font-bold text-[#0F172A]">Subject *</label>
+              <input
+                type="text"
+                formControlName="subject"
+                placeholder="How can we help?"
+                class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm font-medium text-[#0F172A] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0F766E]/20 focus:border-[#0F766E]"
+              />
+              <span *ngIf="contactSubmitted() && contactForm.get('subject')?.errors?.['required']" class="text-[11px] font-semibold text-rose-600">
+                Please enter a subject line.
+              </span>
+            </div>
+
+            <!-- Message -->
+            <div class="flex flex-col gap-1.5">
+              <label class="text-xs font-bold text-[#0F172A]">Message *</label>
+              <textarea
+                rows="4"
+                formControlName="message"
+                placeholder="Tell us a little more about your request or inquiry..."
+                class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm font-medium text-[#0F172A] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0F766E]/20 focus:border-[#0F766E]"
+              ></textarea>
+              <span *ngIf="contactSubmitted() && contactForm.get('message')?.errors?.['required']" class="text-[11px] font-semibold text-rose-600">
+                Please enter your message.
+              </span>
+            </div>
+
+            <!-- Submit CTA -->
+            <div class="pt-2">
+              <button
+                type="submit"
+                [disabled]="submittingContact()"
+                class="w-full py-3.5 rounded-xl bg-[#0F766E] hover:bg-[#0D655E] disabled:opacity-50 text-white font-bold text-xs sm:text-sm shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer"
+              >
+                <i *ngIf="submittingContact()" class="pi pi-spin pi-spinner text-xs"></i>
+                <span>{{ submittingContact() ? 'Sending Message...' : 'Send Message' }}</span>
+                <i *ngIf="!submittingContact()" class="pi pi-arrow-right text-xs"></i>
+              </button>
+              <p class="text-[11px] text-slate-400 text-center mt-2">
+                We'll only use your information to respond to your enquiry.
+              </p>
+            </div>
+
+          </form>
+
+        </div>
+
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ================================================== -->
+  <!-- 10. FINAL CALL TO ACTION BANNER                     -->
+  <!-- ================================================== -->
+  <section class="py-16 bg-[#0F766E] text-white">
+    <div class="max-w-5xl mx-auto px-4 sm:px-6 text-center space-y-6">
+      <h2 class="text-2xl sm:text-4xl font-extrabold tracking-tight">
+        Ready to Simplify Hospital Management?
+      </h2>
+      <p class="text-xs sm:text-base text-teal-100 max-w-xl mx-auto">
+        Bring patient care, hospital operations and financial management together with Health ERP.
+      </p>
+
+      <div class="flex flex-col sm:flex-row items-center justify-center gap-4 pt-2">
+        <button
+          (click)="scrollToSection('contact', $event)"
+          class="px-6 py-3.5 rounded-xl bg-white text-[#0F766E] hover:bg-teal-50 font-bold text-xs sm:text-sm shadow-md transition-all cursor-pointer"
+        >
+          Request a Demo
+        </button>
+
+        <button
+          (click)="scrollToSection('contact', $event)"
+          class="px-6 py-3.5 rounded-xl border border-white/30 hover:bg-white/10 font-bold text-xs sm:text-sm transition-all cursor-pointer"
+        >
+          Contact Support
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================================================== -->
+  <!-- 11. FOOTER                                         -->
+  <!-- ================================================== -->
+  <footer class="bg-slate-900 text-slate-400 py-16 text-xs">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
+      
+      <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
+        <!-- Col 1 -->
+        <div class="space-y-3">
+          <div class="flex items-center gap-2 text-white font-extrabold text-lg">
+            <i class="pi pi-plus-circle text-[#14B8A6]"></i>
+            <span>Health ERP</span>
+          </div>
+          <p class="text-slate-400 leading-relaxed text-xs">
+            Connected hospital management for modern healthcare operations.
+          </p>
+        </div>
+
+        <!-- Col 2 -->
+        <div class="space-y-2">
+          <h4 class="font-bold text-white text-xs uppercase tracking-wider">Clinical Modules</h4>
+          <ul class="space-y-1.5 text-slate-400">
+            <li><a (click)="scrollToSection('solutions', $event)" class="hover:text-white transition-colors cursor-pointer">Patients & EHR</a></li>
+            <li><a (click)="scrollToSection('solutions', $event)" class="hover:text-white transition-colors cursor-pointer">Appointments</a></li>
+            <li><a (click)="scrollToSection('solutions', $event)" class="hover:text-white transition-colors cursor-pointer">Pharmacy</a></li>
+            <li><a (click)="scrollToSection('solutions', $event)" class="hover:text-white transition-colors cursor-pointer">Laboratory</a></li>
+            <li><a (click)="scrollToSection('solutions', $event)" class="hover:text-white transition-colors cursor-pointer">Inpatient Wards</a></li>
+            <li><a (click)="scrollToSection('solutions', $event)" class="hover:text-white transition-colors cursor-pointer">Emergency & Triage</a></li>
+          </ul>
+        </div>
+
+        <!-- Col 3 -->
+        <div class="space-y-2">
+          <h4 class="font-bold text-white text-xs uppercase tracking-wider">Management</h4>
+          <ul class="space-y-1.5 text-slate-400">
+            <li><a (click)="scrollToSection('solutions', $event)" class="hover:text-white transition-colors cursor-pointer">Billing & Payments</a></li>
+            <li><a (click)="scrollToSection('solutions', $event)" class="hover:text-white transition-colors cursor-pointer">Doctors & Staff Directory</a></li>
+            <li><a (click)="scrollToSection('analytics', $event)" class="hover:text-white transition-colors cursor-pointer">Analytics & BI Reports</a></li>
+          </ul>
+        </div>
+
+        <!-- Col 4 -->
+        <div class="space-y-2">
+          <h4 class="font-bold text-white text-xs uppercase tracking-wider">Platform</h4>
+          <ul class="space-y-1.5 text-slate-400">
+            <li><a (click)="scrollToSection('about', $event)" class="hover:text-white transition-colors cursor-pointer">About Health ERP</a></li>
+            <li><a (click)="scrollToSection('contact', $event)" class="hover:text-white transition-colors cursor-pointer">Customer Support</a></li>
+            <li><a (click)="navigateToLogin()" class="hover:text-white transition-colors cursor-pointer">Sign In</a></li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="pt-8 border-t border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-4 text-slate-500">
+        <p>© {{ currentYear }} Health ERP. All rights reserved.</p>
+        <div class="flex items-center gap-6">
+          <a class="hover:text-slate-400 cursor-pointer">Privacy Policy</a>
+          <a class="hover:text-slate-400 cursor-pointer">Terms of Service</a>
+        </div>
+      </div>
+
+    </div>
+  </footer>
+
+</div>
