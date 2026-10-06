@@ -1,0 +1,949 @@
+<div class="space-y-6 w-full max-w-full min-w-0 pb-6">
+
+  <!-- 1. Header Bar -->
+  <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+    <div>
+      <h1 class="text-2xl sm:text-[28px] font-bold text-[#0F172A] tracking-tight">Billing & Financial Claims</h1>
+      <p class="text-xs sm:text-sm font-normal text-[#64748B] mt-0.5">
+        Manage patient invoices, payments, outstanding balances and financial claims
+      </p>
+    </div>
+
+    <div class="flex flex-wrap items-center gap-3">
+      <!-- Primary Action: Create Invoice -->
+      <button
+        type="button"
+        (click)="openCreateInvoiceModal()"
+        class="inline-flex items-center justify-center gap-2 px-4 h-[42px] rounded-xl bg-[#0F766E] hover:bg-[#0D655E] text-white text-xs sm:text-sm font-bold shadow-2xs hover:shadow-xs transition-all shrink-0 cursor-pointer"
+      >
+        <i class="pi pi-plus text-xs sm:text-sm"></i>
+        <span>Create Invoice</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- 2. Financial KPI Summary Cards -->
+  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+    
+    <!-- Total Collected -->
+    <div
+      (click)="onKpiClick('collected')"
+      class="bg-white p-4 sm:p-5 rounded-2xl border border-[#E2E8F0] hover:border-emerald-300 shadow-2xs flex items-center gap-4 cursor-pointer transition-all hover:bg-emerald-50/30 group"
+      title="Click to view paid invoices"
+    >
+      <div class="w-12 h-12 rounded-xl bg-emerald-50 border border-emerald-100 flex items-center justify-center text-emerald-600 shrink-0 group-hover:scale-105 transition-transform">
+        <i class="pi pi-dollar text-xl font-bold"></i>
+      </div>
+      <div class="min-w-0">
+        <p class="text-xs font-semibold text-[#64748B] group-hover:text-emerald-700 uppercase tracking-wider transition-colors">TOTAL COLLECTED</p>
+        <p class="text-[11px] text-[#64748B]">{{ paidInvoicesCount() }} paid invoices</p>
+        <h3 class="text-2xl font-black text-emerald-600 tracking-tight mt-0.5">$ {{ totalCollected() | number:'1.2-2' }}</h3>
+      </div>
+    </div>
+
+    <!-- Balance Due -->
+    <div
+      (click)="onKpiClick('balance')"
+      class="bg-white p-4 sm:p-5 rounded-2xl border border-[#E2E8F0] hover:border-amber-300 shadow-2xs flex items-center gap-4 cursor-pointer transition-all hover:bg-amber-50/30 group"
+      title="Click to view pending balances"
+    >
+      <div class="w-12 h-12 rounded-xl bg-amber-50 border border-amber-100 flex items-center justify-center text-amber-600 shrink-0 group-hover:scale-105 transition-transform">
+        <i class="pi pi-exclamation-circle text-xl"></i>
+      </div>
+      <div class="min-w-0">
+        <p class="text-xs font-semibold text-[#64748B] group-hover:text-amber-700 uppercase tracking-wider transition-colors">BALANCE DUE</p>
+        <p class="text-[11px] text-[#64748B]">{{ pendingCount() }} pending invoices</p>
+        <h3 class="text-2xl font-black text-amber-600 tracking-tight mt-0.5">$ {{ totalBalanceDue() | number:'1.2-2' }}</h3>
+      </div>
+    </div>
+
+    <!-- Total Invoices -->
+    <div
+      (click)="onKpiClick('total')"
+      class="bg-white p-4 sm:p-5 rounded-2xl border border-[#E2E8F0] hover:border-blue-300 shadow-2xs flex items-center gap-4 cursor-pointer transition-all hover:bg-blue-50/30 group"
+      title="Click to reset filters and view all invoices"
+    >
+      <div class="w-12 h-12 rounded-xl bg-blue-50 border border-blue-100 flex items-center justify-center text-blue-600 shrink-0 group-hover:scale-105 transition-transform">
+        <i class="pi pi-file text-xl"></i>
+      </div>
+      <div class="min-w-0">
+        <p class="text-xs font-semibold text-[#64748B] group-hover:text-blue-700 uppercase tracking-wider transition-colors">TOTAL INVOICES</p>
+        <p class="text-[11px] text-[#64748B]">All patient statements</p>
+        <h3 class="text-2xl font-bold text-[#0F172A] tracking-tight mt-0.5">{{ totalInvoicesCount() }}</h3>
+      </div>
+    </div>
+
+    <!-- Pending Claims -->
+    <div
+      (click)="onKpiClick('pending')"
+      class="bg-white p-4 sm:p-5 rounded-2xl border border-[#E2E8F0] hover:border-violet-300 shadow-2xs flex items-center gap-4 cursor-pointer transition-all hover:bg-violet-50/30 group"
+      title="Click to view pending claims"
+    >
+      <div class="w-12 h-12 rounded-xl bg-violet-50 border border-violet-100 flex items-center justify-center text-violet-600 shrink-0 group-hover:scale-105 transition-transform">
+        <i class="pi pi-shield text-xl"></i>
+      </div>
+      <div class="min-w-0">
+        <p class="text-xs font-semibold text-[#64748B] group-hover:text-violet-700 uppercase tracking-wider transition-colors">PENDING CLAIMS</p>
+        <p class="text-[11px] text-[#64748B]">Financial claims queue</p>
+        <h3 class="text-2xl font-bold text-violet-700 tracking-tight mt-0.5">0</h3>
+      </div>
+    </div>
+  </div>
+
+  <!-- 3. Main Workspace Container -->
+  <div class="bg-white rounded-2xl border border-[#E2E8F0] shadow-2xs overflow-hidden min-w-0">
+    
+    <!-- Tab Navigation Bar (Medical Teal Theme) -->
+    <div class="flex items-center gap-2 border-b border-[#E2E8F0] px-4 sm:px-6 pt-4 bg-slate-50/50">
+      <button
+        type="button"
+        (click)="toggleTab('invoices')"
+        [ngClass]="{
+          'border-[#0F766E] text-[#0F766E] font-bold': activeTab() === 'invoices',
+          'border-transparent text-[#64748B] hover:text-[#0F172A] font-semibold': activeTab() !== 'invoices'
+        }"
+        class="pb-3 px-3 text-xs sm:text-sm border-b-2 transition-all flex items-center gap-2 cursor-pointer focus:outline-none"
+      >
+        <i class="pi pi-[#0F766E] pi-file-edit text-xs"></i>
+        <span>Patient Invoices</span>
+        <span
+          class="px-2 py-0.5 rounded-full text-[11px] font-bold"
+          [ngClass]="activeTab() === 'invoices' ? 'bg-[#0F766E]/10 text-[#0F766E]' : 'bg-slate-200/70 text-slate-600'"
+        >
+          {{ totalInvoicesCount() }}
+        </span>
+      </button>
+
+      <button
+        type="button"
+        (click)="toggleTab('claims')"
+        [ngClass]="{
+          'border-[#0F766E] text-[#0F766E] font-bold': activeTab() === 'claims',
+          'border-transparent text-[#64748B] hover:text-[#0F172A] font-semibold': activeTab() !== 'claims'
+        }"
+        class="pb-3 px-3 text-xs sm:text-sm border-b-2 transition-all flex items-center gap-2 cursor-pointer focus:outline-none"
+      >
+        <i class="pi pi-shield text-xs"></i>
+        <span>Financial Claims</span>
+        <span
+          class="px-2 py-0.5 rounded-full text-[11px] font-bold"
+          [ngClass]="activeTab() === 'claims' ? 'bg-[#0F766E]/10 text-[#0F766E]' : 'bg-slate-200/70 text-slate-600'"
+        >
+          0
+        </span>
+      </button>
+    </div>
+
+    <!-- 4. Tab Content: Patient Invoices View -->
+    <div *ngIf="activeTab() === 'invoices'" class="p-4 sm:p-6 space-y-4">
+      
+      <!-- Toolbar: Search + Status Filter -->
+      <div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+        
+        <!-- Search Input -->
+        <div class="relative flex-1 max-w-md">
+          <i class="pi pi-search absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs sm:text-sm pointer-events-none"></i>
+          <input
+            type="text"
+            [ngModel]="searchQuery()"
+            (ngModelChange)="searchQuery.set($event); currentPage.set(1)"
+            placeholder="Search invoice #, patient name or MRN..."
+            class="w-full pl-10 pr-4 h-10 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm text-[#0F172A] placeholder:text-slate-400 focus:bg-white focus:border-[#0F766E] focus:outline-none focus:ring-2 focus:ring-[#0F766E]/20 transition-all"
+          />
+        </div>
+
+        <!-- Filters Right -->
+        <div class="flex items-center gap-2.5">
+          <!-- Status Dropdown -->
+          <div class="flex items-center gap-2">
+            <label class="text-xs font-semibold text-[#64748B] uppercase tracking-wider hidden sm:inline">Status:</label>
+            <select
+              [ngModel]="selectedStatus()"
+              (ngModelChange)="selectedStatus.set($event); currentPage.set(1)"
+              class="h-10 px-3 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm font-medium text-[#0F172A] focus:outline-none focus:border-[#0F766E] cursor-pointer"
+            >
+              <option value="">All Invoices</option>
+              <option value="Paid">Paid</option>
+              <option value="PartiallyPaid">Partially Paid</option>
+              <option value="Pending">Pending</option>
+              <option value="Cancelled">Cancelled</option>
+            </select>
+          </div>
+
+          <!-- Clear Filters -->
+          <button
+            *ngIf="searchQuery() || selectedStatus()"
+            type="button"
+            (click)="clearFilters()"
+            class="px-2.5 py-2 text-xs text-[#0F766E] hover:underline font-semibold flex items-center gap-1 cursor-pointer shrink-0"
+          >
+            <i class="pi pi-refresh text-[10px]"></i>
+            <span>Clear filters</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Invoices Table Container -->
+      <div class="overflow-x-auto rounded-xl border border-slate-200 bg-white">
+        <table class="w-full text-left border-collapse min-w-[900px]">
+          <thead>
+            <tr class="bg-slate-50/80 border-b border-slate-200 text-[11px] font-semibold text-[#64748B] uppercase tracking-wider">
+              <th class="py-3.5 px-3 text-center style-width-3rem"></th>
+              <th class="py-3.5 px-4">Invoice #</th>
+              <th class="py-3.5 px-4">Patient</th>
+              <th class="py-3.5 px-4">Issued</th>
+              <th class="py-3.5 px-4">Due Date</th>
+              <th class="py-3.5 px-4 text-right">Total</th>
+              <th class="py-3.5 px-4 text-right">Paid</th>
+              <th class="py-3.5 px-4 text-right">Balance</th>
+              <th class="py-3.5 px-4">Status</th>
+              <th class="py-3.5 px-4 text-center">Actions</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-100 text-xs sm:text-sm text-[#0F172A]">
+            
+            <!-- Loading -->
+            <tr *ngIf="loading()">
+              <td colspan="10" class="text-center py-10 text-[#64748B]">
+                <div class="inline-flex items-center gap-2 font-medium">
+                  <i class="pi pi-spin pi-spinner text-[#0F766E]"></i>
+                  <span>Loading billing statements and invoices...</span>
+                </div>
+              </td>
+            </tr>
+
+            <!-- Empty State -->
+            <tr *ngIf="!loading() && filteredInvoices().length === 0">
+              <td colspan="10" class="text-center py-12 text-[#64748B]">
+                <div class="flex flex-col items-center justify-center gap-2 max-w-sm mx-auto">
+                  <div class="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center text-slate-500">
+                    <i class="pi pi-file-excel text-xl"></i>
+                  </div>
+                  <p class="font-bold text-slate-800 text-sm mt-1">No invoices found</p>
+                  <p class="text-xs text-slate-500">
+                    {{ (searchQuery() || selectedStatus()) ? 'No financial statements match your current search or filter criteria.' : 'Patient invoices will appear here once generated from medical consultations.' }}
+                  </p>
+                  <button
+                    *ngIf="searchQuery() || selectedStatus()"
+                    (click)="clearFilters()"
+                    class="mt-2 px-3.5 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold"
+                  >
+                    Clear Filters
+                  </button>
+                </div>
+              </td>
+            </tr>
+
+            <!-- Invoice Rows -->
+            <ng-container *ngFor="let inv of paginatedInvoices()">
+              <tr
+                class="hover:bg-slate-50/70 transition-colors h-[62px]"
+                [ngClass]="{ 'bg-slate-50/40': expandedInvoiceId() === inv.id }"
+              >
+                <!-- Expand Chevron Toggle -->
+                <td class="py-3 px-3 text-center">
+                  <button
+                    type="button"
+                    (click)="toggleRowExpansion(inv.id)"
+                    class="w-7 h-7 rounded-lg hover:bg-slate-200/60 flex items-center justify-center text-slate-500 hover:text-[#0F766E] transition-all cursor-pointer"
+                    [title]="expandedInvoiceId() === inv.id ? 'Collapse Invoice Details' : 'Expand Invoice Details'"
+                  >
+                    <i
+                      class="pi text-xs transition-transform duration-200"
+                      [ngClass]="expandedInvoiceId() === inv.id ? 'pi-chevron-down text-[#0F766E] font-bold' : 'pi-chevron-right'"
+                    ></i>
+                  </button>
+                </td>
+
+                <!-- Invoice Number -->
+                <td class="py-3 px-4">
+                  <span class="font-mono font-bold text-[#0F766E] hover:underline cursor-pointer" (click)="openInvoiceDetailModal(inv)">
+                    {{ inv.invoiceNumber }}
+                  </span>
+                </td>
+
+                <!-- Patient Name + MRN -->
+                <td class="py-3 px-4">
+                  <div class="font-bold text-[#0F172A] text-xs sm:text-sm leading-tight">{{ inv.patientName }}</div>
+                  <div *ngIf="getPatientMrn(inv.patientId)" class="text-[11px] font-medium text-[#64748B] font-mono mt-0.5">
+                    MRN: {{ getPatientMrn(inv.patientId) }}
+                  </div>
+                </td>
+
+                <!-- Issue Date -->
+                <td class="py-3 px-4 text-xs font-medium text-slate-700">
+                  {{ formatDate(inv.issueDateUtc) }}
+                </td>
+
+                <!-- Due Date (Highlighted in Rose if Overdue) -->
+                <td class="py-3 px-4 text-xs font-medium">
+                  <span [ngClass]="isOverdue(inv) ? 'text-rose-600 font-bold flex items-center gap-1' : 'text-slate-700'">
+                    <i *ngIf="isOverdue(inv)" class="pi pi-exclamation-triangle text-[11px]"></i>
+                    <span>{{ formatDate(inv.dueDateUtc) }}</span>
+                  </span>
+                </td>
+
+                <!-- Total Amount -->
+                <td class="py-3 px-4 text-right font-semibold text-slate-900 text-xs sm:text-sm">
+                  $ {{ inv.totalAmount | number:'1.2-2' }}
+                </td>
+
+                <!-- Paid Amount -->
+                <td class="py-3 px-4 text-right font-bold text-emerald-600 text-xs sm:text-sm">
+                  $ {{ inv.paidAmount | number:'1.2-2' }}
+                </td>
+
+                <!-- Balance Due -->
+                <td class="py-3 px-4 text-right font-bold text-xs sm:text-sm">
+                  <span
+                    [ngClass]="{
+                      'text-slate-400 font-normal': inv.balanceDue === 0,
+                      'text-rose-600 font-extrabold': isOverdue(inv),
+                      'text-amber-600 font-bold': inv.balanceDue > 0 && !isOverdue(inv)
+                    }"
+                  >
+                    $ {{ inv.balanceDue | number:'1.2-2' }}
+                  </span>
+                </td>
+
+                <!-- Status Badge -->
+                <td class="py-3 px-4">
+                  <span
+                    class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs"
+                    [ngClass]="getStatusBadgeClass(inv.status)"
+                  >
+                    {{ inv.status === 'PartiallyPaid' ? 'Partially Paid' : inv.status }}
+                  </span>
+                </td>
+
+                <!-- Actions -->
+                <td class="py-3 px-4 text-center">
+                  <div class="flex items-center justify-center gap-2">
+                    <!-- Record Payment Action (if balance exists) -->
+                    <button
+                      *ngIf="inv.balanceDue > 0 && inv.status !== 'Cancelled'"
+                      type="button"
+                      (click)="openPaymentDialog(inv)"
+                      class="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-2xs transition-all cursor-pointer shrink-0"
+                    >
+                      <i class="pi pi-credit-card text-[11px]"></i>
+                      <span>Record Payment</span>
+                    </button>
+
+                    <!-- View Details Action (for settled invoices or quick view) -->
+                    <button
+                      type="button"
+                      (click)="openInvoiceDetailModal(inv)"
+                      class="px-2.5 py-1.5 rounded-lg border border-slate-200 hover:bg-slate-100 text-slate-700 text-xs font-semibold transition-all cursor-pointer shrink-0"
+                    >
+                      View Details
+                    </button>
+                  </div>
+                </td>
+              </tr>
+
+              <!-- Expanded Inline Details Row -->
+              <tr *ngIf="expandedInvoiceId() === inv.id">
+                <td colspan="10" class="p-0 bg-slate-50/70 border-b border-slate-200">
+                  <div class="p-4 sm:p-5 m-3 bg-white rounded-xl border border-slate-200 shadow-2xs space-y-4">
+                    
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 pb-3">
+                      <div>
+                        <h4 class="text-sm font-bold text-[#0F172A] flex items-center gap-2">
+                          <i class="pi pi-file-pdf text-[#0F766E]"></i>
+                          <span>Invoice Breakdown — {{ inv.invoiceNumber }}</span>
+                        </h4>
+                        <p class="text-xs text-slate-500 mt-0.5">
+                          Issued on {{ formatDate(inv.issueDateUtc) }} · Due {{ formatDate(inv.dueDateUtc) }}
+                        </p>
+                      </div>
+
+                      <div class="flex items-center gap-2">
+                        <button
+                          *ngIf="inv.balanceDue > 0 && inv.status !== 'Cancelled'"
+                          type="button"
+                          (click)="openPaymentDialog(inv)"
+                          class="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition-all cursor-pointer"
+                        >
+                          + Record Payment
+                        </button>
+                        <button
+                          type="button"
+                          (click)="expandedInvoiceId.set(null)"
+                          class="px-2.5 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 text-xs font-medium cursor-pointer"
+                        >
+                          Close Panel
+                        </button>
+                      </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                      
+                      <!-- Line Items Section -->
+                      <div class="space-y-2">
+                        <h5 class="text-xs font-bold uppercase tracking-wider text-slate-600 flex items-center gap-1.5">
+                          <i class="pi pi-list text-xs"></i>
+                          <span>Services & Line Items</span>
+                        </h5>
+
+                        <div class="rounded-lg border border-slate-200 overflow-hidden">
+                          <table class="w-full text-xs text-left">
+                            <thead class="bg-slate-50 border-b border-slate-200 text-slate-600 font-semibold">
+                              <tr>
+                                <th class="p-2.5">Description</th>
+                                <th class="p-2.5 text-center">Qty</th>
+                                <th class="p-2.5 text-right">Unit Price</th>
+                                <th class="p-2.5 text-right">Total</th>
+                              </tr>
+                            </thead>
+                            <tbody class="divide-y divide-slate-100 text-slate-800">
+                              <tr *ngFor="let item of inv.lineItems" class="hover:bg-slate-50/50">
+                                <td class="p-2.5 font-medium">{{ item.description }}</td>
+                                <td class="p-2.5 text-center font-mono">{{ item.quantity }}</td>
+                                <td class="p-2.5 text-right font-mono">$ {{ item.unitPrice | number:'1.2-2' }}</td>
+                                <td class="p-2.5 text-right font-bold font-mono">$ {{ item.lineTotal | number:'1.2-2' }}</td>
+                              </tr>
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+
+                      <!-- Payment Receipts Section -->
+                      <div class="space-y-2">
+                        <h5 class="text-xs font-bold uppercase tracking-wider text-slate-600 flex items-center gap-1.5">
+                          <i class="pi pi-history text-xs"></i>
+                          <span>Payment History & Receipts</span>
+                        </h5>
+
+                        <div *ngIf="inv.payments && inv.payments.length > 0" class="rounded-lg border border-slate-200 overflow-hidden">
+                          <table class="w-full text-xs text-left">
+                            <thead class="bg-slate-50 border-b border-slate-200 text-slate-600 font-semibold">
+                              <tr>
+                                <th class="p-2.5">Date</th>
+                                <th class="p-2.5">Method</th>
+                                <th class="p-2.5">Ref #</th>
+                                <th class="p-2.5 text-right">Amount</th>
+                              </tr>
+                            </thead>
+                            <tbody class="divide-y divide-slate-100 text-slate-800">
+                              <tr *ngFor="let pay of inv.payments" class="hover:bg-slate-50/50">
+                                <td class="p-2.5 font-medium">{{ formatDate(pay.paymentDateUtc) }}</td>
+                                <td class="p-2.5 font-semibold text-[#0F766E]">{{ getPaymentMethodName(pay.paymentMethod) }}</td>
+                                <td class="p-2.5 font-mono text-slate-500">{{ pay.referenceNumber || '-' }}</td>
+                                <td class="p-2.5 text-right font-bold font-mono text-emerald-600">$ {{ pay.amount | number:'1.2-2' }}</td>
+                              </tr>
+                            </tbody>
+                          </table>
+                        </div>
+
+                        <div *ngIf="!inv.payments || inv.payments.length === 0" class="p-3.5 bg-slate-50 rounded-lg border border-slate-200 text-xs text-slate-500 italic">
+                          No payment receipts recorded yet for this invoice statement.
+                        </div>
+                      </div>
+
+                    </div>
+
+                    <!-- Financial Totals Summary Bar -->
+                    <div class="p-3.5 rounded-xl bg-slate-50 border border-slate-200 flex flex-wrap items-center justify-between gap-4 text-xs font-semibold">
+                      <div class="flex items-center gap-6">
+                        <div>
+                          <span class="text-slate-500 uppercase text-[10px] tracking-wider block">Statement Total</span>
+                          <span class="text-slate-900 font-bold text-sm">$ {{ inv.totalAmount | number:'1.2-2' }}</span>
+                        </div>
+                        <div>
+                          <span class="text-slate-500 uppercase text-[10px] tracking-wider block">Total Paid</span>
+                          <span class="text-emerald-600 font-bold text-sm">$ {{ inv.paidAmount | number:'1.2-2' }}</span>
+                        </div>
+                      </div>
+
+                      <div>
+                        <span class="text-slate-500 uppercase text-[10px] tracking-wider block text-right">Remaining Balance</span>
+                        <span class="text-sm font-extrabold" [ngClass]="inv.balanceDue > 0 ? 'text-amber-600' : 'text-slate-400'">
+                          $ {{ inv.balanceDue | number:'1.2-2' }}
+                        </span>
+                      </div>
+                    </div>
+
+                  </div>
+                </td>
+              </tr>
+            </ng-container>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Table Footer / Pagination -->
+      <div class="flex flex-col sm:flex-row items-center justify-between gap-3 pt-2">
+        <div class="text-xs text-[#64748B]">
+          Showing {{ paginatedInvoices().length }} of {{ filteredInvoices().length }} invoice statements
+        </div>
+
+        <div class="flex items-center gap-1.5" *ngIf="totalPages() > 1">
+          <button
+            type="button"
+            (click)="goToPage(currentPage() - 1)"
+            [disabled]="currentPage() === 1"
+            class="px-2.5 py-1 rounded-lg border border-slate-200 text-xs font-semibold disabled:opacity-40 hover:bg-slate-50 cursor-pointer"
+          >
+            Prev
+          </button>
+          <span class="text-xs font-semibold px-2 text-slate-700">
+            Page {{ currentPage() }} of {{ totalPages() }}
+          </span>
+          <button
+            type="button"
+            (click)="goToPage(currentPage() + 1)"
+            [disabled]="currentPage() === totalPages()"
+            class="px-2.5 py-1 rounded-lg border border-slate-200 text-xs font-semibold disabled:opacity-40 hover:bg-slate-50 cursor-pointer"
+          >
+            Next
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 5. Tab Content: Financial Claims View -->
+    <div *ngIf="activeTab() === 'claims'" class="p-8 text-center text-slate-500">
+      <div class="max-w-md mx-auto space-y-3">
+        <div class="w-12 h-12 rounded-full bg-violet-50 text-violet-600 flex items-center justify-center mx-auto">
+          <i class="pi pi-shield text-xl"></i>
+        </div>
+        <h3 class="text-base font-bold text-slate-800">Financial Claims Queue</h3>
+        <p class="text-xs text-slate-500">
+          No insurance or third-party financial claims pending review. Invoices with insurance payments automatically sync here.
+        </p>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ================================================== -->
+  <!-- MODAL 1: RECORD PAYMENT RECEIPT                      -->
+  <!-- ================================================== -->
+  <div
+    *ngIf="showPaymentModal()"
+    (click)="onBackdropClick($event, 'payment')"
+    class="fixed inset-0 z-50 bg-[#0F172A]/30 backdrop-blur-[2px] flex items-center justify-center p-4 modal-backdrop"
+  >
+    <div class="relative w-full max-w-[480px] max-h-[88vh] bg-white rounded-2xl border border-[#E2E8F0] shadow-[0_24px_60px_rgba(15,23,42,0.18)] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+      
+      <!-- Header -->
+      <div class="flex items-start justify-between p-5 sm:p-6 border-b border-[#E2E8F0] shrink-0">
+        <div>
+          <h2 class="text-xl font-bold text-[#0F172A] tracking-tight">Record Payment Receipt</h2>
+          <p class="text-xs sm:text-sm text-[#64748B] mt-0.5">
+            Process payment against outstanding invoice balance.
+          </p>
+        </div>
+        <button
+          type="button"
+          (click)="showPaymentModal.set(false)"
+          class="w-8 h-8 rounded-full hover:bg-slate-100 flex items-center justify-center text-slate-400 hover:text-slate-600 transition-colors cursor-pointer"
+        >
+          <i class="pi pi-times text-sm"></i>
+        </button>
+      </div>
+
+      <!-- Body -->
+      <div *ngIf="selectedInvoiceForPayment()" class="p-5 sm:p-6 space-y-4 overflow-y-auto">
+        
+        <!-- Summary Box -->
+        <div class="p-4 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-between">
+          <div>
+            <span class="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">Statement</span>
+            <span class="font-mono font-bold text-[#0F766E] text-sm">{{ selectedInvoiceForPayment()?.invoiceNumber }}</span>
+            <span class="text-xs text-slate-600 block mt-0.5">{{ selectedInvoiceForPayment()?.patientName }}</span>
+          </div>
+
+          <div class="text-right">
+            <span class="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">Balance Due</span>
+            <span class="text-lg font-black text-rose-600">$ {{ selectedInvoiceForPayment()?.balanceDue | number:'1.2-2' }}</span>
+          </div>
+        </div>
+
+        <!-- Inline Error Alert -->
+        <div *ngIf="paymentError()" class="p-3 rounded-xl bg-rose-50 border border-rose-200 text-xs font-semibold text-rose-800 flex items-center gap-2">
+          <i class="pi pi-exclamation-circle text-rose-600 shrink-0"></i>
+          <span>{{ paymentError() }}</span>
+        </div>
+
+        <!-- Form -->
+        <form [formGroup]="paymentForm" (ngSubmit)="submitPayment()" class="space-y-3.5">
+          
+          <div class="flex flex-col gap-1.5">
+            <label class="text-xs font-semibold text-[#0F172A]">Payment Amount ($ USD) *</label>
+            <input
+              type="number"
+              step="0.01"
+              formControlName="amount"
+              class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm font-bold text-[#0F172A] focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
+            />
+          </div>
+
+          <div class="flex flex-col gap-1.5">
+            <label class="text-xs font-semibold text-[#0F172A]">Payment Method *</label>
+            <select
+              formControlName="paymentMethod"
+              class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm font-medium text-[#0F172A] focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 cursor-pointer"
+            >
+              <option [value]="1">Cash</option>
+              <option [value]="2">Credit Card</option>
+              <option [value]="3">Insurance Claim</option>
+              <option [value]="4">Bank Transfer</option>
+            </select>
+          </div>
+
+          <div class="flex flex-col gap-1.5">
+            <label class="text-xs font-semibold text-[#0F172A]">Reference / Transaction ID</label>
+            <input
+              type="text"
+              formControlName="referenceNumber"
+              placeholder="e.g. TXN-982103 or Check #449"
+              class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm font-medium text-[#0F172A] focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
+            />
+          </div>
+
+          <div class="flex flex-col gap-1.5">
+            <label class="text-xs font-semibold text-[#0F172A]">Payment Notes</label>
+            <input
+              type="text"
+              formControlName="notes"
+              placeholder="e.g. Paid at front reception desk"
+              class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm font-medium text-[#0F172A] focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
+            />
+          </div>
+
+          <div class="pt-2 flex items-center justify-end gap-3 border-t border-slate-100">
+            <button
+              type="button"
+              (click)="showPaymentModal.set(false)"
+              class="px-4 py-2 rounded-xl border border-slate-200 hover:bg-slate-100 text-slate-700 text-xs sm:text-sm font-semibold transition-all cursor-pointer"
+            >
+              Cancel
+            </button>
+
+            <button
+              type="submit"
+              [disabled]="submittingPayment() || paymentForm.invalid"
+              class="px-5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white text-xs sm:text-sm font-bold shadow-2xs transition-all flex items-center gap-2 cursor-pointer"
+            >
+              <i *ngIf="submittingPayment()" class="pi pi-spin pi-spinner text-xs"></i>
+              <span>{{ submittingPayment() ? 'Recording...' : 'Record Payment' }}</span>
+            </button>
+          </div>
+        </form>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ================================================== -->
+  <!-- MODAL 2: CREATE INVOICE                            -->
+  <!-- ================================================== -->
+  <div
+    *ngIf="showCreateInvoiceModal()"
+    (click)="onBackdropClick($event, 'createInvoice')"
+    class="fixed inset-0 z-50 bg-[#0F172A]/30 backdrop-blur-[2px] flex items-center justify-center p-4 modal-backdrop"
+  >
+    <div class="relative w-full max-w-[620px] max-h-[90vh] bg-white rounded-2xl border border-[#E2E8F0] shadow-[0_24px_60px_rgba(15,23,42,0.18)] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+      
+      <!-- Header -->
+      <div class="flex items-start justify-between p-5 sm:p-6 border-b border-[#E2E8F0] shrink-0">
+        <div>
+          <h2 class="text-xl font-bold text-[#0F172A] tracking-tight">Create Patient Invoice</h2>
+          <p class="text-xs sm:text-sm text-[#64748B] mt-0.5">
+            Generate a new billing invoice statement for patient medical services.
+          </p>
+        </div>
+        <button
+          type="button"
+          (click)="showCreateInvoiceModal.set(false)"
+          class="w-8 h-8 rounded-full hover:bg-slate-100 flex items-center justify-center text-slate-400 hover:text-slate-600 transition-colors cursor-pointer"
+        >
+          <i class="pi pi-times text-sm"></i>
+        </button>
+      </div>
+
+      <!-- Body -->
+      <form [formGroup]="createInvoiceForm" (ngSubmit)="submitCreateInvoice()" class="flex flex-col flex-1 overflow-hidden">
+        <div class="p-5 sm:p-6 space-y-4 overflow-y-auto">
+          
+          <!-- Inline Error Alert -->
+          <div *ngIf="createInvoiceError()" class="p-3 rounded-xl bg-rose-50 border border-rose-200 text-xs font-semibold text-rose-800 flex items-center gap-2">
+            <i class="pi pi-exclamation-circle text-rose-600 shrink-0"></i>
+            <span>{{ createInvoiceError() }}</span>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div class="flex flex-col gap-1.5">
+              <label class="text-xs font-semibold text-[#0F172A]">Select Patient *</label>
+              <select
+                formControlName="patientId"
+                class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm font-medium text-[#0F172A] focus:outline-none focus:ring-2 focus:ring-[#0F766E]/20 focus:border-[#0F766E] cursor-pointer"
+              >
+                <option value="" disabled>Select Patient</option>
+                <option *ngFor="let p of patientList()" [value]="p.id">
+                  {{ p.firstName }} {{ p.lastName }} — {{ p.medicalRecordNumber }}
+                </option>
+              </select>
+            </div>
+
+            <div class="flex flex-col gap-1.5">
+              <label class="text-xs font-semibold text-[#0F172A]">Due Date *</label>
+              <input
+                type="date"
+                formControlName="dueDateUtc"
+                class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm font-medium text-[#0F172A] focus:outline-none focus:ring-2 focus:ring-[#0F766E]/20 focus:border-[#0F766E]"
+              />
+            </div>
+          </div>
+
+          <!-- Line Items Table Editor -->
+          <div class="space-y-2">
+            <div class="flex items-center justify-between">
+              <label class="text-xs font-bold uppercase tracking-wider text-slate-700">Services & Line Items *</label>
+              <button
+                type="button"
+                (click)="addLineItem()"
+                class="px-2.5 py-1 text-xs font-bold text-[#0F766E] hover:bg-[#0F766E]/10 rounded-lg transition-colors flex items-center gap-1 cursor-pointer"
+              >
+                <i class="pi pi-plus text-[10px]"></i>
+                <span>Add Item</span>
+              </button>
+            </div>
+
+            <div formArrayName="lineItems" class="space-y-2">
+              <div
+                *ngFor="let ctrl of lineItemsArray.controls; let i = index"
+                [formGroupName]="i"
+                class="grid grid-cols-12 gap-2 items-center bg-slate-50 p-2.5 rounded-xl border border-slate-200"
+              >
+                <div class="col-span-6">
+                  <input
+                    type="text"
+                    formControlName="description"
+                    placeholder="Description (e.g. ER Consultation)"
+                    class="w-full px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-medium text-[#0F172A] focus:outline-none focus:border-[#0F766E]"
+                  />
+                </div>
+                <div class="col-span-2">
+                  <input
+                    type="number"
+                    min="1"
+                    formControlName="quantity"
+                    placeholder="Qty"
+                    class="w-full px-2 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-mono text-center text-[#0F172A] focus:outline-none focus:border-[#0F766E]"
+                  />
+                </div>
+                <div class="col-span-3">
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    formControlName="unitPrice"
+                    placeholder="Price"
+                    class="w-full px-2 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-mono text-right text-[#0F172A] focus:outline-none focus:border-[#0F766E]"
+                  />
+                </div>
+                <div class="col-span-1 text-center">
+                  <button
+                    type="button"
+                    (click)="removeLineItem(i)"
+                    [disabled]="lineItemsArray.length <= 1"
+                    class="w-7 h-7 rounded-lg hover:bg-rose-100 text-slate-400 hover:text-rose-600 disabled:opacity-30 transition-colors flex items-center justify-center cursor-pointer"
+                  >
+                    <i class="pi pi-trash text-xs"></i>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Total Calculation Banner -->
+          <div class="p-3.5 rounded-xl bg-[#0F766E]/5 border border-[#0F766E]/20 flex items-center justify-between text-xs sm:text-sm font-bold text-[#0F172A]">
+            <span>Calculated Total Amount:</span>
+            <span class="text-base font-black text-[#0F766E]">$ {{ calculatedInvoiceTotal | number:'1.2-2' }}</span>
+          </div>
+
+        </div>
+
+        <!-- Footer -->
+        <div class="p-4 sm:p-5 border-t border-[#E2E8F0] bg-slate-50/80 flex items-center justify-end gap-3 shrink-0">
+          <button
+            type="button"
+            (click)="showCreateInvoiceModal.set(false)"
+            class="px-4 py-2 rounded-xl border border-slate-200 hover:bg-slate-100 text-slate-700 text-xs sm:text-sm font-semibold transition-all cursor-pointer"
+          >
+            Cancel
+          </button>
+
+          <button
+            type="submit"
+            [disabled]="submittingInvoice() || createInvoiceForm.invalid"
+            class="px-5 py-2 rounded-xl bg-[#0F766E] hover:bg-[#0D655E] disabled:opacity-50 text-white text-xs sm:text-sm font-bold shadow-2xs transition-all flex items-center gap-2 cursor-pointer"
+          >
+            <i *ngIf="submittingInvoice()" class="pi pi-spin pi-spinner text-xs"></i>
+            <span>{{ submittingInvoice() ? 'Generating...' : 'Generate Invoice' }}</span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ================================================== -->
+  <!-- MODAL 3: VIEW FULL INVOICE STATEMENT DETAIL        -->
+  <!-- ================================================== -->
+  <div
+    *ngIf="showDetailModal()"
+    (click)="onBackdropClick($event, 'detail')"
+    class="fixed inset-0 z-50 bg-[#0F172A]/30 backdrop-blur-[2px] flex items-center justify-center p-4 modal-backdrop"
+  >
+    <div class="relative w-full max-w-[620px] max-h-[90vh] bg-white rounded-2xl border border-[#E2E8F0] shadow-[0_24px_60px_rgba(15,23,42,0.18)] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+      
+      <!-- Header -->
+      <div class="flex items-start justify-between p-5 sm:p-6 border-b border-[#E2E8F0] shrink-0">
+        <div>
+          <h2 class="text-xl font-bold text-[#0F172A] tracking-tight">Patient Statement Details</h2>
+          <p class="text-xs sm:text-sm text-[#64748B] mt-0.5">
+            Complete financial invoice statement breakdown
+          </p>
+        </div>
+        <button
+          type="button"
+          (click)="showDetailModal.set(false)"
+          class="w-8 h-8 rounded-full hover:bg-slate-100 flex items-center justify-center text-slate-400 hover:text-slate-600 transition-colors cursor-pointer"
+        >
+          <i class="pi pi-times text-sm"></i>
+        </button>
+      </div>
+
+      <!-- Body -->
+      <div *ngIf="selectedInvoiceForDetail()" class="p-5 sm:p-6 space-y-5 overflow-y-auto">
+        
+        <!-- Hospital Branding Header -->
+        <div class="flex items-center justify-between border-b border-slate-200 pb-4">
+          <div>
+            <h3 class="text-lg font-bold text-[#0F766E]">Health ERP Hospital</h3>
+            <p class="text-xs text-slate-500">Financial Operations & Patient Billing</p>
+          </div>
+          <div class="text-right">
+            <span class="text-xs font-mono font-bold text-[#0F766E] block">{{ selectedInvoiceForDetail()?.invoiceNumber }}</span>
+            <span
+              class="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] mt-1"
+              [ngClass]="getStatusBadgeClass(selectedInvoiceForDetail()!.status)"
+            >
+              {{ selectedInvoiceForDetail()?.status }}
+            </span>
+          </div>
+        </div>
+
+        <!-- Patient & Statement Meta -->
+        <div class="grid grid-cols-2 gap-4 text-xs">
+          <div>
+            <span class="text-slate-400 font-medium uppercase tracking-wider block">Billed To</span>
+            <span class="font-bold text-slate-800 text-sm block mt-0.5">{{ selectedInvoiceForDetail()?.patientName }}</span>
+            <span *ngIf="getPatientMrn(selectedInvoiceForDetail()!.patientId)" class="font-mono text-slate-500">
+              MRN: {{ getPatientMrn(selectedInvoiceForDetail()!.patientId) }}
+            </span>
+          </div>
+
+          <div class="text-right">
+            <span class="text-slate-400 font-medium uppercase tracking-wider block">Dates</span>
+            <span class="text-slate-700 block mt-0.5">Issued: {{ formatDate(selectedInvoiceForDetail()!.issueDateUtc) }}</span>
+            <span class="text-slate-700 block">Due: {{ formatDate(selectedInvoiceForDetail()!.dueDateUtc) }}</span>
+          </div>
+        </div>
+
+        <!-- Line Items -->
+        <div class="space-y-2">
+          <h4 class="text-xs font-bold uppercase tracking-wider text-slate-700">Line Items</h4>
+          <div class="rounded-xl border border-slate-200 overflow-hidden">
+            <table class="w-full text-xs text-left">
+              <thead class="bg-slate-50 border-b border-slate-200 text-slate-600 font-semibold">
+                <tr>
+                  <th class="p-2.5">Description</th>
+                  <th class="p-2.5 text-center">Qty</th>
+                  <th class="p-2.5 text-right">Price</th>
+                  <th class="p-2.5 text-right">Total</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-slate-100 text-slate-800">
+                <tr *ngFor="let item of selectedInvoiceForDetail()?.lineItems">
+                  <td class="p-2.5 font-medium">{{ item.description }}</td>
+                  <td class="p-2.5 text-center font-mono">{{ item.quantity }}</td>
+                  <td class="p-2.5 text-right font-mono">$ {{ item.unitPrice | number:'1.2-2' }}</td>
+                  <td class="p-2.5 text-right font-bold font-mono">$ {{ item.lineTotal | number:'1.2-2' }}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Payments -->
+        <div *ngIf="selectedInvoiceForDetail()?.payments && selectedInvoiceForDetail()!.payments.length > 0" class="space-y-2">
+          <h4 class="text-xs font-bold uppercase tracking-wider text-slate-700">Applied Payments</h4>
+          <div class="rounded-xl border border-slate-200 overflow-hidden">
+            <table class="w-full text-xs text-left">
+              <thead class="bg-slate-50 border-b border-slate-200 text-slate-600 font-semibold">
+                <tr>
+                  <th class="p-2.5">Date</th>
+                  <th class="p-2.5">Method</th>
+                  <th class="p-2.5 text-right">Amount</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-slate-100 text-slate-800">
+                <tr *ngFor="let pay of selectedInvoiceForDetail()?.payments">
+                  <td class="p-2.5 font-medium">{{ formatDate(pay.paymentDateUtc) }}</td>
+                  <td class="p-2.5 font-semibold text-[#0F766E]">{{ getPaymentMethodName(pay.paymentMethod) }}</td>
+                  <td class="p-2.5 text-right font-bold font-mono text-emerald-600">$ {{ pay.amount | number:'1.2-2' }}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Totals Summary -->
+        <div class="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-2 text-xs">
+          <div class="flex justify-between text-slate-600">
+            <span>Total Statement Amount:</span>
+            <span class="font-bold text-slate-900">$ {{ selectedInvoiceForDetail()?.totalAmount | number:'1.2-2' }}</span>
+          </div>
+          <div class="flex justify-between text-emerald-600">
+            <span>Total Paid:</span>
+            <span class="font-bold">$ {{ selectedInvoiceForDetail()?.paidAmount | number:'1.2-2' }}</span>
+          </div>
+          <div class="flex justify-between border-t border-slate-200 pt-2 font-bold text-sm">
+            <span>Balance Due:</span>
+            <span [ngClass]="selectedInvoiceForDetail()!.balanceDue > 0 ? 'text-amber-600' : 'text-slate-400'">
+              $ {{ selectedInvoiceForDetail()?.balanceDue | number:'1.2-2' }}
+            </span>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Footer -->
+      <div class="p-4 sm:p-5 border-t border-[#E2E8F0] bg-slate-50/80 flex items-center justify-between shrink-0">
+        <button
+          *ngIf="selectedInvoiceForDetail() && selectedInvoiceForDetail()!.balanceDue > 0"
+          type="button"
+          (click)="showDetailModal.set(false); openPaymentDialog(selectedInvoiceForDetail()!)"
+          class="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs sm:text-sm font-bold cursor-pointer"
+        >
+          Record Payment
+        </button>
+        <span *ngIf="!selectedInvoiceForDetail() || selectedInvoiceForDetail()!.balanceDue <= 0"></span>
+
+        <button
+          type="button"
+          (click)="showDetailModal.set(false)"
+          class="px-4 py-2 rounded-xl border border-slate-200 hover:bg-slate-100 text-slate-700 text-xs sm:text-sm font-semibold transition-all cursor-pointer"
+        >
+          Close
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+</div>

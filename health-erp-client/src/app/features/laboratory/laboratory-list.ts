@@ -1,19 +1,13 @@
-import { Component, inject, OnInit, signal, computed } from '@angular/core';
+import { Component, inject, OnInit, signal, computed, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
-
-import { TableModule } from 'primeng/table';
-import { ButtonModule } from 'primeng/button';
-import { TagModule } from 'primeng/tag';
-import { TooltipModule } from 'primeng/tooltip';
-import { InputTextModule } from 'primeng/inputtext';
-import { DialogModule } from 'primeng/dialog';
-import { MessageModule } from 'primeng/message';
 
 import { LaboratoryService } from './data-access/laboratory.service';
 import { LabTest, LabOrder } from './data-access/laboratory.model';
 import { PatientService } from '../patients/data-access/patient.service';
 import { Patient } from '../patients/data-access/patient.model';
+import { StaffService } from '../staff/data-access/staff.service';
+import { Staff } from '../staff/data-access/staff.model';
 import Swal from 'sweetalert2';
 
 @Component({
@@ -23,507 +17,41 @@ import Swal from 'sweetalert2';
     CommonModule,
     FormsModule,
     ReactiveFormsModule,
-    TableModule,
-    ButtonModule,
-    TagModule,
-    TooltipModule,
-    InputTextModule,
-    DialogModule,
-    MessageModule,
   ],
-  template: `
-    <div class="flex flex-col gap-6">
-      <!-- Page Header -->
-      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h1 class="text-2xl font-bold text-[var(--color-text-primary)]">Laboratory & Diagnostics Management</h1>
-          <p class="text-sm text-[var(--color-text-secondary)]">Manage laboratory test catalog, patient diagnostic orders, and result entries with abnormal flagging</p>
-        </div>
-        <div class="flex items-center gap-2">
-          <button
-            pButton
-            icon="pi pi-plus"
-            label="Add Lab Test"
-            class="p-button-primary"
-            (click)="openAddTestDialog()"
-          ></button>
-          <button
-            pButton
-            icon="pi pi-send"
-            label="Order Test"
-            class="p-button-outlined p-button-secondary"
-            (click)="openAddOrderDialog()"
-          ></button>
-        </div>
-      </div>
-
-      <!-- KPI Summary Cards -->
-      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div class="bg-[var(--color-surface)] p-4 rounded-xl border border-[var(--color-border)] shadow-xs flex items-center gap-4">
-          <div class="p-3 bg-indigo-100 text-indigo-600 rounded-lg">
-            <i class="pi pi-compass text-xl"></i>
-          </div>
-          <div>
-            <p class="text-xs font-medium text-[var(--color-text-secondary)] uppercase">Cataloged Tests</p>
-            <h3 class="text-xl font-bold text-[var(--color-text-primary)]">{{ totalTests() }}</h3>
-          </div>
-        </div>
-
-        <div class="bg-[var(--color-surface)] p-4 rounded-xl border border-[var(--color-border)] shadow-xs flex items-center gap-4">
-          <div class="p-3 bg-amber-100 text-amber-600 rounded-lg">
-            <i class="pi pi-clock text-xl"></i>
-          </div>
-          <div>
-            <p class="text-xs font-medium text-[var(--color-text-secondary)] uppercase">Pending Orders</p>
-            <h3 class="text-xl font-bold text-amber-600">{{ pendingOrdersCount() }}</h3>
-          </div>
-        </div>
-
-        <div class="bg-[var(--color-surface)] p-4 rounded-xl border border-[var(--color-border)] shadow-xs flex items-center gap-4">
-          <div class="p-3 bg-rose-100 text-rose-600 rounded-lg">
-            <i class="pi pi-bolt text-xl"></i>
-          </div>
-          <div>
-            <p class="text-xs font-medium text-[var(--color-text-secondary)] uppercase">STAT / Urgent</p>
-            <h3 class="text-xl font-bold text-rose-600">{{ urgentOrdersCount() }}</h3>
-          </div>
-        </div>
-
-        <div class="bg-[var(--color-surface)] p-4 rounded-xl border border-[var(--color-border)] shadow-xs flex items-center gap-4">
-          <div class="p-3 bg-purple-100 text-purple-600 rounded-lg">
-            <i class="pi pi-exclamation-triangle text-xl"></i>
-          </div>
-          <div>
-            <p class="text-xs font-medium text-[var(--color-text-secondary)] uppercase">Abnormal Flagged</p>
-            <h3 class="text-xl font-bold text-purple-600">{{ abnormalCount() }}</h3>
-          </div>
-        </div>
-      </div>
-
-      <!-- Main Navigation Tabs -->
-      <div class="bg-[var(--color-surface)] rounded-xl border border-[var(--color-border)] shadow-xs overflow-hidden">
-        <div class="flex border-b border-[var(--color-border)] bg-[var(--color-surface-subtle)]">
-          <button
-            class="px-6 py-3 font-semibold text-sm transition-colors border-b-2 flex items-center gap-2"
-            [class.border-indigo-600]="activeTab() === 'orders'"
-            [class.text-indigo-600]="activeTab() === 'orders'"
-            [class.border-transparent]="activeTab() !== 'orders'"
-            [class.text-[var(--color-text-secondary)]]="activeTab() !== 'orders'"
-            (click)="activeTab.set('orders')"
-          >
-            <i class="pi pi-list"></i>
-            Diagnostic Orders & Results ({{ orders().length }})
-          </button>
-          <button
-            class="px-6 py-3 font-semibold text-sm transition-colors border-b-2 flex items-center gap-2"
-            [class.border-indigo-600]="activeTab() === 'catalog'"
-            [class.text-indigo-600]="activeTab() === 'catalog'"
-            [class.border-transparent]="activeTab() !== 'catalog'"
-            [class.text-[var(--color-text-secondary)]]="activeTab() !== 'catalog'"
-            (click)="activeTab.set('catalog')"
-          >
-            <i class="pi pi-book"></i>
-            Test Catalog ({{ catalog().length }})
-          </button>
-        </div>
-
-        <!-- Orders & Results Tab Content -->
-        <div *ngIf="activeTab() === 'orders'" class="p-4 flex flex-col gap-4">
-          <div class="flex flex-col sm:flex-row items-center justify-between gap-4">
-            <div class="flex items-center gap-2">
-              <button
-                pButton
-                label="All"
-                [class]="statusFilter() === null ? 'p-button-primary' : 'p-button-outlined p-button-secondary'"
-                (click)="setStatusFilter(null)"
-              ></button>
-              <button
-                pButton
-                label="Ordered / Pending"
-                [class]="statusFilter() === 'Ordered' ? 'p-button-warning' : 'p-button-outlined p-button-secondary'"
-                (click)="setStatusFilter('Ordered')"
-              ></button>
-              <button
-                pButton
-                label="Completed"
-                [class]="statusFilter() === 'Completed' ? 'p-button-success' : 'p-button-outlined p-button-secondary'"
-                (click)="setStatusFilter('Completed')"
-              ></button>
-            </div>
-            <div class="flex items-center gap-2">
-              <button
-                pButton
-                [icon]="abnormalOnlyFilter() ? 'pi pi-check-circle' : 'pi pi-filter'"
-                [label]="'Abnormal (' + abnormalCount() + ')'"
-                [class]="abnormalOnlyFilter() ? 'p-button-danger' : 'p-button-outlined p-button-secondary'"
-                (click)="toggleAbnormalFilter()"
-              ></button>
-            </div>
-          </div>
-
-          <p-table
-            [value]="filteredOrders()"
-            [loading]="loading()"
-            [paginator]="true"
-            [rows]="10"
-            [tableStyle]="{ 'min-width': '55rem' }"
-            styleClass="p-datatable-sm p-datatable-gridlines"
-          >
-            <ng-template pTemplate="header">
-              <tr>
-                <th>Patient</th>
-                <th>Test Name & Code</th>
-                <th>Ordering Doctor</th>
-                <th>Priority</th>
-                <th>Status</th>
-                <th>Result Details</th>
-                <th class="text-center">Action</th>
-              </tr>
-            </ng-template>
-            <ng-template pTemplate="body" let-order>
-              <tr>
-                <td class="font-bold text-[var(--color-text-primary)]">
-                  {{ order.patientName }}
-                </td>
-                <td>
-                  <div class="font-semibold text-slate-900">{{ order.testName }}</div>
-                  <div class="text-xs text-slate-500">Code: {{ order.testCode }}</div>
-                </td>
-                <td class="text-slate-700">Dr. {{ order.orderingDoctorName }}</td>
-                <td>
-                  <p-tag
-                    [severity]="getPrioritySeverity(order.priority)"
-                    [value]="order.priority"
-                  ></p-tag>
-                </td>
-                <td>
-                  <p-tag
-                    [severity]="getStatusSeverity(order.status)"
-                    [value]="order.status"
-                  ></p-tag>
-                </td>
-                <td>
-                  <div *ngIf="order.resultValue" class="text-xs">
-                    <span class="font-bold" [class.text-rose-600]="order.isAbnormal" [class.text-slate-900]="!order.isAbnormal">
-                      {{ order.resultValue }} {{ order.unit }}
-                    </span>
-                    <div class="text-slate-500">Ref: {{ order.referenceRange || 'N/A' }}</div>
-                    <div *ngIf="order.isAbnormal" class="text-rose-600 font-bold flex items-center gap-1 mt-0.5">
-                      <i class="pi pi-exclamation-circle"></i> ABNORMAL
-                    </div>
-                  </div>
-                  <span *ngIf="!order.resultValue" class="text-xs text-slate-400 italic">Pending Entry</span>
-                </td>
-                <td class="text-center">
-                  <button
-                    *ngIf="order.status !== 'Completed' && order.status !== 'Cancelled'"
-                    pButton
-                    icon="pi pi-pencil"
-                    label="Enter Result"
-                    class="p-button-primary p-button-sm"
-                    (click)="openRecordResultDialog(order)"
-                  ></button>
-                  <span *ngIf="order.status === 'Completed'" class="text-xs text-slate-500">
-                    Done by {{ order.performedBy || 'Tech' }}
-                  </span>
-                </td>
-              </tr>
-            </ng-template>
-            <ng-template pTemplate="emptymessage">
-              <tr>
-                <td colspan="7" class="text-center py-8 text-slate-500">
-                  No diagnostic orders found.
-                </td>
-              </tr>
-            </ng-template>
-          </p-table>
-        </div>
-
-        <!-- Test Catalog Tab Content -->
-        <div *ngIf="activeTab() === 'catalog'" class="p-4 flex flex-col gap-4">
-          <div class="flex items-center justify-between gap-4">
-            <div class="relative flex items-center w-full sm:w-80">
-              <i class="pi pi-search absolute left-3 text-slate-400 z-10 pointer-events-none"></i>
-              <input
-                type="text"
-                pInputText
-                placeholder="Search test name or code..."
-                class="w-full !pl-10"
-                [value]="catalogSearchTerm()"
-                (input)="onCatalogSearchInput($event)"
-              />
-            </div>
-          </div>
-
-          <p-table
-            [value]="filteredCatalog()"
-            [loading]="loading()"
-            [paginator]="true"
-            [rows]="10"
-            [tableStyle]="{ 'min-width': '50rem' }"
-            styleClass="p-datatable-sm p-datatable-gridlines"
-          >
-            <ng-template pTemplate="header">
-              <tr>
-                <th>Test Name</th>
-                <th>Code</th>
-                <th>Category</th>
-                <th>Reference Range</th>
-                <th>Sample Type</th>
-                <th>Standard Price</th>
-              </tr>
-            </ng-template>
-            <ng-template pTemplate="body" let-test>
-              <tr>
-                <td class="font-bold text-[var(--color-text-primary)]">{{ test.name }}</td>
-                <td>
-                  <span class="font-mono bg-slate-100 text-slate-800 px-2 py-0.5 rounded text-xs">
-                    {{ test.code }}
-                  </span>
-                </td>
-                <td>
-                  <span class="px-2 py-1 bg-indigo-50 text-indigo-700 font-medium rounded text-xs">
-                    {{ test.category }}
-                  </span>
-                </td>
-                <td class="text-slate-700">{{ test.referenceRange }} {{ test.unit }}</td>
-                <td class="text-slate-600">{{ test.sampleType }}</td>
-                <td class="font-semibold text-slate-900">$ {{ test.standardPrice | number:'1.2-2' }}</td>
-              </tr>
-            </ng-template>
-            <ng-template pTemplate="emptymessage">
-              <tr>
-                <td colspan="6" class="text-center py-8 text-slate-500">
-                  No catalog tests found.
-                </td>
-              </tr>
-            </ng-template>
-          </p-table>
-        </div>
-      </div>
-
-      <!-- Modal: Add New Lab Test -->
-      <p-dialog
-        header="Add New Diagnostic Test"
-        [(visible)]="displayAddTestDialog"
-        [modal]="true"
-        [style]="{ width: '500px' }"
-        styleClass="p-fluid"
-      >
-        <form [formGroup]="addTestForm" (ngSubmit)="saveTest()" class="flex flex-col gap-4 mt-2">
-          <div class="flex flex-col gap-1">
-            <label class="text-xs font-semibold text-slate-700">Test Name *</label>
-            <input pInputText formControlName="name" placeholder="e.g. Complete Blood Count (CBC)" />
-          </div>
-
-          <div class="grid grid-cols-2 gap-3">
-            <div class="flex flex-col gap-1">
-              <label class="text-xs font-semibold text-slate-700">Code *</label>
-              <input pInputText formControlName="code" placeholder="e.g. CBC-01" />
-            </div>
-
-            <div class="flex flex-col gap-1">
-              <label class="text-xs font-semibold text-slate-700">Category *</label>
-              <input pInputText formControlName="category" placeholder="e.g. Hematology" />
-            </div>
-          </div>
-
-          <div class="grid grid-cols-2 gap-3">
-            <div class="flex flex-col gap-1">
-              <label class="text-xs font-semibold text-slate-700">Reference Range</label>
-              <input pInputText formControlName="referenceRange" placeholder="e.g. 4.5-11.0" />
-            </div>
-
-            <div class="flex flex-col gap-1">
-              <label class="text-xs font-semibold text-slate-700">Unit</label>
-              <input pInputText formControlName="unit" placeholder="e.g. mg/dL" />
-            </div>
-          </div>
-
-          <div class="grid grid-cols-2 gap-3">
-            <div class="flex flex-col gap-1">
-              <label class="text-xs font-semibold text-slate-700">Sample Type</label>
-              <input pInputText formControlName="sampleType" placeholder="e.g. Whole Blood, Serum" />
-            </div>
-
-            <div class="flex flex-col gap-1">
-              <label class="text-xs font-semibold text-slate-700">Standard Price ($) *</label>
-              <input pInputText type="number" step="0.01" formControlName="standardPrice" />
-            </div>
-          </div>
-
-          <div class="flex justify-end gap-2 mt-4">
-            <button
-              pButton
-              type="button"
-              label="Cancel"
-              class="p-button-text p-button-secondary"
-              (click)="displayAddTestDialog = false"
-            ></button>
-            <button
-              pButton
-              type="submit"
-              label="Save Test"
-              class="p-button-primary"
-              [disabled]="addTestForm.invalid || submitting()"
-            ></button>
-          </div>
-        </form>
-      </p-dialog>
-
-      <!-- Modal: Issue Lab Order -->
-      <p-dialog
-        header="Issue Patient Lab Order"
-        [(visible)]="displayAddOrderDialog"
-        [modal]="true"
-        [style]="{ width: '500px' }"
-        styleClass="p-fluid"
-      >
-        <form [formGroup]="addOrderForm" (ngSubmit)="saveOrder()" class="flex flex-col gap-4 mt-2">
-          <div class="flex flex-col gap-1">
-            <label class="text-xs font-semibold text-slate-700">Select Patient *</label>
-            <select
-              formControlName="patientId"
-              class="w-full p-2 border border-slate-300 rounded-md bg-white text-sm"
-            >
-              <option value="" disabled>-- Select Registered Patient --</option>
-              <option *ngFor="let p of patientList()" [value]="p.id">
-                {{ p.firstName }} {{ p.lastName }} (MRN: {{ p.medicalRecordNumber }})
-              </option>
-            </select>
-          </div>
-
-          <div class="flex flex-col gap-1">
-            <label class="text-xs font-semibold text-slate-700">Select Test Catalog (Optional)</label>
-            <select
-              formControlName="labTestId"
-              class="w-full p-2 border border-slate-300 rounded-md bg-white text-sm"
-              (change)="onCatalogSelect($event)"
-            >
-              <option value="">-- Custom Diagnostic Test --</option>
-              <option *ngFor="let test of catalog()" [value]="test.id">
-                {{ test.name }} ({{ test.code }})
-              </option>
-            </select>
-          </div>
-
-          <div class="flex flex-col gap-1">
-            <label class="text-xs font-semibold text-slate-700">Diagnostic Test Name *</label>
-            <input pInputText formControlName="testName" placeholder="e.g. Lipid Profile Panel" />
-          </div>
-
-          <div class="grid grid-cols-2 gap-3">
-            <div class="flex flex-col gap-1">
-              <label class="text-xs font-semibold text-slate-700">Ordering Doctor *</label>
-              <input pInputText formControlName="orderingDoctorName" placeholder="e.g. Sarah Jenkins" />
-            </div>
-
-            <div class="flex flex-col gap-1">
-              <label class="text-xs font-semibold text-slate-700">Priority / Urgency *</label>
-              <select formControlName="priority" class="w-full p-2 border border-slate-300 rounded-md bg-white text-sm">
-                <option value="Routine">Routine</option>
-                <option value="Urgent">Urgent</option>
-                <option value="STAT">STAT (Emergency)</option>
-              </select>
-            </div>
-          </div>
-
-          <div class="flex justify-end gap-2 mt-4">
-            <button
-              pButton
-              type="button"
-              label="Cancel"
-              class="p-button-text p-button-secondary"
-              (click)="displayAddOrderDialog = false"
-            ></button>
-            <button
-              pButton
-              type="submit"
-              label="Issue Order"
-              class="p-button-primary"
-              [disabled]="addOrderForm.invalid || submitting()"
-            ></button>
-          </div>
-        </form>
-      </p-dialog>
-
-      <!-- Modal: Record Lab Results -->
-      <p-dialog
-        header="Record Diagnostic Result"
-        [(visible)]="displayRecordResultDialog"
-        [modal]="true"
-        [style]="{ width: '450px' }"
-        styleClass="p-fluid"
-      >
-        <div *ngIf="selectedOrderForResult" class="flex flex-col gap-4 mt-2">
-          <div class="p-3 bg-slate-50 border border-slate-200 rounded-lg">
-            <div class="font-bold text-slate-800">{{ selectedOrderForResult.testName }}</div>
-            <div class="text-xs text-slate-600">Patient: <span class="font-bold">{{ selectedOrderForResult.patientName }}</span></div>
-            <div class="text-xs text-slate-600">Reference: {{ selectedOrderForResult.referenceRange || 'N/A' }} {{ selectedOrderForResult.unit }}</div>
-          </div>
-
-          <form [formGroup]="recordResultForm" (ngSubmit)="saveResult()" class="flex flex-col gap-4">
-            <div class="flex flex-col gap-1">
-              <label class="text-xs font-semibold text-slate-700">Observed Result Value *</label>
-              <input pInputText formControlName="resultValue" placeholder="e.g. 14.2 or Clear" />
-            </div>
-
-            <div class="flex flex-col gap-1">
-              <label class="text-xs font-semibold text-slate-700">Performed By *</label>
-              <input pInputText formControlName="performedBy" placeholder="e.g. Lab Technician" />
-            </div>
-
-            <div class="flex flex-col gap-1">
-              <label class="text-xs font-semibold text-slate-700">Remarks / Lab Notes</label>
-              <input pInputText formControlName="remarks" placeholder="Sample hemolyzed slightly" />
-            </div>
-
-            <div class="flex items-center gap-2 mt-1">
-              <input type="checkbox" id="isAbnormal" formControlName="isAbnormal" class="h-4 w-4 text-rose-600 rounded" />
-              <label for="isAbnormal" class="text-xs font-semibold text-rose-700 cursor-pointer">
-                Flag Result as Out of Reference Range (Abnormal)
-              </label>
-            </div>
-
-            <div class="flex justify-end gap-2 mt-4">
-              <button
-                pButton
-                type="button"
-                label="Cancel"
-                class="p-button-text p-button-secondary"
-                (click)="displayRecordResultDialog = false"
-              ></button>
-              <button
-                pButton
-                type="submit"
-                label="Complete & Save"
-                class="p-button-primary"
-                [disabled]="recordResultForm.invalid || submitting()"
-              ></button>
-            </div>
-          </form>
-        </div>
-      </p-dialog>
-    </div>
-  `
+  templateUrl: './laboratory-list.html',
 })
 export class LaboratoryListComponent implements OnInit {
   private labService = inject(LaboratoryService);
   private patientService = inject(PatientService);
+  private staffService = inject(StaffService);
   private fb = inject(FormBuilder);
+
+  // Global Math for template expressions
+  Math = Math;
 
   // State Signals
   catalog = signal<LabTest[]>([]);
   orders = signal<LabOrder[]>([]);
   patientList = signal<Patient[]>([]);
+  staffList = signal<Staff[]>([]);
   loading = signal<boolean>(false);
   submitting = signal<boolean>(false);
 
+  // Navigation
   activeTab = signal<'orders' | 'catalog'>('orders');
 
+  // Filters
+  orderSearchQuery = signal<string>('');
   catalogSearchTerm = signal<string>('');
   statusFilter = signal<string | null>(null);
+  priorityOnlyFilter = signal<boolean>(false);
   abnormalOnlyFilter = signal<boolean>(false);
+
+  // Pagination
+  orderCurrentPage = signal<number>(1);
+  orderPageSize = signal<number>(10);
+  catalogCurrentPage = signal<number>(1);
+  catalogPageSize = signal<number>(10);
 
   // Dialog visibility flags
   displayAddTestDialog = false;
@@ -531,6 +59,13 @@ export class LaboratoryListComponent implements OnInit {
   displayRecordResultDialog = false;
 
   selectedOrderForResult: LabOrder | null = null;
+
+  // Form submission feedback flags
+  addTestSubmitted = signal<boolean>(false);
+  addTestError = signal<string | null>(null);
+
+  addOrderSubmitted = signal<boolean>(false);
+  addOrderError = signal<string | null>(null);
 
   // Forms
   addTestForm = this.fb.group({
@@ -540,7 +75,7 @@ export class LaboratoryListComponent implements OnInit {
     referenceRange: [''],
     unit: [''],
     standardPrice: [50.0, [Validators.required, Validators.min(0)]],
-    sampleType: ['Blood']
+    sampleType: ['Whole Blood'],
   });
 
   addOrderForm = this.fb.group({
@@ -549,93 +84,221 @@ export class LaboratoryListComponent implements OnInit {
     testName: ['', Validators.required],
     testCode: ['CUSTOM'],
     orderingDoctorName: ['Sarah Jenkins', Validators.required],
-    priority: ['Routine', Validators.required]
+    priority: ['Routine', Validators.required],
   });
 
   recordResultForm = this.fb.group({
     resultValue: ['', Validators.required],
     performedBy: ['Lab Tech', Validators.required],
     remarks: [''],
-    isAbnormal: [false]
+    isAbnormal: [false],
   });
 
-  // Computed signals
+  // Computed KPI Signals
   totalTests = computed(() => this.catalog().length);
-  pendingOrdersCount = computed(() => this.orders().filter(o => o.status !== 'Completed').length);
-  urgentOrdersCount = computed(() => this.orders().filter(o => o.priority === 'Urgent' || o.priority === 'STAT').length);
-  abnormalCount = computed(() => this.orders().filter(o => o.isAbnormal).length);
+  pendingOrdersCount = computed(() => this.orders().filter((o) => o.status !== 'Completed').length);
+  urgentOrdersCount = computed(() => this.orders().filter((o) => o.priority === 'Urgent' || o.priority === 'STAT').length);
+  abnormalCount = computed(() => this.orders().filter((o) => o.isAbnormal).length);
 
+  // Patient Map for fast MRN Lookup
+  private patientMap = computed(() => {
+    const map = new Map<string, Patient>();
+    for (const p of this.patientList()) {
+      map.set(p.id, p);
+    }
+    return map;
+  });
+
+  // Filtered Orders List
+  filteredOrders = computed(() => {
+    let result = this.orders();
+    const query = this.orderSearchQuery().trim().toLowerCase();
+
+    if (query) {
+      result = result.filter(
+        (o) =>
+          o.patientName.toLowerCase().includes(query) ||
+          o.testName.toLowerCase().includes(query) ||
+          o.testCode.toLowerCase().includes(query) ||
+          o.orderingDoctorName.toLowerCase().includes(query)
+      );
+    }
+
+    const status = this.statusFilter();
+    if (status) {
+      result = result.filter((o) => o.status.toLowerCase() === status.toLowerCase());
+    }
+
+    if (this.priorityOnlyFilter()) {
+      result = result.filter((o) => o.priority === 'STAT' || o.priority === 'Urgent');
+    }
+
+    if (this.abnormalOnlyFilter()) {
+      result = result.filter((o) => o.isAbnormal);
+    }
+
+    return result;
+  });
+
+  // Paginated Orders List
+  paginatedOrders = computed(() => {
+    const list = this.filteredOrders();
+    const page = this.orderCurrentPage();
+    const size = this.orderPageSize();
+    const start = (page - 1) * size;
+    return list.slice(start, start + size);
+  });
+
+  orderTotalPages = computed(() => {
+    const count = this.filteredOrders().length;
+    return Math.ceil(count / this.orderPageSize()) || 1;
+  });
+
+  // Filtered Catalog List
   filteredCatalog = computed(() => {
     let result = this.catalog();
     const search = this.catalogSearchTerm().trim().toLowerCase();
 
     if (search) {
-      result = result.filter(t =>
-        t.name.toLowerCase().includes(search) ||
-        t.code.toLowerCase().includes(search) ||
-        t.category.toLowerCase().includes(search)
+      result = result.filter(
+        (t) =>
+          t.name.toLowerCase().includes(search) ||
+          t.code.toLowerCase().includes(search) ||
+          t.category.toLowerCase().includes(search)
       );
     }
 
     return result;
   });
 
-  filteredOrders = computed(() => {
-    let result = this.orders();
-    const status = this.statusFilter();
+  // Paginated Catalog List
+  paginatedCatalog = computed(() => {
+    const list = this.filteredCatalog();
+    const page = this.catalogCurrentPage();
+    const size = this.catalogPageSize();
+    const start = (page - 1) * size;
+    return list.slice(start, start + size);
+  });
 
-    if (status) {
-      result = result.filter(o => o.status.toLowerCase() === status.toLowerCase());
-    }
-
-    if (this.abnormalOnlyFilter()) {
-      result = result.filter(o => o.isAbnormal);
-    }
-
-    return result;
+  catalogTotalPages = computed(() => {
+    const count = this.filteredCatalog().length;
+    return Math.ceil(count / this.catalogPageSize()) || 1;
   });
 
   ngOnInit(): void {
     this.loadData();
   }
 
+  @HostListener('window:keydown.escape')
+  onEscapeKey(): void {
+    if (this.displayAddTestDialog) this.displayAddTestDialog = false;
+    if (this.displayAddOrderDialog) this.displayAddOrderDialog = false;
+    if (this.displayRecordResultDialog) this.displayRecordResultDialog = false;
+    document.body.style.overflow = '';
+  }
+
   loadData(): void {
     this.loading.set(true);
     this.labService.getCatalog().subscribe({
       next: (tests) => {
-        this.catalog.set(tests);
+        this.catalog.set(tests || []);
         this.loading.set(false);
       },
-      error: () => this.loading.set(false)
+      error: () => this.loading.set(false),
     });
 
     this.labService.getOrders().subscribe({
       next: (ordersList) => {
-        this.orders.set(ordersList);
-      }
+        this.orders.set(ordersList || []);
+      },
     });
 
     this.patientService.getPatients().subscribe({
       next: (patientsList) => {
-        this.patientList.set(patientsList);
-      }
+        this.patientList.set(patientsList || []);
+      },
+    });
+
+    this.staffService.getStaff().subscribe({
+      next: (staff) => {
+        this.staffList.set(staff || []);
+      },
     });
   }
 
-  onCatalogSearchInput(event: Event): void {
-    const val = (event.target as HTMLInputElement).value;
-    this.catalogSearchTerm.set(val);
+  // Workspace Navigation & KPI Click Actions
+  setActiveTab(tab: 'orders' | 'catalog'): void {
+    this.activeTab.set(tab);
+  }
+
+  onKpiClick(type: 'catalog' | 'pending' | 'urgent' | 'abnormal'): void {
+    if (type === 'catalog') {
+      this.activeTab.set('catalog');
+    } else if (type === 'pending') {
+      this.activeTab.set('orders');
+      this.statusFilter.set('Ordered');
+      this.priorityOnlyFilter.set(false);
+      this.abnormalOnlyFilter.set(false);
+      this.orderCurrentPage.set(1);
+    } else if (type === 'urgent') {
+      this.activeTab.set('orders');
+      this.priorityOnlyFilter.set(true);
+      this.statusFilter.set(null);
+      this.abnormalOnlyFilter.set(false);
+      this.orderCurrentPage.set(1);
+    } else if (type === 'abnormal') {
+      this.activeTab.set('orders');
+      this.abnormalOnlyFilter.set(true);
+      this.statusFilter.set(null);
+      this.priorityOnlyFilter.set(false);
+      this.orderCurrentPage.set(1);
+    }
   }
 
   setStatusFilter(status: string | null): void {
     this.statusFilter.set(status);
+    this.priorityOnlyFilter.set(false);
+    this.orderCurrentPage.set(1);
   }
 
   toggleAbnormalFilter(): void {
     this.abnormalOnlyFilter.set(!this.abnormalOnlyFilter());
+    this.orderCurrentPage.set(1);
   }
 
+  clearOrderFilters(): void {
+    this.orderSearchQuery.set('');
+    this.statusFilter.set(null);
+    this.priorityOnlyFilter.set(false);
+    this.abnormalOnlyFilter.set(false);
+    this.orderCurrentPage.set(1);
+  }
+
+  goToOrderPage(page: number): void {
+    if (page >= 1 && page <= this.orderTotalPages()) {
+      this.orderCurrentPage.set(page);
+    }
+  }
+
+  goToCatalogPage(page: number): void {
+    if (page >= 1 && page <= this.catalogTotalPages()) {
+      this.catalogCurrentPage.set(page);
+    }
+  }
+
+  onBackdropClick(event: MouseEvent, dialogType: 'addTest' | 'addOrder' | 'recordResult'): void {
+    if ((event.target as HTMLElement).classList.contains('modal-backdrop')) {
+      if (dialogType === 'addTest') this.displayAddTestDialog = false;
+      if (dialogType === 'addOrder') this.displayAddOrderDialog = false;
+      if (dialogType === 'recordResult') this.displayRecordResultDialog = false;
+      document.body.style.overflow = '';
+    }
+  }
+
+  // Add Catalog Test Dialog Logic
   openAddTestDialog(): void {
+    this.addTestSubmitted.set(false);
+    this.addTestError.set(null);
     this.addTestForm.reset({
       name: '',
       code: '',
@@ -643,111 +306,145 @@ export class LaboratoryListComponent implements OnInit {
       referenceRange: '',
       unit: '',
       standardPrice: 50.0,
-      sampleType: 'Blood'
+      sampleType: 'Whole Blood',
     });
     this.displayAddTestDialog = true;
+    document.body.style.overflow = 'hidden';
   }
 
   saveTest(): void {
-    if (this.addTestForm.invalid) return;
+    this.addTestSubmitted.set(true);
+
+    if (this.addTestForm.invalid) {
+      return;
+    }
 
     this.submitting.set(true);
+    this.addTestError.set(null);
     const val = this.addTestForm.value;
+
     const req = {
-      name: val.name!,
-      code: val.code!,
-      category: val.category!,
-      referenceRange: val.referenceRange || '',
-      unit: val.unit || '',
-      standardPrice: val.standardPrice!,
-      sampleType: val.sampleType || 'Blood'
+      name: val.name!.trim(),
+      code: val.code!.trim(),
+      category: val.category!.trim(),
+      referenceRange: val.referenceRange?.trim() || '',
+      unit: val.unit?.trim() || '',
+      standardPrice: Number(val.standardPrice),
+      sampleType: val.sampleType || 'Whole Blood',
     };
 
     this.labService.createLabTest(req).subscribe({
       next: (newTest) => {
-        this.catalog.update(list => [newTest, ...list]);
+        this.catalog.update((list) => [newTest, ...list]);
         this.displayAddTestDialog = false;
         this.submitting.set(false);
+        document.body.style.overflow = '';
+
         Swal.fire({
-          title: 'Successful!',
-          text: `Lab test ${newTest.name} added to catalog.`,
+          title: 'Test Cataloged',
+          text: `Diagnostic test ${newTest.name} has been added to the catalog.`,
           icon: 'success',
-          confirmButtonColor: '#10b981',
-          timer: 2500,
-          timerProgressBar: true
+          confirmButtonColor: '#0F766E',
+          timer: 2200,
+          timerProgressBar: true,
         });
       },
-      error: () => this.submitting.set(false)
+      error: (err) => {
+        this.submitting.set(false);
+        const msg = err.error?.detail || err.error?.message || 'Failed to add catalog test.';
+        this.addTestError.set(msg);
+      },
     });
   }
 
+  // Issue Order Dialog Logic
   openAddOrderDialog(): void {
+    this.addOrderSubmitted.set(false);
+    this.addOrderError.set(null);
+
+    const defaultPatient = this.patientList().length > 0 ? this.patientList()[0].id : '';
+    const defaultDoctor = this.staffList().length > 0 ? `Dr. ${this.staffList()[0].firstName} ${this.staffList()[0].lastName}` : 'Dr. Sarah Jenkins';
+
     this.addOrderForm.reset({
-      patientId: this.patientList().length > 0 ? this.patientList()[0].id : '',
+      patientId: defaultPatient,
       labTestId: '',
       testName: '',
       testCode: 'CUSTOM',
-      orderingDoctorName: 'Sarah Jenkins',
-      priority: 'Routine'
+      orderingDoctorName: defaultDoctor,
+      priority: 'Routine',
     });
     this.displayAddOrderDialog = true;
+    document.body.style.overflow = 'hidden';
   }
 
   onCatalogSelect(event: Event): void {
     const testId = (event.target as HTMLSelectElement).value;
     if (testId) {
-      const selected = this.catalog().find(t => t.id === testId);
+      const selected = this.catalog().find((t) => t.id === testId);
       if (selected) {
         this.addOrderForm.patchValue({
           testName: selected.name,
-          testCode: selected.code
+          testCode: selected.code,
         });
       }
     }
   }
 
   saveOrder(): void {
-    if (this.addOrderForm.invalid) return;
+    this.addOrderSubmitted.set(true);
+
+    if (this.addOrderForm.invalid) {
+      return;
+    }
 
     this.submitting.set(true);
+    this.addOrderError.set(null);
     const val = this.addOrderForm.value;
 
     const req = {
       patientId: val.patientId!,
       labTestId: val.labTestId || undefined,
-      orderingDoctorName: val.orderingDoctorName!,
-      testName: val.testName!,
-      testCode: val.testCode || 'CUSTOM',
-      priority: val.priority || 'Routine'
+      orderingDoctorName: val.orderingDoctorName!.replace(/^Dr\.\s*/i, ''),
+      testName: val.testName!.trim(),
+      testCode: val.testCode?.trim() || 'CUSTOM',
+      priority: val.priority || 'Routine',
     };
 
     this.labService.createOrder(req).subscribe({
       next: (newOrder) => {
-        this.orders.update(list => [newOrder, ...list]);
+        this.orders.update((list) => [newOrder, ...list]);
         this.displayAddOrderDialog = false;
         this.submitting.set(false);
+        document.body.style.overflow = '';
+
         Swal.fire({
-          title: 'Successful!',
-          text: `Lab order for ${newOrder.testName} created successfully.`,
+          title: 'Order Issued',
+          text: `Diagnostic order for ${newOrder.testName} has been created successfully.`,
           icon: 'success',
-          confirmButtonColor: '#10b981',
-          timer: 2500,
-          timerProgressBar: true
+          confirmButtonColor: '#0F766E',
+          timer: 2200,
+          timerProgressBar: true,
         });
       },
-      error: () => this.submitting.set(false)
+      error: (err) => {
+        this.submitting.set(false);
+        const msg = err.error?.detail || err.error?.message || 'Failed to issue diagnostic order.';
+        this.addOrderError.set(msg);
+      },
     });
   }
 
+  // Record Result Dialog Logic
   openRecordResultDialog(order: LabOrder): void {
     this.selectedOrderForResult = order;
     this.recordResultForm.reset({
       resultValue: '',
       performedBy: 'Lab Tech',
       remarks: '',
-      isAbnormal: false
+      isAbnormal: false,
     });
     this.displayRecordResultDialog = true;
+    document.body.style.overflow = 'hidden';
   }
 
   saveResult(): void {
@@ -756,44 +453,102 @@ export class LaboratoryListComponent implements OnInit {
     this.submitting.set(true);
     const val = this.recordResultForm.value;
     const req = {
-      resultValue: val.resultValue!,
-      performedBy: val.performedBy!,
-      remarks: val.remarks || '',
-      isAbnormal: !!val.isAbnormal
+      resultValue: val.resultValue!.trim(),
+      performedBy: val.performedBy!.trim(),
+      remarks: val.remarks?.trim() || '',
+      isAbnormal: !!val.isAbnormal,
     };
 
     this.labService.recordResult(this.selectedOrderForResult.id, req).subscribe({
       next: (updatedOrder) => {
-        this.orders.update(list => list.map(o => o.id === updatedOrder.id ? updatedOrder : o));
+        this.orders.update((list) => list.map((o) => (o.id === updatedOrder.id ? updatedOrder : o)));
         this.displayRecordResultDialog = false;
         this.submitting.set(false);
+        document.body.style.overflow = '';
+
         Swal.fire({
-          title: 'Successful!',
-          text: `Result for ${updatedOrder.testName} recorded successfully.`,
+          title: 'Result Recorded',
+          text: `Result for ${updatedOrder.testName} has been saved successfully.`,
           icon: 'success',
-          confirmButtonColor: '#10b981',
-          timer: 2500,
-          timerProgressBar: true
+          confirmButtonColor: '#0F766E',
+          timer: 2200,
+          timerProgressBar: true,
         });
       },
-      error: () => this.submitting.set(false)
+      error: () => this.submitting.set(false),
     });
   }
 
-  getPrioritySeverity(priority: string): 'danger' | 'warn' | 'info' {
-    switch (priority.toUpperCase()) {
-      case 'STAT': return 'danger';
-      case 'URGENT': return 'warn';
-      default: return 'info';
+  // Formatting & Display Helpers
+  getPatientMRN(order: LabOrder): string | null {
+    if (!order.patientId) return null;
+    const p = this.patientMap().get(order.patientId);
+    return p?.medicalRecordNumber || null;
+  }
+
+  /**
+   * Reference Range Unit Duplication Fix:
+   * Prevents displaying duplicated unit strings like "70–99 mg/dL mg/dL" or "< 5.7 % %"
+   */
+  formatReferenceRange(referenceRange?: string, unit?: string): string {
+    if (!referenceRange || referenceRange.trim() === '') {
+      return unit ? unit.trim() : 'N/A';
+    }
+
+    const refTrimmed = referenceRange.trim();
+    if (!unit || unit.trim() === '') {
+      return refTrimmed;
+    }
+
+    const unitTrimmed = unit.trim();
+
+    // If referenceRange already contains or ends with unit string (case insensitive)
+    if (
+      refTrimmed.toLowerCase().endsWith(unitTrimmed.toLowerCase()) ||
+      refTrimmed.toLowerCase().includes(unitTrimmed.toLowerCase())
+    ) {
+      return refTrimmed;
+    }
+
+    return `${refTrimmed} ${unitTrimmed}`;
+  }
+
+  getPriorityBadgeClass(priority: string): string {
+    switch (priority?.toUpperCase()) {
+      case 'STAT':
+        return 'bg-rose-100 text-rose-800 border border-rose-300 font-extrabold animate-pulse';
+      case 'URGENT':
+        return 'bg-amber-50 text-amber-800 border border-amber-200 font-bold';
+      case 'ROUTINE':
+      default:
+        return 'bg-blue-50 text-blue-700 border border-blue-200 font-semibold';
     }
   }
 
-  getStatusSeverity(status: string): 'success' | 'warn' | 'danger' | 'info' {
-    switch (status.toLowerCase()) {
-      case 'completed': return 'success';
-      case 'inprogress': return 'info';
-      case 'cancelled': return 'danger';
-      default: return 'warn';
+  getOrderStatusBadgeClass(status: string): string {
+    switch (status?.toLowerCase()) {
+      case 'completed':
+        return 'bg-emerald-50 text-emerald-700 border border-emerald-200';
+      case 'inprogress':
+      case 'in progress':
+        return 'bg-blue-50 text-blue-700 border border-blue-200';
+      case 'cancelled':
+        return 'bg-rose-50 text-rose-700 border border-rose-200';
+      case 'ordered':
+      case 'pending':
+      default:
+        return 'bg-amber-50 text-amber-700 border border-amber-200';
+    }
+  }
+
+  getDisplayStatus(status: string): string {
+    switch (status?.toLowerCase()) {
+      case 'ordered':
+        return 'Ordered / Pending';
+      case 'inprogress':
+        return 'In Progress';
+      default:
+        return status;
     }
   }
 }

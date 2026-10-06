@@ -1,0 +1,374 @@
+<div class="space-y-6 w-full max-w-full min-w-0 pb-6">
+
+  <!-- 1. Header Bar & Controls -->
+  <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+    <div>
+      <h1 class="text-2xl sm:text-[28px] font-bold text-[#0F172A] tracking-tight">Executive BI Analytics & Revenue Reports</h1>
+      <p class="text-xs sm:text-sm font-normal text-[#64748B] mt-0.5">
+        Real-time enterprise financial performance, patient visit statistics, and CSV export portal
+      </p>
+    </div>
+
+    <!-- Controls Right -->
+    <div class="flex flex-wrap items-center gap-3">
+      <!-- Reporting Period Selector -->
+      <div class="relative">
+        <select
+          [ngModel]="selectedPeriod()"
+          (ngModelChange)="selectedPeriod.set($event)"
+          class="h-[42px] px-3.5 bg-white border border-[#E2E8F0] rounded-xl text-xs sm:text-sm font-semibold text-[#0F172A] shadow-2xs hover:border-slate-300 focus:outline-none focus:border-[#0F766E] cursor-pointer"
+        >
+          <option value="All Time">All Time</option>
+          <option value="Last 30 Days">Last 30 Days</option>
+          <option value="Last 3 Months">Last 3 Months</option>
+          <option value="Last 6 Months">Last 6 Months</option>
+          <option value="This Year">This Year</option>
+        </select>
+      </div>
+
+      <!-- Export Reports Dropdown -->
+      <div class="relative">
+        <button
+          type="button"
+          (click)="toggleExportDropdown()"
+          class="inline-flex items-center justify-center gap-2 px-4 h-[42px] rounded-xl bg-[#0F766E] hover:bg-[#0D655E] text-white text-xs sm:text-sm font-bold shadow-2xs transition-all cursor-pointer"
+        >
+          <i *ngIf="exportingCsv()" class="pi pi-spin pi-spinner text-xs"></i>
+          <i *ngIf="!exportingCsv()" class="pi pi-download text-xs sm:text-sm"></i>
+          <span>Export Reports</span>
+          <i class="pi pi-chevron-down text-[10px]"></i>
+        </button>
+
+        <!-- Dropdown Menu -->
+        <div
+          *ngIf="showExportDropdown()"
+          class="absolute right-0 mt-2 w-56 bg-white rounded-xl border border-[#E2E8F0] shadow-lg py-1.5 z-30 animate-in fade-in zoom-in-95 duration-100"
+        >
+          <button
+            type="button"
+            (click)="exportInvoicesCsv()"
+            class="w-full px-4 py-2 text-left text-xs sm:text-sm text-slate-700 hover:bg-slate-50 hover:text-[#0F766E] font-medium flex items-center gap-2 cursor-pointer"
+          >
+            <i class="pi pi-file-excel text-emerald-600"></i>
+            <span>Export Invoices CSV</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Loading Skeletons -->
+  <div *ngIf="loading()" class="space-y-6">
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div *ngFor="let i of [1,2,3,4]" class="h-28 bg-white rounded-2xl border border-slate-200 p-5 animate-pulse flex items-center gap-4">
+        <div class="w-12 h-12 rounded-xl bg-slate-100"></div>
+        <div class="space-y-2 flex-1">
+          <div class="h-3 bg-slate-100 rounded w-1/2"></div>
+          <div class="h-6 bg-slate-100 rounded w-3/4"></div>
+        </div>
+      </div>
+    </div>
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div class="h-72 bg-white rounded-2xl border border-slate-200 p-6 animate-pulse"></div>
+      <div class="h-72 bg-white rounded-2xl border border-slate-200 p-6 animate-pulse"></div>
+    </div>
+  </div>
+
+  <!-- Error State -->
+  <div *ngIf="!loading() && error()" class="p-8 bg-rose-50 border border-rose-200 rounded-2xl text-center space-y-3">
+    <div class="w-12 h-12 rounded-full bg-rose-100 text-rose-600 flex items-center justify-center mx-auto">
+      <i class="pi pi-exclamation-triangle text-xl"></i>
+    </div>
+    <h3 class="text-base font-bold text-rose-900">Analytics Load Error</h3>
+    <p class="text-xs text-rose-700 max-w-md mx-auto">{{ error() }}</p>
+    <button
+      (click)="loadExecutiveMetrics()"
+      class="px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold transition-all cursor-pointer"
+    >
+      Retry Loading
+    </button>
+  </div>
+
+  <!-- Main Content View -->
+  <div *ngIf="!loading() && !error() && metrics() as m" class="space-y-6">
+    
+    <!-- 2. Financial KPI Cards (Subtle Light Glassmorphism Language) -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      
+      <!-- Gross Billed Revenue -->
+      <div
+        class="bg-white/80 backdrop-blur-md p-4 sm:p-5 rounded-2xl border border-white/90 shadow-[0_6px_24px_rgba(15,23,42,0.04)] flex items-center gap-4 transition-all hover:shadow-[0_8px_30px_rgba(15,23,42,0.08)] group"
+      >
+        <div class="w-12 h-12 rounded-xl bg-emerald-50 border border-emerald-100 flex items-center justify-center text-emerald-600 shrink-0 group-hover:scale-105 transition-transform">
+          <i class="pi pi-dollar text-xl font-bold"></i>
+        </div>
+        <div class="min-w-0">
+          <p class="text-xs font-semibold text-[#64748B] uppercase tracking-wider">GROSS BILLED REVENUE</p>
+          <p class="text-[11px] text-[#64748B]">Total billed statements</p>
+          <h3 class="text-2xl font-black text-[#0F172A] tracking-tight mt-0.5">$ {{ m.totalRevenue | number:'1.2-2' }}</h3>
+        </div>
+      </div>
+
+      <!-- Total Cash Collected -->
+      <div
+        class="bg-white/80 backdrop-blur-md p-4 sm:p-5 rounded-2xl border border-white/90 shadow-[0_6px_24px_rgba(15,23,42,0.04)] flex items-center gap-4 transition-all hover:shadow-[0_8px_30px_rgba(15,23,42,0.08)] group"
+      >
+        <div class="w-12 h-12 rounded-xl bg-blue-50 border border-blue-100 flex items-center justify-center text-[#0F766E] shrink-0 group-hover:scale-105 transition-transform">
+          <i class="pi pi-check-circle text-xl"></i>
+        </div>
+        <div class="min-w-0">
+          <p class="text-xs font-semibold text-[#64748B] uppercase tracking-wider">TOTAL CASH COLLECTED</p>
+          <p class="text-[11px] font-bold text-emerald-600">Collection Rate: {{ collectionRate() }}%</p>
+          <h3 class="text-2xl font-black text-emerald-600 tracking-tight mt-0.5">$ {{ m.totalCollected | number:'1.2-2' }}</h3>
+        </div>
+      </div>
+
+      <!-- Accounts Receivable -->
+      <div
+        class="bg-white/80 backdrop-blur-md p-4 sm:p-5 rounded-2xl border border-white/90 shadow-[0_6px_24px_rgba(15,23,42,0.04)] flex items-center gap-4 transition-all hover:shadow-[0_8px_30px_rgba(15,23,42,0.08)] group"
+      >
+        <div class="w-12 h-12 rounded-xl bg-amber-50 border border-amber-100 flex items-center justify-center text-amber-600 shrink-0 group-hover:scale-105 transition-transform">
+          <i class="pi pi-clock text-xl"></i>
+        </div>
+        <div class="min-w-0">
+          <p class="text-xs font-semibold text-[#64748B] uppercase tracking-wider">ACCOUNTS RECEIVABLE</p>
+          <p class="text-[11px] text-[#64748B]">
+            {{ m.totalOutstandingBalance > 0 ? 'Outstanding balance' : 'No outstanding balance' }}
+          </p>
+          <h3 class="text-2xl font-black text-amber-600 tracking-tight mt-0.5">$ {{ m.totalOutstandingBalance | number:'1.2-2' }}</h3>
+        </div>
+      </div>
+
+      <!-- Total Patients (Renamed from Active Directory) -->
+      <div
+        class="bg-white/80 backdrop-blur-md p-4 sm:p-5 rounded-2xl border border-white/90 shadow-[0_6px_24px_rgba(15,23,42,0.04)] flex items-center gap-4 transition-all hover:shadow-[0_8px_30px_rgba(15,23,42,0.08)] group"
+      >
+        <div class="w-12 h-12 rounded-xl bg-violet-50 border border-violet-100 flex items-center justify-center text-violet-600 shrink-0 group-hover:scale-105 transition-transform">
+          <i class="pi pi-users text-xl"></i>
+        </div>
+        <div class="min-w-0">
+          <p class="text-xs font-semibold text-[#64748B] uppercase tracking-wider">TOTAL PATIENTS</p>
+          <p class="text-[11px] text-[#64748B]">Registered patients</p>
+          <h3 class="text-2xl font-bold text-violet-700 tracking-tight mt-0.5">{{ m.totalPatients }}</h3>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- 3. Analytics Grid Row 1: Revenue Trend + Appointment Lifecycle -->
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+      
+      <!-- Revenue Trend Card (60% Desktop Width / 7 Cols) -->
+      <div class="lg:col-span-7 bg-white rounded-2xl border border-[#E2E8F0] shadow-2xs p-5 sm:p-6 flex flex-col gap-4">
+        
+        <!-- Header & Legend -->
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 pb-3">
+          <h2 class="text-base font-bold text-[#0F172A] flex items-center gap-2">
+            <i class="pi pi-chart-bar text-[#0F766E]"></i>
+            <span>Monthly Billed vs Collected Revenue Trend</span>
+          </h2>
+
+          <div class="flex items-center gap-4 text-xs font-semibold">
+            <span class="flex items-center gap-1.5 text-slate-700">
+              <span class="w-3 h-3 bg-indigo-500 rounded-xs"></span> Billed
+            </span>
+            <span class="flex items-center gap-1.5 text-slate-700">
+              <span class="w-3 h-3 bg-emerald-500 rounded-xs"></span> Collected
+            </span>
+          </div>
+        </div>
+
+        <!-- Header Summary Pill -->
+        <div class="flex items-center justify-between p-2.5 rounded-xl bg-slate-50 border border-slate-100 text-xs font-semibold">
+          <span class="text-slate-600">
+            Billed: <strong class="text-slate-900">$ {{ m.totalRevenue | number:'1.2-2' }}</strong>
+            · Collected: <strong class="text-emerald-600">$ {{ m.totalCollected | number:'1.2-2' }}</strong>
+          </span>
+          <span class="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[11px] font-bold">
+            {{ collectionRate() }}% Collection
+          </span>
+        </div>
+
+        <!-- Interactive Bar Chart Container -->
+        <div class="flex items-end justify-between gap-3 h-52 pt-6 px-2 border-b border-slate-200 relative">
+          
+          <div *ngFor="let item of m.monthlyRevenueTrend" class="flex-1 flex flex-col items-center gap-2 h-full justify-end">
+            <div class="w-full flex items-end justify-center gap-1.5 h-40">
+              
+              <!-- Billed Bar (Indigo) -->
+              <div
+                class="w-5 max-w-[20px] bg-indigo-500 hover:bg-indigo-600 rounded-t-md transition-all relative group cursor-pointer"
+                [style.height.%]="getBarHeightPercent(item.totalBilled)"
+              >
+                <!-- Tooltip -->
+                <div class="opacity-0 group-hover:opacity-100 pointer-events-none absolute -top-12 left-1/2 -translate-x-1/2 bg-slate-900 text-white text-[11px] px-2.5 py-1 rounded-lg shadow-md whitespace-nowrap z-20 transition-opacity">
+                  <div class="font-bold text-indigo-300">{{ item.monthName }}</div>
+                  <div>Billed: $ {{ item.totalBilled | number:'1.2-2' }}</div>
+                </div>
+              </div>
+
+              <!-- Collected Bar (Emerald) -->
+              <div
+                class="w-5 max-w-[20px] bg-emerald-500 hover:bg-emerald-600 rounded-t-md transition-all relative group cursor-pointer"
+                [style.height.%]="getBarHeightPercent(item.totalCollected)"
+              >
+                <!-- Tooltip -->
+                <div class="opacity-0 group-hover:opacity-100 pointer-events-none absolute -top-12 left-1/2 -translate-x-1/2 bg-slate-900 text-white text-[11px] px-2.5 py-1 rounded-lg shadow-md whitespace-nowrap z-20 transition-opacity">
+                  <div class="font-bold text-emerald-300">{{ item.monthName }}</div>
+                  <div>Collected: $ {{ item.totalCollected | number:'1.2-2' }}</div>
+                </div>
+              </div>
+
+            </div>
+
+            <!-- Month Label -->
+            <span class="text-xs font-semibold text-slate-600 uppercase tracking-wider">{{ item.monthName }}</span>
+          </div>
+
+          <!-- Empty Chart Fallback -->
+          <div *ngIf="!m.monthlyRevenueTrend || m.monthlyRevenueTrend.length === 0" class="absolute inset-0 flex items-center justify-center text-xs text-slate-400 italic">
+            No monthly revenue trend records available for this period.
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Appointment Lifecycle Status Breakdown (40% Desktop Width / 5 Cols) -->
+      <div class="lg:col-span-5 bg-white rounded-2xl border border-[#E2E8F0] shadow-2xs p-5 sm:p-6 flex flex-col gap-4">
+        
+        <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+          <h2 class="text-base font-bold text-[#0F172A] flex items-center gap-2">
+            <i class="pi pi-calendar text-blue-600"></i>
+            <span>Appointment Lifecycle Status</span>
+          </h2>
+          <span class="text-xs font-bold text-slate-500">Total Visits: {{ m.totalAppointments }}</span>
+        </div>
+
+        <div class="flex flex-col gap-4 py-1">
+          <div *ngFor="let status of m.appointmentStatusBreakdown" class="space-y-1.5">
+            <div class="flex justify-between text-xs font-bold">
+              <span class="text-slate-800">{{ status.status }}</span>
+              <span class="text-slate-600 font-mono">{{ status.count }} visits ({{ getPercent(status.count, m.totalAppointments) }}%)</span>
+            </div>
+
+            <!-- Progress Bar -->
+            <div class="w-full bg-slate-100 h-3 rounded-full overflow-hidden p-0.5 border border-slate-200/60">
+              <div
+                class="h-full rounded-full transition-all duration-300"
+                [ngClass]="{
+                  'bg-emerald-500': status.status === 'Completed',
+                  'bg-blue-500': status.status === 'Scheduled' || status.status === 'Confirmed',
+                  'bg-amber-500': status.status === 'Pending',
+                  'bg-rose-500': status.status === 'Cancelled' || status.status === 'NoShow'
+                }"
+                [style.width.%]="getPercent(status.count, m.totalAppointments)"
+              ></div>
+            </div>
+          </div>
+
+          <!-- Empty State -->
+          <div *ngIf="!m.appointmentStatusBreakdown || m.appointmentStatusBreakdown.length === 0" class="text-xs text-slate-400 italic py-8 text-center">
+            No appointment activity available for this reporting period.
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+
+    <!-- 4. Analytics Grid Row 2: Top Prescribed Medications + Top Diagnostic Lab Tests -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      
+      <!-- Top Prescribed Medications (Adaptive Card) -->
+      <div class="bg-white rounded-2xl border border-[#E2E8F0] shadow-2xs p-5 sm:p-6 flex flex-col gap-4">
+        
+        <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+          <h2 class="text-base font-bold text-[#0F172A] flex items-center gap-2">
+            <i class="pi pi-briefcase text-violet-600"></i>
+            <span>Top Prescribed Medications</span>
+          </h2>
+          <span class="text-xs font-semibold text-slate-500">Total Issued: {{ m.totalPrescriptionsIssued }}</span>
+        </div>
+
+        <div class="space-y-3">
+          <div
+            *ngFor="let drug of m.topPrescribedDrugs; let i = index"
+            class="p-3 bg-slate-50 border border-slate-200 rounded-xl space-y-2 relative overflow-hidden"
+          >
+            <!-- Usage Bar Background Glow -->
+            <div
+              class="absolute left-0 top-0 bottom-0 bg-violet-500/10 transition-all duration-300 pointer-events-none"
+              [style.width.%]="getTopItemWidthPercent(drug.count, m.topPrescribedDrugs)"
+            ></div>
+
+            <div class="relative z-10 flex items-center justify-between">
+              <div class="flex items-center gap-3">
+                <span class="w-6 h-6 rounded-full bg-violet-100 text-violet-700 font-bold text-xs flex items-center justify-center shrink-0">
+                  #{{ i + 1 }}
+                </span>
+                <span class="font-bold text-slate-900 text-xs sm:text-sm">{{ drug.name }}</span>
+              </div>
+
+              <span class="px-2.5 py-1 bg-white border border-violet-200 text-violet-700 font-bold rounded-lg text-xs shadow-2xs">
+                {{ drug.count }} {{ drug.count === 1 ? 'order' : 'orders' }}
+              </span>
+            </div>
+          </div>
+
+          <!-- Empty State -->
+          <div *ngIf="!m.topPrescribedDrugs || m.topPrescribedDrugs.length === 0" class="text-xs text-slate-400 italic py-6 text-center">
+            No prescription activity available for this reporting period.
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Top Diagnostic Lab Tests Executed (Adaptive Card) -->
+      <div class="bg-white rounded-2xl border border-[#E2E8F0] shadow-2xs p-5 sm:p-6 flex flex-col gap-4">
+        
+        <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+          <h2 class="text-base font-bold text-[#0F172A] flex items-center gap-2">
+            <i class="pi pi-compass text-rose-600"></i>
+            <span>Top Diagnostic Lab Tests Executed</span>
+          </h2>
+          <span class="text-xs font-semibold text-slate-500">Total Executed: {{ m.totalLabTestsExecuted }}</span>
+        </div>
+
+        <div class="space-y-3">
+          <div
+            *ngFor="let lab of m.topLabTests; let i = index"
+            class="p-3 bg-slate-50 border border-slate-200 rounded-xl space-y-2 relative overflow-hidden"
+          >
+            <!-- Usage Bar Background Glow -->
+            <div
+              class="absolute left-0 top-0 bottom-0 bg-rose-500/10 transition-all duration-300 pointer-events-none"
+              [style.width.%]="getTopItemWidthPercent(lab.count, m.topLabTests)"
+            ></div>
+
+            <div class="relative z-10 flex items-center justify-between">
+              <div class="flex items-center gap-3">
+                <span class="w-6 h-6 rounded-full bg-rose-100 text-rose-700 font-bold text-xs flex items-center justify-center shrink-0">
+                  #{{ i + 1 }}
+                </span>
+                <span class="font-bold text-slate-900 text-xs sm:text-sm">{{ lab.name }}</span>
+              </div>
+
+              <span class="px-2.5 py-1 bg-white border border-rose-200 text-rose-700 font-bold rounded-lg text-xs shadow-2xs">
+                {{ lab.count }} executed
+              </span>
+            </div>
+          </div>
+
+          <!-- Empty State -->
+          <div *ngIf="!m.topLabTests || m.topLabTests.length === 0" class="text-xs text-slate-400 italic py-6 text-center">
+            No completed laboratory tests available for this reporting period.
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+
+  </div>
+
+</div>

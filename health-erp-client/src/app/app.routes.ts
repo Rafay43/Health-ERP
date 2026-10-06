@@ -32,10 +32,7 @@ export const routes: Routes = [
       },
       {
         path: 'patients/register',
-        loadComponent: () =>
-          import('./features/patients/feature-registration/patient-registration').then(
-            (m) => m.PatientRegistration
-          ),
+        redirectTo: 'patients',
       },
       {
         path: 'patients/:id',
@@ -49,10 +46,7 @@ export const routes: Routes = [
       },
       {
         path: 'staff/register',
-        loadComponent: () =>
-          import('./features/staff/feature-registration/staff-registration').then(
-            (m) => m.StaffRegistration
-          ),
+        redirectTo: 'staff',
       },
       {
         path: 'appointments',
@@ -61,10 +55,7 @@ export const routes: Routes = [
       },
       {
         path: 'appointments/book',
-        loadComponent: () =>
-          import('./features/appointments/feature-booking/book-appointment').then(
-            (m) => m.BookAppointment
-          ),
+        redirectTo: 'appointments',
       },
       {
         path: 'billing',

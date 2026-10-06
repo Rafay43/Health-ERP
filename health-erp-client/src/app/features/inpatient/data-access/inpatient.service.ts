@@ -6,7 +6,8 @@ import {
   Admission,
   CreateBedRequest,
   AdmitPatientRequest,
-  DischargeRequest
+  DischargeRequest,
+  TransferBedRequest
 } from './inpatient.model';
 
 @Injectable({ providedIn: 'root' })
@@ -38,4 +39,9 @@ export class InpatientService {
   dischargePatient(admissionId: string, request: DischargeRequest): Observable<Admission> {
     return this.http.post<Admission>(`${this.baseUrl}/admissions/${admissionId}/discharge`, request);
   }
+
+  transferBed(admissionId: string, request: TransferBedRequest): Observable<Admission> {
+    return this.http.post<Admission>(`${this.baseUrl}/admissions/${admissionId}/transfer`, request);
+  }
 }
+

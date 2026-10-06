@@ -1,50 +1,98 @@
-<div class="flex h-screen bg-[var(--color-bg)]">
-  <!-- Sidebar -->
+<div class="flex h-screen w-screen max-w-full overflow-hidden bg-[#F8FAFC] font-sans antialiased text-[#1E293B]">
+  
+  <!-- Sidebar (220px Desktop Width) -->
   <aside
-    class="bg-[var(--color-surface)] border-r border-[var(--color-border)] transition-all duration-200 flex flex-col"
-    [class.w-64]="!sidebarCollapsed"
+    class="bg-white border-r border-[#E2E8F0] transition-all duration-200 flex flex-col shrink-0 z-30"
+    [class.w-[220px]]="!sidebarCollapsed"
     [class.w-16]="sidebarCollapsed"
   >
-    <div class="h-16 flex items-center justify-between px-4 border-b border-[var(--color-border)]">
+    <!-- Brand Header -->
+    <div class="h-16 flex items-center justify-between px-4 border-b border-[#E2E8F0] shrink-0">
       @if (!sidebarCollapsed) {
-        <span class="font-bold text-lg text-[var(--color-primary)]">Health ERP</span>
+        <div class="flex items-center gap-2.5">
+          <div class="w-8 h-8 rounded-lg bg-[#0F766E] text-white flex items-center justify-center shadow-xs">
+            <i class="pi pi-plus-circle text-base"></i>
+          </div>
+          <span class="font-bold text-base text-[#0F172A] tracking-tight">Health ERP</span>
+        </div>
       }
-      <p-button
-        icon="pi pi-bars"
-        [text]="true"
-        [rounded]="true"
-        (onClick)="toggleSidebar()"
-      ></p-button>
+      <button
+        type="button"
+        class="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors cursor-pointer"
+        (click)="toggleSidebar()"
+      >
+        <i class="pi pi-bars text-base"></i>
+      </button>
     </div>
 
-    <nav class="flex-1 overflow-y-auto py-4">
-      @for (item of navItems; track item.route) {
+    <!-- Navigation Items Categorized -->
+    <nav class="flex-1 overflow-y-auto p-3 flex flex-col justify-between">
+      <div class="space-y-1">
+        <div *ngIf="!sidebarCollapsed" class="pb-1 px-3 text-[10px] font-bold text-slate-400 uppercase tracking-wider">Clinical</div>
+        
+        @for (item of clinicalNavItems; track item.route) {
+          <a
+            [routerLink]="item.route"
+            routerLinkActive="!bg-teal-50/90 !text-[#0F766E] !font-semibold border-l-2 border-[#0F766E]"
+            [routerLinkActiveOptions]="{ exact: false }"
+            class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-xs font-medium text-[#475569] hover:bg-teal-50/60 hover:text-[#0F766E] transition-all duration-150"
+          >
+            <i [class]="item.icon" class="text-sm text-slate-400"></i>
+            @if (!sidebarCollapsed) {
+              <span>{{ item.label }}</span>
+            }
+          </a>
+        }
+
+        <div *ngIf="!sidebarCollapsed" class="pt-4 pb-1 px-3 text-[10px] font-bold text-slate-400 uppercase tracking-wider">Operations</div>
+        <div *ngIf="sidebarCollapsed" class="my-2 border-t border-slate-100"></div>
+
+        @for (item of operationsNavItems; track item.route) {
+          <a
+            [routerLink]="item.route"
+            routerLinkActive="!bg-teal-50/90 !text-[#0F766E] !font-semibold border-l-2 border-[#0F766E]"
+            [routerLinkActiveOptions]="{ exact: false }"
+            class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-xs font-medium text-[#475569] hover:bg-teal-50/60 hover:text-[#0F766E] transition-all duration-150"
+          >
+            <i [class]="item.icon" class="text-sm text-slate-400"></i>
+            @if (!sidebarCollapsed) {
+              <span>{{ item.label }}</span>
+            }
+          </a>
+        }
+      </div>
+
+      <!-- Bottom Admin Group -->
+      <div class="pt-3 border-t border-slate-100 mt-auto">
         <a
-          [routerLink]="item.route"
-          routerLinkActive="bg-[var(--color-primary)]/10 text-[var(--color-primary)] border-r-2 border-[var(--color-primary)]"
+          routerLink="/admin"
+          routerLinkActive="!bg-teal-50/90 !text-[#0F766E] !font-semibold border-l-2 border-[#0F766E]"
           [routerLinkActiveOptions]="{ exact: false }"
-          class="flex items-center gap-3 px-4 py-3 text-[var(--color-text-secondary)] hover:bg-[var(--color-bg)] transition-colors"
+          class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-xs font-medium text-[#475569] hover:bg-teal-50/60 hover:text-[#0F766E] transition-all duration-150"
         >
-          <i [class]="item.icon" class="text-lg"></i>
+          <i class="pi pi-cog text-sm text-slate-400"></i>
           @if (!sidebarCollapsed) {
-            <span class="text-sm font-medium">{{ item.label }}</span>
+            <span>Admin</span>
           }
         </a>
-      }
+      </div>
     </nav>
   </aside>
 
-  <!-- Main content area -->
-  <div class="flex-1 flex flex-col overflow-hidden relative">
-    <!-- Top bar -->
-    <header class="h-16 bg-[var(--color-surface)] border-b border-[var(--color-border)] flex items-center justify-between px-6 z-20">
-      <div class="relative flex items-center w-72 sm:w-96">
-        <i class="pi pi-search absolute left-3 text-slate-400 z-10 pointer-events-none"></i>
+  <!-- Main Content Wrapper -->
+  <div class="flex-1 flex flex-col overflow-hidden relative min-w-0">
+    
+    <!-- Top Header Bar -->
+    <header class="h-16 bg-white border-b border-[#E2E8F0] flex items-center justify-between px-6 z-20 shrink-0">
+      
+      <!-- Global Search Field -->
+      <div class="relative flex items-center w-80 sm:w-[380px]">
+        <i class="pi pi-search absolute left-3.5 text-slate-400 text-sm z-10 pointer-events-none"></i>
         <input
           type="text"
           pInputText
-          placeholder="Search patients, appointments, ER triage, staff..."
-          class="w-full !pl-10 !pr-8 !py-1.5 text-xs rounded-lg border border-slate-200 focus:ring-2 focus:ring-indigo-500 bg-slate-50 focus:bg-white transition-all text-slate-800"
+          placeholder="Search patients, MRN, appointments, staff..."
+          class="w-full !pl-10 !pr-8 !py-2 text-xs font-medium rounded-xl border border-slate-200 focus:border-[#0F766E] focus:ring-2 focus:ring-[#0F766E]/20 bg-[#F8FAFC] focus:bg-white transition-all text-[#0F172A]"
           [value]="searchQuery()"
           (input)="onSearchInput($event)"
           (focus)="onSearchFocus()"
@@ -52,7 +100,7 @@
         />
         <button
           *ngIf="searchQuery()"
-          class="absolute right-2 text-slate-400 hover:text-slate-600 z-10 text-xs"
+          class="absolute right-3 text-slate-400 hover:text-slate-600 z-10 text-xs"
           (click)="clearSearch()"
         >
           <i class="pi pi-times"></i>
@@ -65,7 +113,7 @@
         >
           <div class="p-2.5 bg-slate-50 border-b border-slate-200 flex items-center justify-between text-xs text-slate-500 font-medium">
             <span>Search Results for "<strong class="text-slate-800">{{ searchQuery() }}</strong>"</span>
-            <span class="text-2xs font-semibold px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-600">{{ searchResults().length }} matches</span>
+            <span class="text-2xs font-semibold px-2 py-0.5 rounded-full bg-teal-50 text-[#0F766E]">{{ searchResults().length }} matches</span>
           </div>
 
           <div class="flex-1 overflow-y-auto divide-y divide-slate-100">
@@ -80,7 +128,7 @@
               (click)="selectSearchResult(res)"
             >
               <div class="flex items-center gap-3 min-w-0">
-                <div class="w-8 h-8 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center shrink-0">
+                <div class="w-8 h-8 rounded-lg bg-teal-50 text-[#0F766E] flex items-center justify-center shrink-0">
                   <i [class]="res.icon" class="text-sm"></i>
                 </div>
                 <div class="truncate">
@@ -97,35 +145,36 @@
         </div>
       </div>
 
+      <!-- Right Header Actions -->
       <div class="flex items-center gap-4">
-        <!-- Notification Bell & Badge -->
+        <!-- Notification Bell -->
         <div class="relative">
           <button
-            class="p-2 rounded-full hover:bg-slate-100 relative transition-colors"
+            class="p-2 rounded-full hover:bg-slate-100 relative transition-colors cursor-pointer"
             (click)="toggleNotificationDrawer()"
           >
-            <i class="pi pi-bell text-xl text-slate-700"></i>
+            <i class="pi pi-bell text-lg text-slate-600"></i>
             <span
               *ngIf="notificationService.unreadCount() > 0"
-              class="absolute -top-1 -right-1 bg-rose-600 text-white text-3xs font-bold rounded-full h-5 w-5 flex items-center justify-center animate-bounce shadow-xs"
+              class="absolute top-0 right-0 bg-rose-600 text-white text-[10px] font-bold rounded-full h-4.5 w-4.5 flex items-center justify-center shadow-xs"
             >
               {{ notificationService.unreadCount() }}
             </span>
           </button>
 
-          <!-- Floating Notification Center Drawer -->
+          <!-- Notification Center Drawer -->
           <div
             *ngIf="showNotificationDrawer()"
             class="absolute right-0 mt-3 w-80 sm:w-96 bg-white rounded-xl shadow-2xl border border-slate-200 z-50 overflow-hidden flex flex-col max-h-[500px]"
           >
             <div class="p-3.5 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
               <div class="flex items-center gap-2">
-                <i class="pi pi-bell text-indigo-600 font-bold"></i>
+                <i class="pi pi-bell text-[#0F766E] font-bold"></i>
                 <h3 class="font-bold text-slate-800 text-sm">System Alerts & Notifications</h3>
               </div>
               <button
                 *ngIf="notificationService.unreadCount() > 0"
-                class="text-2xs font-semibold text-indigo-600 hover:text-indigo-800 transition-colors"
+                class="text-2xs font-semibold text-[#0F766E] hover:text-[#0D665F] transition-colors"
                 (click)="markAllAsRead()"
               >
                 Mark all read
@@ -148,43 +197,47 @@
                   <span class="font-bold text-slate-800 leading-snug">{{ n.title }}</span>
                   <span
                     *ngIf="!n.isRead && !(n.IsRead)"
-                    class="w-2 h-2 rounded-full bg-indigo-600 shrink-0 mt-1"
+                    class="w-2 h-2 rounded-full bg-[#0F766E] shrink-0 mt-1"
                     title="Unread"
                   ></span>
                 </div>
                 <p class="text-slate-600 text-2xs leading-relaxed">{{ n.message }}</p>
                 <div class="flex items-center justify-between text-3xs text-slate-400 mt-1">
                   <span>{{ n.createdAtUtc | date:'shortTime' }}</span>
-                  <span *ngIf="n.linkUrl" class="text-indigo-600 font-medium">View details &rarr;</span>
+                  <span *ngIf="n.linkUrl" class="text-[#0F766E] font-medium">View details &rarr;</span>
                 </div>
               </div>
             </div>
           </div>
         </div>
 
+        <!-- Administrator Profile -->
         @if (currentUser()) {
-          <div class="flex items-center gap-3 border-l border-[var(--color-border)] pl-4">
-            <p-avatar [label]="userInitials" shape="circle" styleClass="bg-[var(--color-primary)] text-white"></p-avatar>
-            <div class="hidden sm:flex flex-col">
-              <span class="text-sm font-semibold leading-tight text-[var(--color-text-primary)]">{{ currentUser()?.firstName }} {{ currentUser()?.lastName }}</span>
-              <span class="text-xs text-[var(--color-text-secondary)]">{{ currentUser()?.email }}</span>
+          <div class="flex items-center gap-3 border-l border-[#E2E8F0] pl-4">
+            <div class="w-9 h-9 rounded-full bg-[#0F766E] text-white font-bold text-xs flex items-center justify-center shadow-xs shrink-0">
+              {{ userInitials }}
             </div>
-            <p-button
-              icon="pi pi-sign-out"
-              [text]="true"
-              [rounded]="true"
-              severity="secondary"
-              pTooltip="Sign Out"
-              (onClick)="logout()"
-            ></p-button>
+            <div class="hidden sm:flex flex-col">
+              <span class="text-xs font-bold leading-tight text-[#0F172A]">System Administrator</span>
+              <span class="text-[11px] font-medium text-[#64748B]">{{ currentUser()?.email }}</span>
+            </div>
+            <button
+              type="button"
+              class="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer ml-1"
+              title="Sign Out"
+              (click)="logout()"
+            >
+              <i class="pi pi-sign-out text-base"></i>
+            </button>
           </div>
         }
       </div>
     </header>
 
-    <!-- Routed content -->
-    <main class="flex-1 overflow-y-auto p-6 bg-gradient-to-br from-[#dbe5f0] via-[#e6eff7] to-[#cbd7e6]">
+    <!-- Routed Dashboard Main Canvas (NO HORIZONTAL SCROLLBAR) -->
+    <main class="flex-1 overflow-y-auto p-5 sm:p-6 bg-[#F8FAFC] min-w-0">
       <router-outlet></router-outlet>
     </main>
   </div>
 </div>
+

@@ -84,4 +84,17 @@ public class Admission : BaseEntity<AdmissionId>, IAuditable
         var daysStayed = Math.Max(1, (int)Math.Ceiling(stayDuration.TotalDays));
         TotalRoomCharge = daysStayed * DailyRateSnapshot;
     }
+
+    public void TransferBed(BedId newBedId, decimal newDailyRate, string? transferReason)
+    {
+        if (IsDischarged)
+            throw new InvalidOperationException("Cannot transfer a discharged patient.");
+
+        BedId = newBedId;
+        DailyRateSnapshot = newDailyRate;
+        if (!string.IsNullOrWhiteSpace(transferReason))
+        {
+            ChiefComplaint += $" | Bed Transfer Note ({DateTime.UtcNow:yyyy-MM-dd}): {transferReason.Trim()}";
+        }
+    }
 }

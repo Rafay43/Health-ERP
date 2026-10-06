@@ -1,14 +1,6 @@
-import { Component, inject, OnInit, signal, computed } from '@angular/core';
+import { Component, inject, OnInit, signal, computed, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
-
-import { TableModule } from 'primeng/table';
-import { ButtonModule } from 'primeng/button';
-import { TagModule } from 'primeng/tag';
-import { TooltipModule } from 'primeng/tooltip';
-import { InputTextModule } from 'primeng/inputtext';
-import { DialogModule } from 'primeng/dialog';
-import { MessageModule } from 'primeng/message';
 
 import { EmergencyService } from './data-access/emergency.service';
 import { TriageRecord } from './data-access/emergency.model';
@@ -16,6 +8,8 @@ import { PatientService } from '../patients/data-access/patient.service';
 import { Patient } from '../patients/data-access/patient.model';
 import { InpatientService } from '../inpatient/data-access/inpatient.service';
 import { Bed } from '../inpatient/data-access/inpatient.model';
+import { StaffService } from '../staff/data-access/staff.service';
+import { Staff } from '../staff/data-access/staff.model';
 import Swal from 'sweetalert2';
 
 @Component({
@@ -25,386 +19,38 @@ import Swal from 'sweetalert2';
     CommonModule,
     FormsModule,
     ReactiveFormsModule,
-    TableModule,
-    ButtonModule,
-    TagModule,
-    TooltipModule,
-    InputTextModule,
-    DialogModule,
-    MessageModule,
   ],
-  template: `
-    <div class="flex flex-col gap-6">
-      <!-- Header -->
-      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h1 class="text-2xl font-bold text-[var(--color-text-primary)]">Emergency Department (ED) & Triage</h1>
-          <p class="text-sm text-[var(--color-text-secondary)]">
-            ESI Triage Level 1–5 triage queue, vital signs monitoring, bay allocation, and swift ward bed transfer
-          </p>
-        </div>
-        <div class="flex items-center gap-2">
-          <button
-            pButton
-            icon="pi pi-plus"
-            label="Rapid ER Intake / Triage"
-            class="p-button-danger"
-            (click)="openAddTriageModal()"
-          ></button>
-        </div>
-      </div>
-
-      <!-- KPI Summary Cards -->
-      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div class="bg-rose-50 p-4 rounded-xl border border-rose-200 shadow-xs flex items-center gap-4">
-          <div class="p-3 bg-rose-600 text-white rounded-lg animate-pulse">
-            <i class="pi pi-heart-fill text-xl"></i>
-          </div>
-          <div>
-            <p class="text-xs font-semibold text-rose-800 uppercase">Level 1 - Resuscitation</p>
-            <h3 class="text-2xl font-black text-rose-900">{{ level1Count() }}</h3>
-          </div>
-        </div>
-
-        <div class="bg-amber-50 p-4 rounded-xl border border-amber-200 shadow-xs flex items-center gap-4">
-          <div class="p-3 bg-amber-500 text-white rounded-lg">
-            <i class="pi pi-bolt text-xl"></i>
-          </div>
-          <div>
-            <p class="text-xs font-semibold text-amber-800 uppercase">Level 2 - Emergent</p>
-            <h3 class="text-2xl font-black text-amber-900">{{ level2Count() }}</h3>
-          </div>
-        </div>
-
-        <div class="bg-[var(--color-surface)] p-4 rounded-xl border border-[var(--color-border)] shadow-xs flex items-center gap-4">
-          <div class="p-3 bg-blue-100 text-blue-600 rounded-lg">
-            <i class="pi pi-users text-xl"></i>
-          </div>
-          <div>
-            <p class="text-xs font-medium text-[var(--color-text-secondary)] uppercase">In Bay Care</p>
-            <h3 class="text-xl font-bold text-[var(--color-text-primary)]">{{ inBayCareCount() }}</h3>
-          </div>
-        </div>
-
-        <div class="bg-[var(--color-surface)] p-4 rounded-xl border border-[var(--color-border)] shadow-xs flex items-center gap-4">
-          <div class="p-3 bg-purple-100 text-purple-600 rounded-lg">
-            <i class="pi pi-clock text-xl"></i>
-          </div>
-          <div>
-            <p class="text-xs font-medium text-[var(--color-text-secondary)] uppercase">Total Active ER Queue</p>
-            <h3 class="text-xl font-bold text-purple-600">{{ activeQueueCount() }}</h3>
-          </div>
-        </div>
-      </div>
-
-      <!-- Filter Bar -->
-      <div class="flex items-center justify-between border-b border-[var(--color-border)] pb-3">
-        <div class="flex items-center gap-2">
-          <button
-            class="px-4 py-1.5 font-medium text-xs rounded-lg transition-colors border"
-            [ngClass]="activeOnlyFilter() ? 'bg-rose-600 text-white border-rose-600' : 'bg-white text-slate-700 border-slate-300'"
-            (click)="toggleActiveFilter(true)"
-          >
-            Active ER Queue
-          </button>
-          <button
-            class="px-4 py-1.5 font-medium text-xs rounded-lg transition-colors border"
-            [ngClass]="!activeOnlyFilter() ? 'bg-rose-600 text-white border-rose-600' : 'bg-white text-slate-700 border-slate-300'"
-            (click)="toggleActiveFilter(false)"
-          >
-            All Historical Triage Logs
-          </button>
-        </div>
-      </div>
-
-      <!-- MAIN ER TRIAGE QUEUE TABLE -->
-      <div class="bg-[var(--color-surface)] rounded-xl border border-[var(--color-border)] shadow-xs overflow-hidden">
-        <p-table
-          [value]="triageRecords()"
-          [rows]="10"
-          [paginator]="true"
-          styleClass="p-datatable-sm"
-        >
-          <ng-template pTemplate="header">
-            <tr>
-              <th>ESI Triage Severity</th>
-              <th>Patient</th>
-              <th>Chief Complaint</th>
-              <th>Vital Signs</th>
-              <th>Assigned Bay</th>
-              <th>Status</th>
-              <th>Arrival Time</th>
-              <th class="text-right">ER Actions</th>
-            </tr>
-          </ng-template>
-          <ng-template pTemplate="body" let-rec>
-            <tr [ngClass]="{'bg-rose-50/40': rec.severityLevel === 1, 'bg-amber-50/30': rec.severityLevel === 2}">
-              <td>
-                <span
-                  class="px-2.5 py-1 rounded-full text-xs font-bold inline-flex items-center gap-1 shadow-2xs"
-                  [ngClass]="getSeverityBadgeClass(rec.severityLevel)"
-                >
-                  <span class="w-2 h-2 rounded-full" [ngClass]="getSeverityDotClass(rec.severityLevel)"></span>
-                  Level {{ rec.severityLevel }} - {{ getSeverityLabel(rec.severityLevel) }}
-                </span>
-              </td>
-              <td>
-                <div class="font-bold text-slate-800">{{ rec.patientName }}</div>
-                <div class="text-xs text-slate-500">MRN: {{ rec.patientMrn }}</div>
-              </td>
-              <td class="max-w-xs truncate font-medium text-slate-700" [pTooltip]="rec.chiefComplaint">
-                {{ rec.chiefComplaint }}
-              </td>
-              <td>
-                <div class="text-xs flex flex-wrap gap-1">
-                  <span class="px-1.5 py-0.5 bg-slate-100 rounded text-slate-700 font-mono">BP: {{ rec.bloodPressure }}</span>
-                  <span class="px-1.5 py-0.5 rounded font-mono" [ngClass]="rec.heartRateBpm > 100 ? 'bg-amber-100 text-amber-800 font-bold' : 'bg-slate-100 text-slate-700'">
-                    HR: {{ rec.heartRateBpm }}
-                  </span>
-                  <span class="px-1.5 py-0.5 rounded font-mono" [ngClass]="rec.oxygenSaturationSpO2 < 95 ? 'bg-rose-100 text-rose-800 font-bold' : 'bg-slate-100 text-slate-700'">
-                    SpO2: {{ rec.oxygenSaturationSpO2 }}%
-                  </span>
-                  <span class="px-1.5 py-0.5 bg-slate-100 rounded text-slate-700 font-mono">T: {{ rec.bodyTemperatureCelsius }}°C</span>
-                </div>
-              </td>
-              <td>
-                <div *ngIf="rec.assignedBay" class="font-bold text-indigo-700 text-sm">
-                  <i class="pi pi-map-marker text-xs mr-1"></i>{{ rec.assignedBay }}
-                </div>
-                <div *ngIf="!rec.assignedBay" class="text-xs text-amber-600 italic">
-                  Unassigned (Waiting)
-                </div>
-                <div *ngIf="rec.attendingPhysicianName" class="text-xs text-slate-500">
-                  {{ rec.attendingPhysicianName }}
-                </div>
-              </td>
-              <td>
-                <p-tag
-                  [value]="getStatusLabel(rec.statusName)"
-                  [severity]="getStatusSeverity(rec.statusName)"
-                ></p-tag>
-              </td>
-              <td>{{ rec.arrivalDateUtc | date:'shortTime' }}</td>
-              <td class="text-right">
-                <div *ngIf="rec.statusName !== 'DischargedFromED' && rec.statusName !== 'TransferredToInpatient'" class="flex items-center justify-end gap-1">
-                  <button
-                    pButton
-                    icon="pi pi-map-marker"
-                    pTooltip="Assign Bay / Doctor"
-                    class="p-button-xs p-button-outlined p-button-secondary"
-                    (click)="openAssignBayModal(rec)"
-                  ></button>
-                  <button
-                    pButton
-                    icon="pi pi-building"
-                    pTooltip="Transfer to Ward Bed"
-                    class="p-button-xs p-button-primary"
-                    (click)="openTransferModal(rec)"
-                  ></button>
-                  <button
-                    pButton
-                    icon="pi pi-check"
-                    pTooltip="Discharge from ER"
-                    class="p-button-xs p-button-success p-button-text"
-                    (click)="dischargeFromER(rec)"
-                  ></button>
-                </div>
-                <span *ngIf="rec.statusName === 'DischargedFromED' || rec.statusName === 'TransferredToInpatient'" class="text-xs text-slate-400">
-                  Resolved
-                </span>
-              </td>
-            </tr>
-          </ng-template>
-          <ng-template pTemplate="emptymessage">
-            <tr>
-              <td colspan="8" class="text-center py-8 text-slate-500">
-                No active patients in the Emergency Triage queue.
-              </td>
-            </tr>
-          </ng-template>
-        </p-table>
-      </div>
-
-      <!-- MODAL 1: RAPID ER TRIAGE INTAKE -->
-      <p-dialog
-        [(visible)]="showTriageDialog"
-        header="Emergency Department Intake & Triage"
-        [modal]="true"
-        [style]="{ width: '520px' }"
-      >
-        <form [formGroup]="triageForm" (ngSubmit)="submitTriage()" class="flex flex-col gap-4 mt-2">
-          <div>
-            <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">Emergency Patient</label>
-            <select
-              formControlName="patientId"
-              class="w-full px-3 py-2 rounded-lg border border-slate-300 bg-white text-sm focus:ring-2 focus:ring-rose-500"
-            >
-              <option value="" disabled>-- Select Patient --</option>
-              <option *ngFor="let p of patientList()" [value]="p.id">
-                {{ p.firstName }} {{ p.lastName }} (MRN: {{ p.medicalRecordNumber }})
-              </option>
-            </select>
-          </div>
-
-          <div>
-            <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">ESI Triage Severity Level</label>
-            <select
-              formControlName="severity"
-              class="w-full px-3 py-2 rounded-lg border-2 font-bold text-sm focus:ring-2"
-              [ngClass]="getSeveritySelectClass(triageForm.value.severity)"
-            >
-              <option [value]="1">Level 1 - Resuscitation (Immediate Life Threat)</option>
-              <option [value]="2">Level 2 - Emergent (High Risk / Urgent)</option>
-              <option [value]="3">Level 3 - Urgent (Multiple Resources Needed)</option>
-              <option [value]="4">Level 4 - Less Urgent (One Resource Needed)</option>
-              <option [value]="5">Level 5 - Non-Urgent (No Resources Needed)</option>
-            </select>
-          </div>
-
-          <div>
-            <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">Chief Complaint</label>
-            <textarea
-              rows="2"
-              pInputText
-              formControlName="chiefComplaint"
-              placeholder="e.g. Severe chest pain, respiratory distress, trauma..."
-              class="w-full"
-            ></textarea>
-          </div>
-
-          <!-- Vitals Grid -->
-          <div class="p-3 bg-slate-50 rounded-xl border border-slate-200">
-            <span class="text-xs font-bold text-slate-700 uppercase block mb-2">Initial Vital Signs</span>
-            <div class="grid grid-cols-3 gap-3">
-              <div>
-                <label class="block text-2xs font-medium text-slate-500">Blood Pressure</label>
-                <input pInputText formControlName="bloodPressure" placeholder="120/80" class="w-full text-xs" />
-              </div>
-              <div>
-                <label class="block text-2xs font-medium text-slate-500">Heart Rate (BPM)</label>
-                <input pInputText type="number" formControlName="heartRateBpm" placeholder="80" class="w-full text-xs" />
-              </div>
-              <div>
-                <label class="block text-2xs font-medium text-slate-500">SpO2 (%)</label>
-                <input pInputText type="number" formControlName="oxygenSaturationSpO2" placeholder="98" class="w-full text-xs" />
-              </div>
-              <div>
-                <label class="block text-2xs font-medium text-slate-500">Temp (°C)</label>
-                <input pInputText type="number" step="0.1" formControlName="bodyTemperatureCelsius" placeholder="37.0" class="w-full text-xs" />
-              </div>
-              <div>
-                <label class="block text-2xs font-medium text-slate-500">Resp Rate (BPM)</label>
-                <input pInputText type="number" formControlName="respiratoryRateBpm" placeholder="16" class="w-full text-xs" />
-              </div>
-              <div>
-                <label class="block text-2xs font-medium text-slate-500">Assign Bay (Opt.)</label>
-                <input pInputText formControlName="assignedBay" placeholder="Trauma Bay 1" class="w-full text-xs" />
-              </div>
-            </div>
-          </div>
-
-          <div>
-            <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">Triage Nurse Name</label>
-            <input pInputText formControlName="triageNurseName" class="w-full" />
-          </div>
-
-          <div class="flex justify-end gap-2 mt-2">
-            <button pButton type="button" label="Cancel" class="p-button-text" (click)="showTriageDialog.set(false)"></button>
-            <button pButton type="submit" label="Register ER Triage" class="p-button-danger" [disabled]="triageForm.invalid"></button>
-          </div>
-        </form>
-      </p-dialog>
-
-      <!-- MODAL 2: ASSIGN BAY & PHYSICIAN -->
-      <p-dialog
-        [(visible)]="showAssignBayDialog"
-        header="Assign ER Bay & Attending Physician"
-        [modal]="true"
-        [style]="{ width: '420px' }"
-      >
-        <form [formGroup]="assignBayForm" (ngSubmit)="submitAssignBay()" class="flex flex-col gap-4 mt-2">
-          <div>
-            <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">ER Bay / Bed Name</label>
-            <input pInputText formControlName="bayName" placeholder="e.g. Trauma Bay 01, ER Bed 3" class="w-full" />
-          </div>
-          <div>
-            <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">Attending Physician</label>
-            <input pInputText formControlName="attendingPhysicianName" placeholder="Dr. Gregory House" class="w-full" />
-          </div>
-
-          <div class="flex justify-end gap-2 mt-2">
-            <button pButton type="button" label="Cancel" class="p-button-text" (click)="showAssignBayDialog.set(false)"></button>
-            <button pButton type="submit" label="Save Bay Assignment" class="p-button-primary" [disabled]="assignBayForm.invalid"></button>
-          </div>
-        </form>
-      </p-dialog>
-
-      <!-- MODAL 3: TRANSFER TO INPATIENT WARD -->
-      <p-dialog
-        [(visible)]="showTransferDialog"
-        header="Transfer ER Patient to Inpatient Ward"
-        [modal]="true"
-        [style]="{ width: '480px' }"
-      >
-        <div *ngIf="selectedTriageForTransfer()" class="flex flex-col gap-4 mt-2">
-          <div class="p-3 bg-slate-50 rounded-lg border border-slate-200 text-xs">
-            <p class="font-bold text-slate-800 text-sm mb-1">{{ selectedTriageForTransfer()?.patientName }}</p>
-            <p class="text-slate-600">Chief Complaint: {{ selectedTriageForTransfer()?.chiefComplaint }}</p>
-          </div>
-
-          <form [formGroup]="transferForm" (ngSubmit)="submitTransfer()" class="flex flex-col gap-4">
-            <div>
-              <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">Select Available Ward Bed</label>
-              <select
-                formControlName="bedId"
-                class="w-full px-3 py-2 rounded-lg border border-slate-300 bg-white text-sm focus:ring-2 focus:ring-indigo-500"
-              >
-                <option value="" disabled>-- Select Inpatient Bed --</option>
-                <option *ngFor="let b of availableBeds()" [value]="b.id">
-                  {{ b.wardName }} - Room {{ b.roomNumber }} ({{ b.bedNumber }}) - $ {{ b.dailyRate }}/day
-                </option>
-              </select>
-            </div>
-
-            <div>
-              <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">Admitting Physician</label>
-              <input pInputText formControlName="admittingDoctorName" placeholder="Dr. Sarah Connor" class="w-full" />
-            </div>
-
-            <div>
-              <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">Admission Transfer Notes</label>
-              <textarea
-                rows="3"
-                pInputText
-                formControlName="admissionNotes"
-                placeholder="Urgent transfer from ER for continuous monitoring and surgical intervention..."
-                class="w-full"
-              ></textarea>
-            </div>
-
-            <div class="flex justify-end gap-2 mt-2">
-              <button pButton type="button" label="Cancel" class="p-button-text" (click)="showTransferDialog.set(false)"></button>
-              <button pButton type="submit" label="Execute Ward Transfer" class="p-button-success" [disabled]="transferForm.invalid"></button>
-            </div>
-          </form>
-        </div>
-      </p-dialog>
-    </div>
-  `
+  templateUrl: './emergency-list.html',
 })
 export class EmergencyListComponent implements OnInit {
   private emergencyService = inject(EmergencyService);
   private patientService = inject(PatientService);
   private inpatientService = inject(InpatientService);
+  private staffService = inject(StaffService);
   private fb = inject(FormBuilder);
+
+  // Global Math for template expressions
+  Math = Math;
 
   // State Signals
   triageRecords = signal<TriageRecord[]>([]);
   patientList = signal<Patient[]>([]);
   availableBeds = signal<Bed[]>([]);
+  staffList = signal<Staff[]>([]);
+  loading = signal<boolean>(false);
+  submitting = signal<boolean>(false);
 
+  // Navigation & Filters
   activeOnlyFilter = signal<boolean>(true);
+  searchQuery = signal<string>('');
+  selectedSeverity = signal<string>('');
+  selectedStatus = signal<string>('');
 
+  // Pagination
+  currentPage = signal<number>(1);
+  pageSize = signal<number>(10);
+
+  // Dialog Visibility Flags
   showTriageDialog = signal<boolean>(false);
   showAssignBayDialog = signal<boolean>(false);
   showTransferDialog = signal<boolean>(false);
@@ -412,305 +58,555 @@ export class EmergencyListComponent implements OnInit {
   selectedTriageForBay = signal<TriageRecord | null>(null);
   selectedTriageForTransfer = signal<TriageRecord | null>(null);
 
-  // Reactive Forms
+  // Feedback flags
+  triageError = signal<string | null>(null);
+
+  // Reactive Forms (UN-PREFILLED VITAL INPUTS FOR CLINICAL DATA ACCURACY)
   triageForm = this.fb.group({
     patientId: ['', Validators.required],
     severity: [2, Validators.required],
     chiefComplaint: ['', Validators.required],
-    bloodPressure: ['120/80', Validators.required],
-    heartRateBpm: [88, [Validators.required, Validators.min(20)]],
-    oxygenSaturationSpO2: [96, [Validators.required, Validators.min(50), Validators.max(100)]],
-    bodyTemperatureCelsius: [37.0, Validators.required],
-    respiratoryRateBpm: [18, Validators.required],
+    bloodPressure: [''],
+    heartRateBpm: [null as number | null],
+    oxygenSaturationSpO2: [null as number | null],
+    bodyTemperatureCelsius: [null as number | null],
+    respiratoryRateBpm: [null as number | null],
     triageNurseName: ['Nurse Clara Barton', Validators.required],
-    assignedBay: ['']
+    assignedBay: [''],
   });
 
   assignBayForm = this.fb.group({
     bayName: ['', Validators.required],
-    attendingPhysicianName: ['Dr. Gregory House', Validators.required]
+    attendingPhysicianName: ['Dr. Gregory House', Validators.required],
   });
 
   transferForm = this.fb.group({
     bedId: ['', Validators.required],
     admittingDoctorName: ['Dr. Sarah Connor', Validators.required],
-    admissionNotes: ['Direct ER transfer for inpatient care', Validators.required]
+    admissionNotes: ['Direct ER transfer for inpatient care', Validators.required],
   });
 
-  // Computed Signals
-  level1Count = computed(() => this.triageRecords().filter(r => r.severityLevel === 1 && r.statusName !== 'DischargedFromED' && r.statusName !== 'TransferredToInpatient').length);
-  level2Count = computed(() => this.triageRecords().filter(r => r.severityLevel === 2 && r.statusName !== 'DischargedFromED' && r.statusName !== 'TransferredToInpatient').length);
-  inBayCareCount = computed(() => this.triageRecords().filter(r => r.statusName === 'InBayCare').length);
-  activeQueueCount = computed(() => this.triageRecords().filter(r => r.statusName !== 'DischargedFromED' && r.statusName !== 'TransferredToInpatient').length);
+  // Computed KPI Signals
+  level1Count = computed(
+    () =>
+      this.triageRecords().filter(
+        (r) => r.severityLevel === 1 && r.statusName !== 'DischargedFromED' && r.statusName !== 'TransferredToInpatient'
+      ).length
+  );
 
-  ngOnInit() {
+  level2Count = computed(
+    () =>
+      this.triageRecords().filter(
+        (r) => r.severityLevel === 2 && r.statusName !== 'DischargedFromED' && r.statusName !== 'TransferredToInpatient'
+      ).length
+  );
+
+  inBayCareCount = computed(
+    () =>
+      this.triageRecords().filter(
+        (r) => r.statusName === 'InBayCare'
+      ).length
+  );
+
+  activeQueueCount = computed(
+    () =>
+      this.triageRecords().filter(
+        (r) => r.statusName !== 'DischargedFromED' && r.statusName !== 'TransferredToInpatient'
+      ).length
+  );
+
+  historicalCount = computed(
+    () =>
+      this.triageRecords().filter(
+        (r) => r.statusName === 'DischargedFromED' || r.statusName === 'TransferredToInpatient'
+      ).length
+  );
+
+  // Filtered Queue List
+  filteredTriageRecords = computed(() => {
+    let list = this.triageRecords();
+
+    // 1. Tab filter
+    if (this.activeOnlyFilter()) {
+      list = list.filter((r) => r.statusName !== 'DischargedFromED' && r.statusName !== 'TransferredToInpatient');
+    } else {
+      list = list.filter((r) => r.statusName === 'DischargedFromED' || r.statusName === 'TransferredToInpatient');
+    }
+
+    // 2. Search query
+    const query = this.searchQuery().trim().toLowerCase();
+    if (query) {
+      list = list.filter(
+        (r) =>
+          r.patientName?.toLowerCase().includes(query) ||
+          r.patientMrn?.toLowerCase().includes(query) ||
+          r.chiefComplaint?.toLowerCase().includes(query) ||
+          r.assignedBay?.toLowerCase().includes(query) ||
+          r.triageNurseName?.toLowerCase().includes(query)
+      );
+    }
+
+    // 3. Severity filter
+    const sev = this.selectedSeverity();
+    if (sev) {
+      list = list.filter((r) => r.severityLevel === Number(sev));
+    }
+
+    // 4. Status filter
+    const status = this.selectedStatus();
+    if (status) {
+      list = list.filter((r) => r.statusName.toLowerCase() === status.toLowerCase());
+    }
+
+    // 5. Clinical Priority Sorting for Active Queue (ESI 1 first, ESI 2 second, etc.)
+    if (this.activeOnlyFilter()) {
+      list = [...list].sort((a, b) => a.severityLevel - b.severityLevel);
+    }
+
+    return list;
+  });
+
+  // Paginated List
+  paginatedTriageRecords = computed(() => {
+    const list = this.filteredTriageRecords();
+    const page = this.currentPage();
+    const size = this.pageSize();
+    const start = (page - 1) * size;
+    return list.slice(start, start + size);
+  });
+
+  totalPages = computed(() => {
+    const count = this.filteredTriageRecords().length;
+    return Math.ceil(count / this.pageSize()) || 1;
+  });
+
+  ngOnInit(): void {
     this.loadEmergencyQueue();
     this.loadPatients();
     this.loadBeds();
+    this.loadStaff();
   }
 
-  loadEmergencyQueue() {
+  @HostListener('window:keydown.escape')
+  onEscapeKey(): void {
+    if (this.showTriageDialog()) this.showTriageDialog.set(false);
+    if (this.showAssignBayDialog()) this.showAssignBayDialog.set(false);
+    if (this.showTransferDialog()) this.showTransferDialog.set(false);
+    document.body.style.overflow = '';
+  }
+
+  loadEmergencyQueue(): void {
+    this.loading.set(true);
     this.emergencyService.getEmergencyQueue(this.activeOnlyFilter()).subscribe({
-      next: (data) => this.triageRecords.set(data),
-      error: (err) => console.error('Failed to load emergency queue', err)
+      next: (data) => {
+        this.triageRecords.set(data || []);
+        this.loading.set(false);
+      },
+      error: () => this.loading.set(false),
     });
   }
 
-  loadPatients() {
+  loadPatients(): void {
     this.patientService.getPatients().subscribe({
-      next: (data) => this.patientList.set(data),
-      error: (err) => console.error('Failed to load patients', err)
+      next: (data) => this.patientList.set(data || []),
     });
   }
 
-  loadBeds() {
+  loadBeds(): void {
     this.inpatientService.getBedGrid().subscribe({
-      next: (data) => this.availableBeds.set(data.filter(b => b.status === 'Available')),
-      error: (err) => console.error('Failed to load beds', err)
+      next: (data) => this.availableBeds.set((data || []).filter((b) => b.status === 'Available')),
     });
   }
 
-  toggleActiveFilter(active: boolean) {
+  loadStaff(): void {
+    this.staffService.getStaff().subscribe({
+      next: (staff) => this.staffList.set(staff || []),
+    });
+  }
+
+  toggleActiveFilter(active: boolean): void {
     this.activeOnlyFilter.set(active);
+    this.currentPage.set(1);
     this.loadEmergencyQueue();
+  }
+
+  onKpiClick(type: 'esi1' | 'esi2' | 'inBay' | 'activeQueue'): void {
+    this.activeOnlyFilter.set(true);
+    this.currentPage.set(1);
+
+    if (type === 'esi1') {
+      this.selectedSeverity.set('1');
+      this.selectedStatus.set('');
+      this.searchQuery.set('');
+    } else if (type === 'esi2') {
+      this.selectedSeverity.set('2');
+      this.selectedStatus.set('');
+      this.searchQuery.set('');
+    } else if (type === 'inBay') {
+      this.selectedStatus.set('InBayCare');
+      this.selectedSeverity.set('');
+      this.searchQuery.set('');
+    } else if (type === 'activeQueue') {
+      this.selectedSeverity.set('');
+      this.selectedStatus.set('');
+      this.searchQuery.set('');
+    }
+  }
+
+  clearFilters(): void {
+    this.searchQuery.set('');
+    this.selectedSeverity.set('');
+    this.selectedStatus.set('');
+    this.currentPage.set(1);
+  }
+
+  goToPage(page: number): void {
+    if (page >= 1 && page <= this.totalPages()) {
+      this.currentPage.set(page);
+    }
+  }
+
+  onBackdropClick(event: MouseEvent, dialogType: 'triage' | 'assignBay' | 'transfer'): void {
+    if ((event.target as HTMLElement).classList.contains('modal-backdrop')) {
+      if (dialogType === 'triage') this.showTriageDialog.set(false);
+      if (dialogType === 'assignBay') this.showAssignBayDialog.set(false);
+      if (dialogType === 'transfer') this.showTransferDialog.set(false);
+      document.body.style.overflow = '';
+    }
+  }
+
+  // Modal 1: Rapid ER Intake
+  openAddTriageModal(): void {
+    this.triageError.set(null);
+    const firstPatient = this.patientList().length > 0 ? this.patientList()[0].id : '';
+    const defaultNurse = this.staffList().length > 0 ? `Nurse ${this.staffList()[0].firstName} ${this.staffList()[0].lastName}` : 'Nurse Clara Barton';
+
+    this.triageForm.reset({
+      patientId: firstPatient,
+      severity: 2,
+      chiefComplaint: '',
+      bloodPressure: '',
+      heartRateBpm: null,
+      oxygenSaturationSpO2: null,
+      bodyTemperatureCelsius: null,
+      respiratoryRateBpm: null,
+      triageNurseName: defaultNurse,
+      assignedBay: '',
+    });
+
+    this.showTriageDialog.set(true);
+    document.body.style.overflow = 'hidden';
+  }
+
+  submitTriage(): void {
+    if (this.triageForm.invalid) return;
+
+    this.submitting.set(true);
+    this.triageError.set(null);
+    const val = this.triageForm.value;
+
+    const payload = {
+      patientId: val.patientId!,
+      chiefComplaint: val.chiefComplaint!.trim(),
+      bloodPressure: val.bloodPressure?.trim() || '',
+      heartRateBpm: val.heartRateBpm != null ? Number(val.heartRateBpm) : 0,
+      oxygenSaturationSpO2: val.oxygenSaturationSpO2 != null ? Number(val.oxygenSaturationSpO2) : 0,
+      bodyTemperatureCelsius: val.bodyTemperatureCelsius != null ? Number(val.bodyTemperatureCelsius) : 0,
+      respiratoryRateBpm: val.respiratoryRateBpm != null ? Number(val.respiratoryRateBpm) : 0,
+      severity: Number(val.severity),
+      triageNurseName: val.triageNurseName!.trim(),
+      assignedBay: val.assignedBay?.trim() || undefined,
+    };
+
+    this.emergencyService.createTriageRecord(payload).subscribe({
+      next: () => {
+        this.submitting.set(false);
+        this.showTriageDialog.set(false);
+        document.body.style.overflow = '';
+        this.loadEmergencyQueue();
+
+        Swal.fire({
+          title: 'ER Triage Registered',
+          text: 'Emergency patient has been added to the triage queue.',
+          icon: 'success',
+          confirmButtonColor: '#0F766E',
+          timer: 2200,
+          timerProgressBar: true,
+        });
+      },
+      error: (err) => {
+        this.submitting.set(false);
+        const msg = err.error?.detail || err.error?.message || 'Failed to register ER triage encounter.';
+        this.triageError.set(msg);
+      },
+    });
+  }
+
+  // Modal 2: Assign Bay & Physician
+  openAssignBayModal(rec: TriageRecord): void {
+    this.selectedTriageForBay.set(rec);
+    const defaultDoctor = this.staffList().length > 0 ? `Dr. ${this.staffList()[0].firstName} ${this.staffList()[0].lastName}` : 'Dr. Gregory House';
+
+    this.assignBayForm.reset({
+      bayName: rec.assignedBay || 'Trauma Bay 01',
+      attendingPhysicianName: rec.attendingPhysicianName || defaultDoctor,
+    });
+    this.showAssignBayDialog.set(true);
+    document.body.style.overflow = 'hidden';
+  }
+
+  submitAssignBay(): void {
+    const rec = this.selectedTriageForBay();
+    if (!rec || this.assignBayForm.invalid) return;
+
+    this.submitting.set(true);
+    const val = this.assignBayForm.value;
+
+    this.emergencyService
+      .assignBay(rec.id, {
+        bayName: val.bayName!.trim(),
+        attendingPhysicianName: val.attendingPhysicianName!.trim(),
+      })
+      .subscribe({
+        next: () => {
+          this.submitting.set(false);
+          this.showAssignBayDialog.set(false);
+          this.selectedTriageForBay.set(null);
+          document.body.style.overflow = '';
+          this.loadEmergencyQueue();
+
+          Swal.fire({
+            title: 'Bay Assigned',
+            text: `Patient assigned to ${val.bayName} successfully.`,
+            icon: 'success',
+            confirmButtonColor: '#0F766E',
+            timer: 2200,
+            timerProgressBar: true,
+          });
+        },
+        error: () => this.submitting.set(false),
+      });
+  }
+
+  // Modal 3: Transfer to Ward
+  openTransferModal(rec: TriageRecord): void {
+    this.selectedTriageForTransfer.set(rec);
+    const firstBed = this.availableBeds().length > 0 ? this.availableBeds()[0].id : '';
+    const doctor = rec.attendingPhysicianName || 'Dr. Sarah Connor';
+
+    this.transferForm.reset({
+      bedId: firstBed,
+      admittingDoctorName: doctor,
+      admissionNotes: `ER Transfer: ${rec.chiefComplaint}`,
+    });
+    this.showTransferDialog.set(true);
+    document.body.style.overflow = 'hidden';
+  }
+
+  submitTransfer(): void {
+    const rec = this.selectedTriageForTransfer();
+    if (!rec || this.transferForm.invalid) return;
+
+    this.submitting.set(true);
+    const val = this.transferForm.value;
+
+    this.emergencyService
+      .transferToInpatient(rec.id, {
+        bedId: val.bedId!,
+        admittingDoctorName: val.admittingDoctorName!.trim(),
+        admissionNotes: val.admissionNotes!.trim(),
+      })
+      .subscribe({
+        next: () => {
+          this.submitting.set(false);
+          this.showTransferDialog.set(false);
+          this.selectedTriageForTransfer.set(null);
+          document.body.style.overflow = '';
+          this.loadEmergencyQueue();
+          this.loadBeds();
+
+          Swal.fire({
+            title: 'Transferred to Ward',
+            text: 'Patient successfully transferred to inpatient ward bed.',
+            icon: 'success',
+            confirmButtonColor: '#0F766E',
+            timer: 2200,
+            timerProgressBar: true,
+          });
+        },
+        error: () => this.submitting.set(false),
+      });
+  }
+
+  // Action: Discharge from ER
+  dischargeFromER(rec: TriageRecord): void {
+    Swal.fire({
+      title: 'Discharge Patient?',
+      text: `Are you sure you want to discharge ${rec.patientName} from Emergency Department?`,
+      icon: 'question',
+      showCancelButton: true,
+      confirmButtonColor: '#0F766E',
+      cancelButtonColor: '#64748B',
+      confirmButtonText: 'Yes, Discharge ER',
+    }).then((result) => {
+      if (result.isConfirmed) {
+        this.submitting.set(true);
+        this.emergencyService.dischargeFromEmergency(rec.id).subscribe({
+          next: () => {
+            this.submitting.set(false);
+            this.loadEmergencyQueue();
+
+            Swal.fire({
+              title: 'Discharged',
+              text: 'Patient discharged from Emergency Department.',
+              icon: 'success',
+              confirmButtonColor: '#0F766E',
+              timer: 2200,
+              timerProgressBar: true,
+            });
+          },
+          error: () => this.submitting.set(false),
+        });
+      }
+    });
+  }
+
+  // Formatting & Display Helpers
+  getSeverityLabel(level: number): string {
+    switch (level) {
+      case 1:
+        return 'Resuscitation';
+      case 2:
+        return 'Emergent';
+      case 3:
+        return 'Urgent';
+      case 4:
+        return 'Less Urgent';
+      case 5:
+        return 'Non-Urgent';
+      default:
+        return 'Unknown';
+    }
   }
 
   getSeverityBadgeClass(level: number): string {
     switch (level) {
-      case 1: return 'bg-rose-600 text-white animate-pulse';
-      case 2: return 'bg-amber-500 text-white';
-      case 3: return 'bg-yellow-400 text-slate-900';
-      case 4: return 'bg-emerald-500 text-white';
-      case 5: return 'bg-blue-500 text-white';
-      default: return 'bg-slate-500 text-white';
+      case 1:
+        return 'bg-rose-100 text-rose-800 border border-rose-300 font-extrabold';
+      case 2:
+        return 'bg-orange-100 text-orange-800 border border-orange-300 font-bold';
+      case 3:
+        return 'bg-amber-50 text-amber-800 border border-amber-200 font-bold';
+      case 4:
+        return 'bg-blue-50 text-blue-700 border border-blue-200';
+      case 5:
+        return 'bg-emerald-50 text-emerald-700 border border-emerald-200';
+      default:
+        return 'bg-slate-100 text-slate-700 border border-slate-200';
     }
   }
 
   getSeverityDotClass(level: number): string {
     switch (level) {
-      case 1: return 'bg-white animate-ping';
-      case 2: return 'bg-white';
-      default: return 'bg-slate-200';
+      case 1:
+        return 'bg-rose-600 animate-ping';
+      case 2:
+        return 'bg-orange-600';
+      case 3:
+        return 'bg-amber-500';
+      case 4:
+        return 'bg-blue-500';
+      case 5:
+        return 'bg-emerald-500';
+      default:
+        return 'bg-slate-400';
+    }
+  }
+
+  getSeverityRowBorderClass(level: number): string {
+    switch (level) {
+      case 1:
+        return 'border-l-4 border-l-rose-500';
+      case 2:
+        return 'border-l-4 border-l-orange-500';
+      case 3:
+        return 'border-l-4 border-l-amber-400';
+      default:
+        return '';
     }
   }
 
   getSeveritySelectClass(level: any): string {
     const lvl = Number(level);
     switch (lvl) {
-      case 1: return 'border-rose-600 bg-rose-50 text-rose-900';
-      case 2: return 'border-amber-500 bg-amber-50 text-amber-900';
-      case 3: return 'border-yellow-500 bg-yellow-50 text-yellow-900';
-      default: return 'border-slate-300';
-    }
-  }
-
-  getSeverityLabel(level: number): string {
-    switch (level) {
-      case 1: return 'Resuscitation';
-      case 2: return 'Emergent';
-      case 3: return 'Urgent';
-      case 4: return 'Less Urgent';
-      case 5: return 'Non-Urgent';
-      default: return 'Unknown';
+      case 1:
+        return 'border-rose-500 bg-rose-50 text-rose-900';
+      case 2:
+        return 'border-orange-500 bg-orange-50 text-orange-900';
+      case 3:
+        return 'border-amber-400 bg-amber-50 text-amber-900';
+      default:
+        return 'border-slate-200 bg-slate-50 text-slate-800';
     }
   }
 
   getStatusLabel(status: string): string {
     switch (status) {
-      case 'WaitingForTriage': return 'Waiting Triage';
-      case 'Triaged': return 'Triaged';
-      case 'InBayCare': return 'In Bay Care';
-      case 'TransferredToInpatient': return 'Transferred to Ward';
-      case 'DischargedFromED': return 'Discharged ER';
-      default: return status;
+      case 'WaitingForTriage':
+        return 'Waiting Triage';
+      case 'Triaged':
+        return 'Triaged';
+      case 'InBayCare':
+        return 'In Bay Care';
+      case 'TransferredToInpatient':
+        return 'Transferred to Ward';
+      case 'DischargedFromED':
+        return 'Discharged ER';
+      default:
+        return status;
     }
   }
 
-  getStatusSeverity(status: string): 'success' | 'danger' | 'warn' | 'info' | 'secondary' {
+  getStatusBadgeClass(status: string): string {
     switch (status) {
-      case 'InBayCare': return 'info';
-      case 'Triaged': return 'warn';
-      case 'TransferredToInpatient': return 'success';
-      case 'DischargedFromED': return 'secondary';
-      default: return 'danger';
+      case 'InBayCare':
+        return 'bg-blue-50 text-blue-700 border border-blue-200';
+      case 'Triaged':
+        return 'bg-amber-50 text-amber-700 border border-amber-200';
+      case 'TransferredToInpatient':
+        return 'bg-emerald-50 text-emerald-700 border border-emerald-200';
+      case 'DischargedFromED':
+        return 'bg-slate-100 text-slate-700 border border-slate-200';
+      default:
+        return 'bg-amber-50 text-amber-700 border border-amber-200';
     }
   }
 
-  openAddTriageModal() {
-    this.triageForm.reset({
-      patientId: '',
-      severity: 2,
-      chiefComplaint: '',
-      bloodPressure: '120/80',
-      heartRateBpm: 88,
-      oxygenSaturationSpO2: 96,
-      bodyTemperatureCelsius: 37.0,
-      respiratoryRateBpm: 18,
-      triageNurseName: 'Nurse Clara Barton',
-      assignedBay: ''
-    });
-    this.showTriageDialog.set(true);
-  }
-
-  submitTriage() {
-    if (this.triageForm.invalid) return;
-
-    const val = this.triageForm.value;
-    this.emergencyService.createTriageRecord({
-      patientId: val.patientId!,
-      chiefComplaint: val.chiefComplaint!,
-      bloodPressure: val.bloodPressure!,
-      heartRateBpm: Number(val.heartRateBpm),
-      oxygenSaturationSpO2: Number(val.oxygenSaturationSpO2),
-      bodyTemperatureCelsius: Number(val.bodyTemperatureCelsius),
-      respiratoryRateBpm: Number(val.respiratoryRateBpm),
-      severity: Number(val.severity),
-      triageNurseName: val.triageNurseName!,
-      assignedBay: val.assignedBay || undefined
-    }).subscribe({
-      next: () => {
-        this.showTriageDialog.set(false);
-        this.loadEmergencyQueue();
-        Swal.fire({
-          title: 'Successful!',
-          text: 'Emergency triage record saved successfully.',
-          icon: 'success',
-          confirmButtonColor: '#10b981',
-          timer: 2500,
-          timerProgressBar: true
-        });
-      },
-      error: (err) => {
-        Swal.fire({
-          title: 'Error',
-          text: err.error?.detail || err.error?.message || 'Failed to create ER triage.',
-          icon: 'error',
-          confirmButtonColor: '#ef4444'
-        });
-      }
+  formatTime(isoString: string): string {
+    if (!isoString) return '';
+    const d = new Date(isoString);
+    if (isNaN(d.getTime())) return isoString;
+    return d.toLocaleTimeString('en-US', {
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: true,
     });
   }
 
-  openAssignBayModal(rec: TriageRecord) {
-    this.selectedTriageForBay.set(rec);
-    this.assignBayForm.reset({
-      bayName: rec.assignedBay || 'Trauma Bay 01',
-      attendingPhysicianName: rec.attendingPhysicianName || 'Dr. Gregory House'
-    });
-    this.showAssignBayDialog.set(true);
-  }
+  calculateWaitTime(arrivalIso: string): string {
+    if (!arrivalIso) return '-';
+    const arrival = new Date(arrivalIso).getTime();
+    if (isNaN(arrival)) return '-';
 
-  submitAssignBay() {
-    const rec = this.selectedTriageForBay();
-    if (!rec || this.assignBayForm.invalid) return;
+    const now = new Date().getTime();
+    const diffMs = Math.max(0, now - arrival);
+    const diffMins = Math.floor(diffMs / 60000);
 
-    const val = this.assignBayForm.value;
-    this.emergencyService.assignBay(rec.id, {
-      bayName: val.bayName!,
-      attendingPhysicianName: val.attendingPhysicianName!
-    }).subscribe({
-      next: () => {
-        this.showAssignBayDialog.set(false);
-        this.selectedTriageForBay.set(null);
-        this.loadEmergencyQueue();
-        Swal.fire({
-          title: 'Successful!',
-          text: `Assigned to ${val.bayName} successfully.`,
-          icon: 'success',
-          confirmButtonColor: '#10b981',
-          timer: 2500,
-          timerProgressBar: true
-        });
-      },
-      error: (err) => {
-        Swal.fire({
-          title: 'Error',
-          text: err.error?.detail || err.error?.message || 'Failed to assign bay.',
-          icon: 'error',
-          confirmButtonColor: '#ef4444'
-        });
-      }
-    });
-  }
-
-  openTransferModal(rec: TriageRecord) {
-    this.selectedTriageForTransfer.set(rec);
-    this.transferForm.reset({
-      bedId: '',
-      admittingDoctorName: rec.attendingPhysicianName || 'Dr. Sarah Connor',
-      admissionNotes: `ER Transfer: ${rec.chiefComplaint}`
-    });
-    this.showTransferDialog.set(true);
-  }
-
-  submitTransfer() {
-    const rec = this.selectedTriageForTransfer();
-    if (!rec || this.transferForm.invalid) return;
-
-    const val = this.transferForm.value;
-    this.emergencyService.transferToInpatient(rec.id, {
-      bedId: val.bedId!,
-      admittingDoctorName: val.admittingDoctorName!,
-      admissionNotes: val.admissionNotes!
-    }).subscribe({
-      next: () => {
-        this.showTransferDialog.set(false);
-        this.selectedTriageForTransfer.set(null);
-        this.loadEmergencyQueue();
-        this.loadBeds();
-        Swal.fire({
-          title: 'Successful!',
-          text: 'Patient transferred to inpatient ward successfully.',
-          icon: 'success',
-          confirmButtonColor: '#10b981',
-          timer: 2500,
-          timerProgressBar: true
-        });
-      },
-      error: (err) => {
-        Swal.fire({
-          title: 'Error',
-          text: err.error?.detail || err.error?.message || 'Failed to transfer patient to ward.',
-          icon: 'error',
-          confirmButtonColor: '#ef4444'
-        });
-      }
-    });
-  }
-
-  dischargeFromER(rec: TriageRecord) {
-    Swal.fire({
-      title: 'Discharge Patient?',
-      text: `Discharge ${rec.patientName} from Emergency Department?`,
-      icon: 'question',
-      showCancelButton: true,
-      confirmButtonColor: '#ef4444',
-      cancelButtonColor: '#6b7280',
-      confirmButtonText: 'Yes, Discharge'
-    }).then((result) => {
-      if (result.isConfirmed) {
-        this.emergencyService.dischargeFromEmergency(rec.id).subscribe({
-          next: () => {
-            this.loadEmergencyQueue();
-            Swal.fire({
-              title: 'Successful!',
-              text: 'Patient discharged from Emergency Department.',
-              icon: 'success',
-              confirmButtonColor: '#10b981',
-              timer: 2500,
-              timerProgressBar: true
-            });
-          },
-          error: (err) => {
-            Swal.fire({
-              title: 'Error',
-              text: err.error?.detail || err.error?.message || 'Failed to discharge patient from ER.',
-              icon: 'error',
-              confirmButtonColor: '#ef4444'
-            });
-          }
-        });
-      }
-    });
+    if (diffMins < 60) {
+      return `${diffMins} min`;
+    }
+    const hrs = Math.floor(diffMins / 60);
+    const mins = diffMins % 60;
+    return `${hrs}h ${mins}m`;
   }
 }

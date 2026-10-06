@@ -56,7 +56,19 @@ public static class InpatientEndpoints
         .Produces<AdmissionDto>(200)
         .Produces(400)
         .Produces(404);
+
+        group.MapPost("/admissions/{id:guid}/transfer", async (Guid id, TransferBedRequest request, IMediator mediator) =>
+        {
+            var result = await mediator.Send(new TransferBedCommand(id, request.NewBedId, request.TransferReason));
+            return Results.Ok(result);
+        })
+        .WithName("TransferBed")
+        .Produces<AdmissionDto>(200)
+        .Produces(400)
+        .Produces(404);
     }
 }
 
 public record DischargeRequest(string DischargeSummary);
+public record TransferBedRequest(Guid NewBedId, string? TransferReason);
+

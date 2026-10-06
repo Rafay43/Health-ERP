@@ -1,0 +1,997 @@
+<div class="space-y-6 w-full max-w-full min-w-0 pb-6">
+
+  <!-- 1. Header Bar -->
+  <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+    <div>
+      <h1 class="text-2xl sm:text-[28px] font-bold text-[#0F172A] tracking-tight">Laboratory & Diagnostics Management</h1>
+      <p class="text-xs sm:text-sm font-normal text-[#64748B] mt-0.5">
+        Manage diagnostic test catalogs, patient lab orders, results and abnormal findings
+      </p>
+    </div>
+
+    <div class="flex flex-wrap items-center gap-3">
+      <!-- Primary Action: Order Test -->
+      <button
+        type="button"
+        (click)="openAddOrderDialog()"
+        class="inline-flex items-center justify-center gap-2 px-4 h-[42px] rounded-xl bg-[#0F766E] hover:bg-[#0D665F] text-white text-xs sm:text-sm font-semibold shadow-2xs hover:shadow-xs transition-all shrink-0 cursor-pointer"
+      >
+        <i class="pi pi-send text-xs sm:text-sm"></i>
+        <span>Order Test</span>
+      </button>
+
+      <!-- Secondary Action: Add Lab Test -->
+      <button
+        type="button"
+        (click)="openAddTestDialog()"
+        class="inline-flex items-center justify-center gap-2 px-4 h-[42px] rounded-xl bg-white border border-[#CBD5E1] hover:bg-slate-50 text-[#334155] text-xs sm:text-sm font-semibold shadow-2xs hover:shadow-xs transition-all shrink-0 cursor-pointer"
+      >
+        <i class="pi pi-plus text-xs sm:text-sm text-[#0F766E]"></i>
+        <span>Add Lab Test</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- 2. KPI Summary Cards -->
+  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+    
+    <!-- Cataloged Tests (Clickable: switches to catalog) -->
+    <div
+      (click)="onKpiClick('catalog')"
+      class="bg-white p-4 sm:p-5 rounded-2xl border border-[#E2E8F0] hover:border-blue-300 shadow-2xs flex items-center gap-4 cursor-pointer transition-all hover:bg-blue-50/30 group"
+      title="Click to view Test Catalog"
+    >
+      <div class="w-12 h-12 rounded-xl bg-blue-50 border border-blue-100 flex items-center justify-center text-blue-600 shrink-0 group-hover:scale-105 transition-transform">
+        <i class="pi pi-compass text-xl"></i>
+      </div>
+      <div class="min-w-0">
+        <p class="text-xs font-semibold text-[#64748B] group-hover:text-blue-700 uppercase tracking-wider transition-colors">Cataloged Tests</p>
+        <h3 class="text-2xl font-bold text-[#0F172A] tracking-tight mt-0.5">{{ totalTests() }}</h3>
+      </div>
+    </div>
+
+    <!-- Pending Orders (Clickable: switches to pending orders) -->
+    <div
+      (click)="onKpiClick('pending')"
+      class="bg-white p-4 sm:p-5 rounded-2xl border border-[#E2E8F0] hover:border-amber-300 shadow-2xs flex items-center gap-4 cursor-pointer transition-all hover:bg-amber-50/30 group"
+      title="Click to view Pending Lab Orders"
+    >
+      <div class="w-12 h-12 rounded-xl bg-amber-50 border border-amber-100 flex items-center justify-center text-amber-600 shrink-0 group-hover:scale-105 transition-transform">
+        <i class="pi pi-clock text-xl"></i>
+      </div>
+      <div class="min-w-0">
+        <p class="text-xs font-semibold text-[#64748B] group-hover:text-amber-700 uppercase tracking-wider transition-colors">Pending Orders</p>
+        <h3 class="text-2xl font-bold text-amber-600 tracking-tight mt-0.5">{{ pendingOrdersCount() }}</h3>
+      </div>
+    </div>
+
+    <!-- STAT / Urgent (Clickable: switches to STAT/Urgent orders) -->
+    <div
+      (click)="onKpiClick('urgent')"
+      class="bg-white p-4 sm:p-5 rounded-2xl border border-[#E2E8F0] hover:border-rose-300 shadow-2xs flex items-center gap-4 cursor-pointer transition-all hover:bg-rose-50/30 group"
+      title="Click to view STAT and Urgent orders"
+    >
+      <div class="w-12 h-12 rounded-xl bg-rose-50 border border-rose-100 flex items-center justify-center text-rose-600 shrink-0 group-hover:scale-105 transition-transform">
+        <i class="pi pi-bolt text-xl"></i>
+      </div>
+      <div class="min-w-0">
+        <p class="text-xs font-semibold text-[#64748B] group-hover:text-rose-700 uppercase tracking-wider transition-colors">STAT / Urgent</p>
+        <h3 class="text-2xl font-bold text-rose-600 tracking-tight mt-0.5">{{ urgentOrdersCount() }}</h3>
+      </div>
+    </div>
+
+    <!-- Abnormal Flagged (Clickable: filters abnormal orders) -->
+    <div
+      (click)="onKpiClick('abnormal')"
+      class="bg-white p-4 sm:p-5 rounded-2xl border border-[#E2E8F0] hover:border-purple-300 shadow-2xs flex items-center gap-4 cursor-pointer transition-all hover:bg-purple-50/30 group"
+      title="Click to view Abnormal Flagged Results"
+    >
+      <div class="w-12 h-12 rounded-xl bg-purple-50 border border-purple-100 flex items-center justify-center text-purple-600 shrink-0 group-hover:scale-105 transition-transform">
+        <i class="pi pi-exclamation-triangle text-xl"></i>
+      </div>
+      <div class="min-w-0">
+        <p class="text-xs font-semibold text-[#64748B] group-hover:text-purple-700 uppercase tracking-wider transition-colors">Abnormal Flagged</p>
+        <h3 class="text-2xl font-bold text-purple-600 tracking-tight mt-0.5">{{ abnormalCount() }}</h3>
+      </div>
+    </div>
+  </div>
+
+  <!-- 3. Main Workspace Container & Segmented Navigation -->
+  <div class="bg-white rounded-2xl border border-[#E2E8F0] shadow-2xs overflow-hidden min-w-0">
+    
+    <!-- Tab Navigation Bar -->
+    <div class="flex items-center gap-2 border-b border-[#E2E8F0] px-4 sm:px-6 pt-4 bg-slate-50/50">
+      <button
+        type="button"
+        (click)="setActiveTab('orders')"
+        [ngClass]="{
+          'border-[#0F766E] text-[#0F766E] font-bold': activeTab() === 'orders',
+          'border-transparent text-[#64748B] hover:text-[#0F172A] font-semibold': activeTab() !== 'orders'
+        }"
+        class="pb-3 px-3 text-xs sm:text-sm border-b-2 transition-all flex items-center gap-2 cursor-pointer focus:outline-none"
+      >
+        <i class="pi pi-list text-xs"></i>
+        <span>Diagnostic Orders & Results</span>
+        <span
+          class="px-2 py-0.5 rounded-full text-[11px] font-bold"
+          [ngClass]="activeTab() === 'orders' ? 'bg-[#0F766E]/10 text-[#0F766E]' : 'bg-slate-200/70 text-slate-600'"
+        >
+          {{ orders().length }}
+        </span>
+      </button>
+
+      <button
+        type="button"
+        (click)="setActiveTab('catalog')"
+        [ngClass]="{
+          'border-[#0F766E] text-[#0F766E] font-bold': activeTab() === 'catalog',
+          'border-transparent text-[#64748B] hover:text-[#0F172A] font-semibold': activeTab() !== 'catalog'
+        }"
+        class="pb-3 px-3 text-xs sm:text-sm border-b-2 transition-all flex items-center gap-2 cursor-pointer focus:outline-none"
+      >
+        <i class="pi pi-book text-xs"></i>
+        <span>Test Catalog</span>
+        <span
+          class="px-2 py-0.5 rounded-full text-[11px] font-bold"
+          [ngClass]="activeTab() === 'catalog' ? 'bg-[#0F766E]/10 text-[#0F766E]' : 'bg-slate-200/70 text-slate-600'"
+        >
+          {{ catalog().length }}
+        </span>
+      </button>
+    </div>
+
+    <!-- 4A. Diagnostic Orders & Results Tab Content -->
+    <div *ngIf="activeTab() === 'orders'" class="p-4 sm:p-6 space-y-4">
+      
+      <!-- Toolbar: Search + Status Segmented Filters + Abnormal Toggle -->
+      <div class="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3">
+        
+        <!-- Search Input -->
+        <div class="relative flex-1 max-w-md">
+          <i class="pi pi-search absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs sm:text-sm pointer-events-none"></i>
+          <input
+            type="text"
+            [ngModel]="orderSearchQuery()"
+            (ngModelChange)="orderSearchQuery.set($event); orderCurrentPage.set(1)"
+            placeholder="Search patient, MRN, test or code..."
+            class="w-full pl-9 pr-8 py-2 bg-slate-50 border border-slate-200/90 rounded-xl text-xs sm:text-sm font-medium text-[#0F172A] placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#0F766E]/20 focus:border-[#0F766E] transition-all"
+          />
+          <button
+            *ngIf="orderSearchQuery()"
+            (click)="orderSearchQuery.set(''); orderCurrentPage.set(1)"
+            class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 text-xs"
+          >
+            <i class="pi pi-times"></i>
+          </button>
+        </div>
+
+        <!-- Filter Controls -->
+        <div class="flex flex-wrap items-center justify-between sm:justify-end gap-3">
+          <!-- Status Segmented Controls -->
+          <div class="inline-flex items-center p-1 rounded-xl bg-slate-100 border border-slate-200">
+            <button
+              type="button"
+              (click)="setStatusFilter(null)"
+              [ngClass]="{
+                'bg-[#0F766E] text-white font-bold shadow-2xs': statusFilter() === null && !priorityOnlyFilter(),
+                'text-[#475569] hover:bg-slate-200/60 font-semibold': statusFilter() !== null || priorityOnlyFilter()
+              }"
+              class="px-3 py-1.5 text-xs rounded-lg transition-all cursor-pointer"
+            >
+              All ({{ orders().length }})
+            </button>
+            <button
+              type="button"
+              (click)="setStatusFilter('Ordered')"
+              [ngClass]="{
+                'bg-[#0F766E] text-white font-bold shadow-2xs': statusFilter() === 'Ordered' && !priorityOnlyFilter(),
+                'text-[#475569] hover:bg-slate-200/60 font-semibold': statusFilter() !== 'Ordered' || priorityOnlyFilter()
+              }"
+              class="px-3 py-1.5 text-xs rounded-lg transition-all cursor-pointer flex items-center gap-1.5"
+            >
+              <span>Pending</span>
+              <span class="px-1.5 py-0.5 text-[10px] rounded-md bg-amber-100 text-amber-800 font-bold">
+                {{ pendingOrdersCount() }}
+              </span>
+            </button>
+            <button
+              type="button"
+              (click)="setStatusFilter('Completed')"
+              [ngClass]="{
+                'bg-[#0F766E] text-white font-bold shadow-2xs': statusFilter() === 'Completed' && !priorityOnlyFilter(),
+                'text-[#475569] hover:bg-slate-200/60 font-semibold': statusFilter() !== 'Completed' || priorityOnlyFilter()
+              }"
+              class="px-3 py-1.5 text-xs rounded-lg transition-all cursor-pointer"
+            >
+              Completed
+            </button>
+          </div>
+
+          <!-- Abnormal Toggle Chip -->
+          <button
+            type="button"
+            (click)="toggleAbnormalFilter()"
+            [ngClass]="{
+              'bg-purple-50 border-purple-300 text-purple-800 font-bold shadow-2xs': abnormalOnlyFilter(),
+              'bg-white border-slate-200 text-[#475569] hover:bg-slate-50 font-semibold': !abnormalOnlyFilter()
+            }"
+            class="px-3 py-2 text-xs rounded-xl border flex items-center gap-1.5 transition-all cursor-pointer"
+          >
+            <i class="pi text-xs" [ngClass]="abnormalOnlyFilter() ? 'pi-check-circle text-purple-600' : 'pi-filter text-slate-400'"></i>
+            <span>Abnormal</span>
+            <span class="px-1.5 py-0.5 rounded-md text-[10px] bg-purple-100/80 text-purple-800 font-bold">
+              {{ abnormalCount() }}
+            </span>
+          </button>
+
+          <!-- Clear Filters -->
+          <button
+            *ngIf="orderSearchQuery() || statusFilter() || abnormalOnlyFilter() || priorityOnlyFilter()"
+            type="button"
+            (click)="clearOrderFilters()"
+            class="px-2.5 py-2 text-xs text-[#0F766E] hover:underline font-semibold flex items-center gap-1 cursor-pointer"
+          >
+            <i class="pi pi-refresh text-[10px]"></i>
+            <span>Clear filters</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Diagnostic Orders Table Container -->
+      <div class="overflow-x-auto rounded-xl border border-slate-200 bg-white">
+        <table class="w-full text-left border-collapse min-w-[800px]">
+          <thead>
+            <tr class="bg-slate-50/80 border-b border-slate-200 text-[11px] font-semibold text-[#64748B] uppercase tracking-wider">
+              <th class="py-3.5 px-4">Patient</th>
+              <th class="py-3.5 px-4">Test</th>
+              <th class="py-3.5 px-4">Ordering Doctor</th>
+              <th class="py-3.5 px-4">Priority</th>
+              <th class="py-3.5 px-4">Status</th>
+              <th class="py-3.5 px-4">Result Details</th>
+              <th class="py-3.5 px-4 text-center">Action</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-100 text-xs sm:text-sm text-[#0F172A]">
+            
+            <!-- Loading -->
+            <tr *ngIf="loading()">
+              <td colspan="7" class="text-center py-10 text-[#64748B]">
+                <div class="inline-flex items-center gap-2 font-medium">
+                  <i class="pi pi-spin pi-spinner text-[#0F766E]"></i>
+                  <span>Loading diagnostic orders...</span>
+                </div>
+              </td>
+            </tr>
+
+            <!-- Empty -->
+            <tr *ngIf="!loading() && filteredOrders().length === 0">
+              <td colspan="7" class="text-center py-12 text-[#64748B]">
+                <div class="flex flex-col items-center justify-center gap-2 max-w-sm mx-auto">
+                  <div class="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center text-slate-400">
+                    <i class="pi pi-list text-xl"></i>
+                  </div>
+                  <p class="font-bold text-slate-800 text-sm mt-1">No diagnostic orders found</p>
+                  <p class="text-xs text-slate-500">
+                    {{ (orderSearchQuery() || statusFilter() || abnormalOnlyFilter() || priorityOnlyFilter()) ? 'No orders match the selected search or filters.' : 'Order a diagnostic test to begin tracking lab orders.' }}
+                  </p>
+                  <button
+                    *ngIf="orderSearchQuery() || statusFilter() || abnormalOnlyFilter() || priorityOnlyFilter()"
+                    (click)="clearOrderFilters()"
+                    class="mt-2 px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold"
+                  >
+                    Clear Filters
+                  </button>
+                </div>
+              </td>
+            </tr>
+
+            <!-- Diagnostic Order Rows -->
+            <tr
+              *ngFor="let order of paginatedOrders()"
+              class="hover:bg-slate-50/70 transition-colors h-[58px]"
+            >
+              <!-- Patient -->
+              <td class="py-2.5 px-4">
+                <div class="font-bold text-[#0F172A] text-xs sm:text-sm">{{ order.patientName }}</div>
+                <div *ngIf="getPatientMRN(order)" class="text-[11px] font-medium text-[#64748B] mt-0.5">
+                  {{ getPatientMRN(order) }}
+                </div>
+              </td>
+
+              <!-- Test Name & Code -->
+              <td class="py-2.5 px-4">
+                <div class="font-bold text-slate-900 text-xs sm:text-sm leading-tight">{{ order.testName }}</div>
+                <div class="mt-0.5">
+                  <span class="inline-block px-1.5 py-0.5 rounded bg-slate-100 text-slate-600 font-mono text-[10px] font-semibold">
+                    {{ order.testCode }}
+                  </span>
+                </div>
+              </td>
+
+              <!-- Ordering Doctor -->
+              <td class="py-2.5 px-4 text-xs font-semibold text-slate-700">
+                Dr. {{ order.orderingDoctorName }}
+              </td>
+
+              <!-- Priority -->
+              <td class="py-2.5 px-4">
+                <span
+                  class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold"
+                  [ngClass]="getPriorityBadgeClass(order.priority)"
+                >
+                  {{ order.priority }}
+                </span>
+              </td>
+
+              <!-- Status -->
+              <td class="py-2.5 px-4">
+                <span
+                  class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold"
+                  [ngClass]="getOrderStatusBadgeClass(order.status)"
+                >
+                  {{ getDisplayStatus(order.status) }}
+                </span>
+              </td>
+
+              <!-- Result Details -->
+              <td class="py-2.5 px-4">
+                <div *ngIf="order.resultValue" class="flex flex-col">
+                  <div class="flex items-center gap-1.5">
+                    <span class="font-bold text-xs sm:text-sm" [ngClass]="order.isAbnormal ? 'text-rose-600' : 'text-slate-900'">
+                      {{ order.resultValue }}
+                    </span>
+                    <span *ngIf="order.isAbnormal" class="px-1.5 py-0.2 rounded text-[10px] font-bold bg-rose-100 text-rose-700 uppercase">
+                      ABNORMAL
+                    </span>
+                  </div>
+                  <div class="text-[11px] text-[#64748B]">
+                    Reference: {{ formatReferenceRange(order.referenceRange, order.unit) }}
+                  </div>
+                </div>
+                <span *ngIf="!order.resultValue" class="text-xs text-slate-400 italic">
+                  Pending Entry
+                </span>
+              </td>
+
+              <!-- Action -->
+              <td class="py-2.5 px-4 text-center">
+                <button
+                  *ngIf="order.status !== 'Completed' && order.status !== 'Cancelled'"
+                  type="button"
+                  (click)="openRecordResultDialog(order)"
+                  class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#0F766E] hover:bg-[#0D665F] text-white text-xs font-semibold shadow-2xs transition-all cursor-pointer"
+                >
+                  <i class="pi pi-pencil text-[11px]"></i>
+                  <span>Enter Result</span>
+                </button>
+
+                <div *ngIf="order.status === 'Completed'" class="flex flex-col items-center">
+                  <span class="text-xs font-semibold text-emerald-700">Completed</span>
+                  <span class="text-[10px] text-[#64748B]" *ngIf="order.performedBy">
+                    by {{ order.performedBy }}
+                  </span>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Pagination Footer -->
+      <div *ngIf="filteredOrders().length > 0" class="flex flex-col sm:flex-row items-center justify-between gap-3 pt-2 text-xs text-[#64748B]">
+        <div>
+          Showing <span class="font-bold text-[#0F172A]">{{ (orderCurrentPage() - 1) * orderPageSize() + 1 }}</span> to
+          <span class="font-bold text-[#0F172A]">{{ Math.min(orderCurrentPage() * orderPageSize(), filteredOrders().length) }}</span> of
+          <span class="font-bold text-[#0F172A]">{{ filteredOrders().length }}</span> lab orders
+        </div>
+
+        <div class="flex items-center gap-1.5" *ngIf="orderTotalPages() > 1">
+          <button
+            type="button"
+            (click)="goToOrderPage(orderCurrentPage() - 1)"
+            [disabled]="orderCurrentPage() === 1"
+            class="px-2.5 py-1 rounded-lg border border-slate-200 bg-white disabled:opacity-40 text-slate-700 hover:bg-slate-50 text-xs font-semibold cursor-pointer"
+          >
+            Previous
+          </button>
+          <span class="px-2 py-1 font-semibold text-slate-700">
+            Page {{ orderCurrentPage() }} of {{ orderTotalPages() }}
+          </span>
+          <button
+            type="button"
+            (click)="goToOrderPage(orderCurrentPage() + 1)"
+            [disabled]="orderCurrentPage() === orderTotalPages()"
+            class="px-2.5 py-1 rounded-lg border border-slate-200 bg-white disabled:opacity-40 text-slate-700 hover:bg-slate-50 text-xs font-semibold cursor-pointer"
+          >
+            Next
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 4B. Test Catalog Tab Content -->
+    <div *ngIf="activeTab() === 'catalog'" class="p-4 sm:p-6 space-y-4">
+      
+      <!-- Toolbar -->
+      <div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+        <!-- Search Input -->
+        <div class="relative flex-1 max-w-md">
+          <i class="pi pi-search absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs sm:text-sm pointer-events-none"></i>
+          <input
+            type="text"
+            [ngModel]="catalogSearchTerm()"
+            (ngModelChange)="catalogSearchTerm.set($event); catalogCurrentPage.set(1)"
+            placeholder="Search test name or code..."
+            class="w-full pl-9 pr-8 py-2 bg-slate-50 border border-slate-200/90 rounded-xl text-xs sm:text-sm font-medium text-[#0F172A] placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#0F766E]/20 focus:border-[#0F766E] transition-all"
+          />
+          <button
+            *ngIf="catalogSearchTerm()"
+            (click)="catalogSearchTerm.set(''); catalogCurrentPage.set(1)"
+            class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 text-xs"
+          >
+            <i class="pi pi-times"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- Test Catalog Table Container -->
+      <div class="overflow-x-auto rounded-xl border border-slate-200 bg-white">
+        <table class="w-full text-left border-collapse min-w-[760px]">
+          <thead>
+            <tr class="bg-slate-50/80 border-b border-slate-200 text-[11px] font-semibold text-[#64748B] uppercase tracking-wider">
+              <th class="py-3.5 px-4">Test Name</th>
+              <th class="py-3.5 px-4">Code</th>
+              <th class="py-3.5 px-4">Category</th>
+              <th class="py-3.5 px-4">Reference Range</th>
+              <th class="py-3.5 px-4">Sample Type</th>
+              <th class="py-3.5 px-4 text-right">Standard Price</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-100 text-xs sm:text-sm text-[#0F172A]">
+            
+            <!-- Loading -->
+            <tr *ngIf="loading()">
+              <td colspan="6" class="text-center py-10 text-[#64748B]">
+                <div class="inline-flex items-center gap-2 font-medium">
+                  <i class="pi pi-spin pi-spinner text-[#0F766E]"></i>
+                  <span>Loading test catalog...</span>
+                </div>
+              </td>
+            </tr>
+
+            <!-- Empty -->
+            <tr *ngIf="!loading() && filteredCatalog().length === 0">
+              <td colspan="6" class="text-center py-12 text-[#64748B]">
+                <div class="flex flex-col items-center justify-center gap-2 max-w-sm mx-auto">
+                  <div class="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center text-slate-400">
+                    <i class="pi pi-book text-xl"></i>
+                  </div>
+                  <p class="font-bold text-slate-800 text-sm mt-1">No diagnostic tests in the catalog</p>
+                  <p class="text-xs text-slate-500">
+                    {{ catalogSearchTerm() ? 'No catalog tests match your search term.' : 'Add your first diagnostic test definition to the catalog.' }}
+                  </p>
+                </div>
+              </td>
+            </tr>
+
+            <!-- Catalog Test Rows -->
+            <tr
+              *ngFor="let test of paginatedCatalog()"
+              class="hover:bg-slate-50/70 transition-colors h-[54px]"
+            >
+              <!-- Test Name -->
+              <td class="py-2.5 px-4 font-bold text-[#0F172A] text-xs sm:text-sm">
+                {{ test.name }}
+              </td>
+
+              <!-- Code -->
+              <td class="py-2.5 px-4">
+                <span class="inline-block font-mono bg-slate-100 text-slate-700 px-2 py-0.5 rounded text-xs font-semibold">
+                  {{ test.code }}
+                </span>
+              </td>
+
+              <!-- Category -->
+              <td class="py-2.5 px-4">
+                <span class="inline-block px-2.5 py-1 rounded-md bg-indigo-50 text-indigo-700 font-semibold text-xs">
+                  {{ test.category }}
+                </span>
+              </td>
+
+              <!-- Reference Range (Cleansed without unit duplication) -->
+              <td class="py-2.5 px-4 text-xs font-medium text-slate-700">
+                {{ formatReferenceRange(test.referenceRange, test.unit) }}
+              </td>
+
+              <!-- Sample Type -->
+              <td class="py-2.5 px-4 text-xs text-slate-600">
+                {{ test.sampleType || 'Whole Blood' }}
+              </td>
+
+              <!-- Standard Price -->
+              <td class="py-2.5 px-4 text-right font-semibold font-mono text-slate-900 text-xs sm:text-sm">
+                ${{ test.standardPrice | number:'1.2-2' }}
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Pagination Footer -->
+      <div *ngIf="filteredCatalog().length > 0" class="flex flex-col sm:flex-row items-center justify-between gap-3 pt-2 text-xs text-[#64748B]">
+        <div>
+          Showing <span class="font-bold text-[#0F172A]">{{ (catalogCurrentPage() - 1) * catalogPageSize() + 1 }}</span> to
+          <span class="font-bold text-[#0F172A]">{{ Math.min(catalogCurrentPage() * catalogPageSize(), filteredCatalog().length) }}</span> of
+          <span class="font-bold text-[#0F172A]">{{ filteredCatalog().length }}</span> catalog tests
+        </div>
+
+        <div class="flex items-center gap-1.5" *ngIf="catalogTotalPages() > 1">
+          <button
+            type="button"
+            (click)="goToCatalogPage(catalogCurrentPage() - 1)"
+            [disabled]="catalogCurrentPage() === 1"
+            class="px-2.5 py-1 rounded-lg border border-slate-200 bg-white disabled:opacity-40 text-slate-700 hover:bg-slate-50 text-xs font-semibold cursor-pointer"
+          >
+            Previous
+          </button>
+          <span class="px-2 py-1 font-semibold text-slate-700">
+            Page {{ catalogCurrentPage() }} of {{ catalogTotalPages() }}
+          </span>
+          <button
+            type="button"
+            (click)="goToCatalogPage(catalogCurrentPage() + 1)"
+            [disabled]="catalogCurrentPage() === catalogTotalPages()"
+            class="px-2.5 py-1 rounded-lg border border-slate-200 bg-white disabled:opacity-40 text-slate-700 hover:bg-slate-50 text-xs font-semibold cursor-pointer"
+          >
+            Next
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================================================== -->
+  <!-- MODAL 1: ADD DIAGNOSTIC TEST (CATALOG)             -->
+  <!-- ================================================== -->
+  <div
+    *ngIf="displayAddTestDialog"
+    (click)="onBackdropClick($event, 'addTest')"
+    class="fixed inset-0 z-50 bg-[#0F172A]/30 backdrop-blur-[2px] flex items-center justify-center p-4 modal-backdrop"
+  >
+    <div class="relative w-full max-w-[580px] max-h-[88vh] bg-white rounded-2xl border border-[#E2E8F0] shadow-[0_24px_60px_rgba(15,23,42,0.18)] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+      
+      <!-- Modal Header -->
+      <div class="flex items-start justify-between p-5 sm:p-6 border-b border-[#E2E8F0] shrink-0">
+        <div>
+          <h2 class="text-xl font-bold text-[#0F172A] tracking-tight">Add Diagnostic Test</h2>
+          <p class="text-xs sm:text-sm text-[#64748B] mt-0.5">
+            Add a diagnostic test definition to the laboratory catalog.
+          </p>
+        </div>
+        <button
+          type="button"
+          (click)="displayAddTestDialog = false"
+          class="w-8 h-8 rounded-full hover:bg-slate-100 flex items-center justify-center text-slate-400 hover:text-slate-600 transition-colors cursor-pointer"
+        >
+          <i class="pi pi-times text-sm"></i>
+        </button>
+      </div>
+
+      <!-- Modal Body (Form) -->
+      <form [formGroup]="addTestForm" (ngSubmit)="saveTest()" class="flex flex-col flex-1 overflow-y-auto">
+        <div class="p-5 sm:p-6 space-y-5">
+          
+          <!-- API Error Alert -->
+          <div *ngIf="addTestError()" class="p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-medium flex items-center gap-2">
+            <i class="pi pi-exclamation-circle text-rose-500 text-sm shrink-0"></i>
+            <span>{{ addTestError() }}</span>
+          </div>
+
+          <!-- SECTION 1: Test Details -->
+          <div class="space-y-3">
+            <h3 class="text-xs font-bold uppercase tracking-wider text-[#0F766E] border-b border-slate-100 pb-1">
+              SECTION — Test Details
+            </h3>
+
+            <div class="flex flex-col gap-1.5">
+              <label class="text-xs font-semibold text-[#0F172A]">Test Name *</label>
+              <input
+                type="text"
+                formControlName="name"
+                placeholder="e.g. Complete Blood Count (CBC)"
+                class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm font-medium text-[#0F172A] placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#0F766E]/20 focus:border-[#0F766E]"
+              />
+              <span *ngIf="addTestSubmitted() && addTestForm.get('name')?.invalid" class="text-[11px] font-semibold text-rose-600">
+                Test name is required.
+              </span>
+            </div>
+
+            <div class="grid grid-cols-2 gap-3">
+              <div class="flex flex-col gap-1.5">
+                <label class="text-xs font-semibold text-[#0F172A]">Code *</label>
+                <input
+                  type="text"
+                  formControlName="code"
+                  placeholder="e.g. CBC-01"
+                  class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm font-medium text-[#0F172A] focus:outline-none focus:ring-2 focus:ring-[#0F766E]/20 focus:border-[#0F766E]"
+                />
+                <span *ngIf="addTestSubmitted() && addTestForm.get('code')?.invalid" class="text-[11px] font-semibold text-rose-600">
+                  Code is required.
+                </span>
+              </div>
+
+              <div class="flex flex-col gap-1.5">
+                <label class="text-xs font-semibold text-[#0F172A]">Category *</label>
+                <input
+                  type="text"
+                  formControlName="category"
+                  placeholder="e.g. Biochemistry, Hematology"
+                  class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm font-medium text-[#0F172A] focus:outline-none focus:ring-2 focus:ring-[#0F766E]/20 focus:border-[#0F766E]"
+                />
+              </div>
+            </div>
+          </div>
+
+          <!-- SECTION 2: Result Reference -->
+          <div class="space-y-3">
+            <h3 class="text-xs font-bold uppercase tracking-wider text-[#0F766E] border-b border-slate-100 pb-1">
+              SECTION — Result Reference
+            </h3>
+
+            <div class="grid grid-cols-2 gap-3">
+              <div class="flex flex-col gap-1.5">
+                <label class="text-xs font-semibold text-[#0F172A]">Reference Range</label>
+                <input
+                  type="text"
+                  formControlName="referenceRange"
+                  placeholder="e.g. 4.5–11.0"
+                  class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm font-medium text-[#0F172A] focus:outline-none focus:ring-2 focus:ring-[#0F766E]/20 focus:border-[#0F766E]"
+                />
+              </div>
+
+              <div class="flex flex-col gap-1.5">
+                <label class="text-xs font-semibold text-[#0F172A]">Unit</label>
+                <input
+                  type="text"
+                  formControlName="unit"
+                  placeholder="e.g. mg/dL, cells/uL"
+                  class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm font-medium text-[#0F172A] focus:outline-none focus:ring-2 focus:ring-[#0F766E]/20 focus:border-[#0F766E]"
+                />
+              </div>
+            </div>
+
+            <div class="flex flex-col gap-1.5">
+              <label class="text-xs font-semibold text-[#0F172A]">Sample Type</label>
+              <select
+                formControlName="sampleType"
+                class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm font-medium text-[#0F172A] focus:outline-none focus:ring-2 focus:ring-[#0F766E]/20 focus:border-[#0F766E] cursor-pointer"
+              >
+                <option value="Whole Blood">Whole Blood</option>
+                <option value="Serum">Serum</option>
+                <option value="Plasma">Plasma</option>
+                <option value="Urine">Urine</option>
+                <option value="Swab">Swab</option>
+                <option value="Other">Other</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- SECTION 3: Billing -->
+          <div class="space-y-3">
+            <h3 class="text-xs font-bold uppercase tracking-wider text-[#0F766E] border-b border-slate-100 pb-1">
+              SECTION — Billing
+            </h3>
+
+            <div class="flex flex-col gap-1.5">
+              <label class="text-xs font-semibold text-[#0F172A]">Standard Price ($) *</label>
+              <input
+                type="number"
+                step="0.01"
+                min="0"
+                formControlName="standardPrice"
+                class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm font-medium text-[#0F172A] focus:outline-none focus:ring-2 focus:ring-[#0F766E]/20 focus:border-[#0F766E]"
+              />
+            </div>
+          </div>
+        </div>
+
+        <!-- Modal Footer -->
+        <div class="p-4 sm:p-5 border-t border-[#E2E8F0] bg-slate-50/80 flex items-center justify-end gap-3 shrink-0">
+          <button
+            type="button"
+            (click)="displayAddTestDialog = false"
+            class="px-4 py-2 rounded-xl border border-slate-200 hover:bg-slate-100 text-slate-700 text-xs sm:text-sm font-semibold transition-all cursor-pointer"
+          >
+            Cancel
+          </button>
+
+          <button
+            type="submit"
+            [disabled]="submitting()"
+            class="px-5 py-2 rounded-xl bg-[#0F766E] hover:bg-[#0D665F] disabled:opacity-50 text-white text-xs sm:text-sm font-semibold shadow-2xs transition-all flex items-center gap-2 cursor-pointer"
+          >
+            <i *ngIf="submitting()" class="pi pi-spin pi-spinner text-xs"></i>
+            <span>{{ submitting() ? 'Saving Test...' : 'Save Test' }}</span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ================================================== -->
+  <!-- MODAL 2: ORDER DIAGNOSTIC TEST                      -->
+  <!-- ================================================== -->
+  <div
+    *ngIf="displayAddOrderDialog"
+    (click)="onBackdropClick($event, 'addOrder')"
+    class="fixed inset-0 z-50 bg-[#0F172A]/30 backdrop-blur-[2px] flex items-center justify-center p-4 modal-backdrop"
+  >
+    <div class="relative w-full max-w-[620px] max-h-[88vh] bg-white rounded-2xl border border-[#E2E8F0] shadow-[0_24px_60px_rgba(15,23,42,0.18)] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+      
+      <!-- Modal Header -->
+      <div class="flex items-start justify-between p-5 sm:p-6 border-b border-[#E2E8F0] shrink-0">
+        <div>
+          <h2 class="text-xl font-bold text-[#0F172A] tracking-tight">Order Diagnostic Test</h2>
+          <p class="text-xs sm:text-sm text-[#64748B] mt-0.5">
+            Create a laboratory test order for a patient.
+          </p>
+        </div>
+        <button
+          type="button"
+          (click)="displayAddOrderDialog = false"
+          class="w-8 h-8 rounded-full hover:bg-slate-100 flex items-center justify-center text-slate-400 hover:text-slate-600 transition-colors cursor-pointer"
+        >
+          <i class="pi pi-times text-sm"></i>
+        </button>
+      </div>
+
+      <!-- Modal Body (Form) -->
+      <form [formGroup]="addOrderForm" (ngSubmit)="saveOrder()" class="flex flex-col flex-1 overflow-y-auto">
+        <div class="p-5 sm:p-6 space-y-5">
+          
+          <!-- API Error Alert -->
+          <div *ngIf="addOrderError()" class="p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-medium flex items-center gap-2">
+            <i class="pi pi-exclamation-circle text-rose-500 text-sm shrink-0"></i>
+            <span>{{ addOrderError() }}</span>
+          </div>
+
+          <!-- SECTION 1: Patient -->
+          <div class="space-y-3">
+            <h3 class="text-xs font-bold uppercase tracking-wider text-[#0F766E] border-b border-slate-100 pb-1">
+              SECTION — Patient
+            </h3>
+
+            <div class="flex flex-col gap-1.5">
+              <label class="text-xs font-semibold text-[#0F172A]">Patient *</label>
+              <select
+                formControlName="patientId"
+                class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm font-medium text-[#0F172A] focus:outline-none focus:ring-2 focus:ring-[#0F766E]/20 focus:border-[#0F766E] cursor-pointer"
+              >
+                <option value="" disabled>Select Patient</option>
+                <option *ngFor="let p of patientList()" [value]="p.id">
+                  {{ p.firstName }} {{ p.lastName }} — {{ p.medicalRecordNumber }}
+                </option>
+              </select>
+              <span *ngIf="addOrderSubmitted() && addOrderForm.get('patientId')?.invalid" class="text-[11px] font-semibold text-rose-600">
+                Patient is required.
+              </span>
+            </div>
+          </div>
+
+          <!-- SECTION 2: Test -->
+          <div class="space-y-3">
+            <h3 class="text-xs font-bold uppercase tracking-wider text-[#0F766E] border-b border-slate-100 pb-1">
+              SECTION — Test
+            </h3>
+
+            <div class="flex flex-col gap-1.5">
+              <label class="text-xs font-semibold text-[#0F172A]">Test Catalog (Optional)</label>
+              <select
+                formControlName="labTestId"
+                (change)="onCatalogSelect($event)"
+                class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm font-medium text-[#0F172A] focus:outline-none focus:ring-2 focus:ring-[#0F766E]/20 focus:border-[#0F766E] cursor-pointer"
+              >
+                <option value="">Custom Diagnostic Test</option>
+                <option *ngFor="let test of catalog()" [value]="test.id">
+                  {{ test.name }} ({{ test.code }})
+                </option>
+              </select>
+            </div>
+
+            <div class="flex flex-col gap-1.5">
+              <label class="text-xs font-semibold text-[#0F172A]">Diagnostic Test Name *</label>
+              <input
+                type="text"
+                formControlName="testName"
+                placeholder="e.g. Complete Blood Count (CBC)"
+                class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm font-medium text-[#0F172A] placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#0F766E]/20 focus:border-[#0F766E]"
+              />
+              <span *ngIf="addOrderSubmitted() && addOrderForm.get('testName')?.invalid" class="text-[11px] font-semibold text-rose-600">
+                Test name is required.
+              </span>
+            </div>
+          </div>
+
+          <!-- SECTION 3: Order Details -->
+          <div class="space-y-3">
+            <h3 class="text-xs font-bold uppercase tracking-wider text-[#0F766E] border-b border-slate-100 pb-1">
+              SECTION — Order Details
+            </h3>
+
+            <div class="grid grid-cols-2 gap-3">
+              <div class="flex flex-col gap-1.5">
+                <label class="text-xs font-semibold text-[#0F172A]">Ordering Doctor *</label>
+                <select
+                  *ngIf="staffList().length > 0; else textDoctorInput"
+                  formControlName="orderingDoctorName"
+                  class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm font-medium text-[#0F172A] focus:outline-none focus:ring-2 focus:ring-[#0F766E]/20 focus:border-[#0F766E] cursor-pointer"
+                >
+                  <option *ngFor="let s of staffList()" [value]="'Dr. ' + s.firstName + ' ' + s.lastName">
+                    Dr. {{ s.firstName }} {{ s.lastName }} ({{ s.specialty }})
+                  </option>
+                </select>
+                <ng-template #textDoctorInput>
+                  <input
+                    type="text"
+                    formControlName="orderingDoctorName"
+                    placeholder="e.g. Sarah Jenkins"
+                    class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm font-medium text-[#0F172A] focus:outline-none focus:ring-2 focus:ring-[#0F766E]/20 focus:border-[#0F766E]"
+                  />
+                </ng-template>
+              </div>
+
+              <div class="flex flex-col gap-1.5">
+                <label class="text-xs font-semibold text-[#0F172A]">Priority *</label>
+                <select
+                  formControlName="priority"
+                  class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm font-medium text-[#0F172A] focus:outline-none focus:ring-2 focus:ring-[#0F766E]/20 focus:border-[#0F766E] cursor-pointer"
+                >
+                  <option value="Routine">Routine</option>
+                  <option value="Urgent">Urgent</option>
+                  <option value="STAT">STAT (Emergency)</option>
+                </select>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Modal Footer -->
+        <div class="p-4 sm:p-5 border-t border-[#E2E8F0] bg-slate-50/80 flex items-center justify-end gap-3 shrink-0">
+          <button
+            type="button"
+            (click)="displayAddOrderDialog = false"
+            class="px-4 py-2 rounded-xl border border-slate-200 hover:bg-slate-100 text-slate-700 text-xs sm:text-sm font-semibold transition-all cursor-pointer"
+          >
+            Cancel
+          </button>
+
+          <button
+            type="submit"
+            [disabled]="submitting()"
+            class="px-5 py-2 rounded-xl bg-[#0F766E] hover:bg-[#0D665F] disabled:opacity-50 text-white text-xs sm:text-sm font-semibold shadow-2xs transition-all flex items-center gap-2 cursor-pointer"
+          >
+            <i *ngIf="submitting()" class="pi pi-spin pi-spinner text-xs"></i>
+            <span>{{ submitting() ? 'Issuing Order...' : 'Order Test' }}</span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ================================================== -->
+  <!-- MODAL 3: ENTER DIAGNOSTIC RESULT                    -->
+  <!-- ================================================== -->
+  <div
+    *ngIf="displayRecordResultDialog"
+    (click)="onBackdropClick($event, 'recordResult')"
+    class="fixed inset-0 z-50 bg-[#0F172A]/30 backdrop-blur-[2px] flex items-center justify-center p-4 modal-backdrop"
+  >
+    <div class="relative w-full max-w-[500px] max-h-[88vh] bg-white rounded-2xl border border-[#E2E8F0] shadow-[0_24px_60px_rgba(15,23,42,0.18)] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+      
+      <!-- Header -->
+      <div class="flex items-start justify-between p-5 border-b border-[#E2E8F0] shrink-0">
+        <div>
+          <h2 class="text-lg font-bold text-[#0F172A] tracking-tight">Enter Lab Result</h2>
+          <p class="text-xs text-[#64748B] mt-0.5">
+            Record clinical findings for patient diagnostic order.
+          </p>
+        </div>
+        <button
+          type="button"
+          (click)="displayRecordResultDialog = false"
+          class="w-7 h-7 rounded-full hover:bg-slate-100 flex items-center justify-center text-slate-400 hover:text-slate-600 transition-colors cursor-pointer"
+        >
+          <i class="pi pi-times text-xs"></i>
+        </button>
+      </div>
+
+      <!-- Body -->
+      <div *ngIf="selectedOrderForResult" class="p-5 space-y-4 overflow-y-auto">
+        
+        <!-- Summary Box -->
+        <div class="p-3.5 rounded-xl bg-slate-50 border border-slate-200 space-y-1">
+          <div class="flex items-center justify-between">
+            <span class="font-bold text-[#0F172A] text-sm">{{ selectedOrderForResult.testName }}</span>
+            <span class="px-2 py-0.5 rounded bg-slate-200 text-slate-700 font-mono text-[10px] font-bold">
+              {{ selectedOrderForResult.testCode }}
+            </span>
+          </div>
+          <div class="text-xs text-[#64748B]">
+            Patient: <span class="font-bold text-[#0F172A]">{{ selectedOrderForResult.patientName }}</span>
+          </div>
+          <div class="text-xs text-[#64748B]">
+            Reference Range: <span class="font-semibold text-slate-700">{{ formatReferenceRange(selectedOrderForResult.referenceRange, selectedOrderForResult.unit) }}</span>
+          </div>
+        </div>
+
+        <form [formGroup]="recordResultForm" (ngSubmit)="saveResult()" class="space-y-4">
+          <div class="flex flex-col gap-1.5">
+            <label class="text-xs font-semibold text-[#0F172A]">Result Value *</label>
+            <input
+              type="text"
+              formControlName="resultValue"
+              placeholder="e.g. 14.2 or Normal"
+              class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm font-medium text-[#0F172A] focus:outline-none focus:ring-2 focus:ring-[#0F766E]/20 focus:border-[#0F766E]"
+            />
+            <span *ngIf="recordResultForm.get('resultValue')?.touched && recordResultForm.get('resultValue')?.invalid" class="text-[11px] font-semibold text-rose-600">
+              Result value is required.
+            </span>
+          </div>
+
+          <div class="flex flex-col gap-1.5">
+            <label class="text-xs font-semibold text-[#0F172A]">Performed By *</label>
+            <input
+              type="text"
+              formControlName="performedBy"
+              placeholder="e.g. Lab Tech"
+              class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm font-medium text-[#0F172A] focus:outline-none focus:ring-2 focus:ring-[#0F766E]/20 focus:border-[#0F766E]"
+            />
+          </div>
+
+          <div class="flex flex-col gap-1.5">
+            <label class="text-xs font-semibold text-[#0F172A]">Notes / Clinical Remarks</label>
+            <textarea
+              rows="2"
+              formControlName="remarks"
+              placeholder="e.g. Sample processed cleanly"
+              class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm font-medium text-[#0F172A] placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#0F766E]/20 focus:border-[#0F766E]"
+            ></textarea>
+          </div>
+
+          <!-- Abnormal Flag Checkbox -->
+          <div class="p-3 rounded-xl bg-rose-50/70 border border-rose-200 flex items-center gap-2.5">
+            <input
+              type="checkbox"
+              id="isAbnormal"
+              formControlName="isAbnormal"
+              class="h-4 w-4 text-rose-600 rounded border-slate-300 focus:ring-rose-500 cursor-pointer"
+            />
+            <label for="isAbnormal" class="text-xs font-semibold text-rose-800 cursor-pointer">
+              Flag Result as Out of Reference Range (Abnormal)
+            </label>
+          </div>
+
+          <!-- Footer Inside Form -->
+          <div class="pt-3 border-t border-[#E2E8F0] flex items-center justify-end gap-3">
+            <button
+              type="button"
+              (click)="displayRecordResultDialog = false"
+              class="px-4 py-2 rounded-xl border border-slate-200 hover:bg-slate-100 text-slate-700 text-xs font-semibold transition-all cursor-pointer"
+            >
+              Cancel
+            </button>
+
+            <button
+              type="submit"
+              [disabled]="recordResultForm.invalid || submitting()"
+              class="px-4 py-2 rounded-xl bg-[#0F766E] hover:bg-[#0D665F] disabled:opacity-50 text-white text-xs font-semibold shadow-2xs transition-all flex items-center gap-2 cursor-pointer"
+            >
+              <i *ngIf="submitting()" class="pi pi-spin pi-spinner text-xs"></i>
+              <span>{{ submitting() ? 'Saving Result...' : 'Save Result' }}</span>
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>

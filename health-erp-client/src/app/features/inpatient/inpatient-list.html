@@ -1,0 +1,984 @@
+<div class="space-y-6 w-full max-w-full min-w-0 pb-6">
+
+  <!-- 1. Header Bar -->
+  <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+    <div>
+      <h1 class="text-2xl sm:text-[28px] font-bold text-[#0F172A] tracking-tight">Inpatient Ward & Bed Management</h1>
+      <p class="text-xs sm:text-sm font-normal text-[#64748B] mt-0.5">
+        Monitor ward occupancy, bed availability and inpatient admissions in real time
+      </p>
+    </div>
+
+    <div class="flex flex-wrap items-center gap-3">
+      <!-- Primary: Admit Patient -->
+      <button
+        type="button"
+        (click)="openAdmitModal()"
+        class="inline-flex items-center justify-center gap-2 px-4 h-[42px] rounded-xl bg-[#0F766E] hover:bg-[#0D665F] text-white text-xs sm:text-sm font-semibold shadow-2xs hover:shadow-xs transition-all shrink-0 cursor-pointer"
+      >
+        <i class="pi pi-sign-in text-xs sm:text-sm"></i>
+        <span>Admit Patient</span>
+      </button>
+
+      <!-- Secondary Outlined: Add Hospital Bed -->
+      <button
+        type="button"
+        (click)="openAddBedModal()"
+        class="inline-flex items-center justify-center gap-2 px-4 h-[42px] rounded-xl bg-white border border-[#CBD5E1] hover:bg-slate-50 text-[#334155] text-xs sm:text-sm font-semibold shadow-2xs hover:shadow-xs transition-all shrink-0 cursor-pointer"
+      >
+        <i class="pi pi-plus text-xs sm:text-sm text-[#0F766E]"></i>
+        <span>Add Hospital Bed</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- 2. KPI Summary Cards -->
+  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+    
+    <!-- Total Beds -->
+    <div class="bg-white p-4 sm:p-5 rounded-2xl border border-[#E2E8F0] shadow-2xs flex items-center gap-4 transition-all">
+      <div class="w-12 h-12 rounded-xl bg-blue-50 border border-blue-100 flex items-center justify-center text-blue-600 shrink-0">
+        <i class="pi pi-building text-xl"></i>
+      </div>
+      <div class="min-w-0">
+        <p class="text-xs font-semibold text-[#64748B] uppercase tracking-wider">Total Beds</p>
+        <h3 class="text-2xl font-bold text-[#0F172A] tracking-tight mt-0.5">{{ totalBedsCount() }}</h3>
+      </div>
+    </div>
+
+    <!-- Occupied Beds (With Occupancy Meter) -->
+    <div
+      (click)="onKpiClick('occupied')"
+      class="bg-white p-4 sm:p-5 rounded-2xl border border-[#E2E8F0] hover:border-rose-300 shadow-2xs flex items-center gap-4 cursor-pointer transition-all hover:bg-rose-50/30 group"
+      title="Click to filter Occupied Beds"
+    >
+      <div class="w-12 h-12 rounded-xl bg-rose-50 border border-rose-100 flex items-center justify-center text-rose-600 shrink-0 group-hover:scale-105 transition-transform">
+        <i class="pi pi-user text-xl"></i>
+      </div>
+      <div class="min-w-0 flex-1">
+        <div class="flex items-center justify-between">
+          <p class="text-xs font-semibold text-[#64748B] group-hover:text-rose-700 uppercase tracking-wider transition-colors">Occupied Beds</p>
+          <span class="text-xs font-bold text-rose-600">{{ occupancyRate() }}%</span>
+        </div>
+        <h3 class="text-2xl font-bold text-rose-600 tracking-tight mt-0.5">{{ occupiedBedsCount() }}</h3>
+        <!-- Subtle Occupancy Meter Bar -->
+        <div class="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden mt-1.5">
+          <div class="h-full bg-rose-500 rounded-full transition-all duration-500" [style.width.%]="occupancyRate()"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Available Beds -->
+    <div
+      (click)="onKpiClick('available')"
+      class="bg-white p-4 sm:p-5 rounded-2xl border border-[#E2E8F0] hover:border-emerald-300 shadow-2xs flex items-center gap-4 cursor-pointer transition-all hover:bg-emerald-50/30 group"
+      title="Click to filter Available Beds"
+    >
+      <div class="w-12 h-12 rounded-xl bg-emerald-50 border border-emerald-100 flex items-center justify-center text-emerald-600 shrink-0 group-hover:scale-105 transition-transform">
+        <i class="pi pi-check-circle text-xl"></i>
+      </div>
+      <div class="min-w-0 flex-1">
+        <div class="flex items-center justify-between">
+          <p class="text-xs font-semibold text-[#64748B] group-hover:text-emerald-700 uppercase tracking-wider transition-colors">Available Beds</p>
+          <span class="text-xs font-bold text-emerald-600">{{ availableRate() }}%</span>
+        </div>
+        <h3 class="text-2xl font-bold text-emerald-600 tracking-tight mt-0.5">{{ availableBedsCount() }}</h3>
+        <p class="text-[11px] text-[#64748B] mt-1">{{ availableBedsCount() }} of {{ totalBedsCount() }} ready</p>
+      </div>
+    </div>
+
+    <!-- Active Inpatients -->
+    <div
+      (click)="onKpiClick('activeInpatients')"
+      class="bg-white p-4 sm:p-5 rounded-2xl border border-[#E2E8F0] hover:border-indigo-300 shadow-2xs flex items-center gap-4 cursor-pointer transition-all hover:bg-indigo-50/30 group"
+      title="Click to view Active Inpatient Admissions"
+    >
+      <div class="w-12 h-12 rounded-xl bg-indigo-50 border border-indigo-100 flex items-center justify-center text-indigo-600 shrink-0 group-hover:scale-105 transition-transform">
+        <i class="pi pi-users text-xl"></i>
+      </div>
+      <div class="min-w-0">
+        <p class="text-xs font-semibold text-[#64748B] group-hover:text-indigo-700 uppercase tracking-wider transition-colors">Active Inpatients</p>
+        <h3 class="text-2xl font-bold text-indigo-600 tracking-tight mt-0.5">{{ activeAdmissionsCount() }}</h3>
+        <p class="text-[11px] text-[#64748B] mt-1">Currently in care</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- 3. Main Workspace Container & Segmented Navigation (Teal Theme) -->
+  <div class="bg-white rounded-2xl border border-[#E2E8F0] shadow-2xs overflow-hidden min-w-0">
+    
+    <!-- Tab Navigation Bar -->
+    <div class="flex items-center justify-between border-b border-[#E2E8F0] px-4 sm:px-6 pt-4 bg-slate-50/50">
+      <div class="flex items-center gap-2">
+        <button
+          type="button"
+          (click)="setActiveTab('grid')"
+          [ngClass]="{
+            'border-[#0F766E] text-[#0F766E] font-bold': activeTab() === 'grid',
+            'border-transparent text-[#64748B] hover:text-[#0F172A] font-semibold': activeTab() !== 'grid'
+          }"
+          class="pb-3 px-3 text-xs sm:text-sm border-b-2 transition-all flex items-center gap-2 cursor-pointer focus:outline-none"
+        >
+          <i class="pi pi-th-large text-xs"></i>
+          <span>Bed Allocation Grid</span>
+          <span
+            class="px-2 py-0.5 rounded-full text-[11px] font-bold"
+            [ngClass]="activeTab() === 'grid' ? 'bg-[#0F766E]/10 text-[#0F766E]' : 'bg-slate-200/70 text-slate-600'"
+          >
+            {{ beds().length }}
+          </span>
+        </button>
+
+        <button
+          type="button"
+          (click)="setActiveTab('admissions')"
+          [ngClass]="{
+            'border-[#0F766E] text-[#0F766E] font-bold': activeTab() === 'admissions',
+            'border-transparent text-[#64748B] hover:text-[#0F172A] font-semibold': activeTab() !== 'admissions'
+          }"
+          class="pb-3 px-3 text-xs sm:text-sm border-b-2 transition-all flex items-center gap-2 cursor-pointer focus:outline-none"
+        >
+          <i class="pi pi-list text-xs"></i>
+          <span>Admission Records</span>
+          <span
+            class="px-2 py-0.5 rounded-full text-[11px] font-bold"
+            [ngClass]="activeTab() === 'admissions' ? 'bg-[#0F766E]/10 text-[#0F766E]' : 'bg-slate-200/70 text-slate-600'"
+          >
+            {{ admissions().length }}
+          </span>
+        </button>
+      </div>
+    </div>
+
+    <!-- 4A. TAB 1: BED ALLOCATION GRID -->
+    <div *ngIf="activeTab() === 'grid'" class="p-4 sm:p-6 space-y-5">
+      
+      <!-- Toolbar: Search + Status Filter + Ward Select -->
+      <div class="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3">
+        
+        <!-- Search Input -->
+        <div class="relative flex-1 max-w-md">
+          <i class="pi pi-search absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs sm:text-sm pointer-events-none"></i>
+          <input
+            type="text"
+            [ngModel]="searchQuery()"
+            (ngModelChange)="searchQuery.set($event)"
+            placeholder="Search room, bed, patient or MRN..."
+            class="w-full pl-9 pr-8 py-2 bg-slate-50 border border-slate-200/90 rounded-xl text-xs sm:text-sm font-medium text-[#0F172A] placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#0F766E]/20 focus:border-[#0F766E] transition-all"
+          />
+          <button
+            *ngIf="searchQuery()"
+            (click)="searchQuery.set('')"
+            class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 text-xs"
+          >
+            <i class="pi pi-times"></i>
+          </button>
+        </div>
+
+        <!-- Right Controls: Status & Ward -->
+        <div class="flex flex-wrap items-center justify-between sm:justify-end gap-3">
+          
+          <!-- Status Segmented Controls -->
+          <div class="inline-flex items-center p-1 rounded-xl bg-slate-100 border border-slate-200">
+            <button
+              type="button"
+              (click)="selectedStatus.set('')"
+              [ngClass]="{
+                'bg-[#0F766E] text-white font-bold shadow-2xs': selectedStatus() === '',
+                'text-[#475569] hover:bg-slate-200/60 font-semibold': selectedStatus() !== ''
+              }"
+              class="px-3 py-1.5 text-xs rounded-lg transition-all cursor-pointer"
+            >
+              All ({{ beds().length }})
+            </button>
+            <button
+              type="button"
+              (click)="selectedStatus.set('Available')"
+              [ngClass]="{
+                'bg-[#0F766E] text-white font-bold shadow-2xs': selectedStatus() === 'Available',
+                'text-[#475569] hover:bg-slate-200/60 font-semibold': selectedStatus() !== 'Available'
+              }"
+              class="px-3 py-1.5 text-xs rounded-lg transition-all cursor-pointer flex items-center gap-1.5"
+            >
+              <span>Available</span>
+              <span class="px-1.5 py-0.5 text-[10px] rounded-md bg-emerald-100 text-emerald-800 font-bold">
+                {{ availableBedsCount() }}
+              </span>
+            </button>
+            <button
+              type="button"
+              (click)="selectedStatus.set('Occupied')"
+              [ngClass]="{
+                'bg-[#0F766E] text-white font-bold shadow-2xs': selectedStatus() === 'Occupied',
+                'text-[#475569] hover:bg-slate-200/60 font-semibold': selectedStatus() !== 'Occupied'
+              }"
+              class="px-3 py-1.5 text-xs rounded-lg transition-all cursor-pointer flex items-center gap-1.5"
+            >
+              <span>Occupied</span>
+              <span class="px-1.5 py-0.5 text-[10px] rounded-md bg-rose-100 text-rose-800 font-bold">
+                {{ occupiedBedsCount() }}
+              </span>
+            </button>
+          </div>
+
+          <!-- Ward Filter Selector -->
+          <div class="flex items-center gap-1.5">
+            <span class="text-xs font-semibold text-[#64748B]">Ward:</span>
+            <select
+              [ngModel]="selectedWard()"
+              (ngModelChange)="onWardFilterChange($event)"
+              class="bg-slate-50 border border-slate-200/90 rounded-xl text-xs font-semibold text-[#475569] px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#0F766E]/20 focus:border-[#0F766E] cursor-pointer"
+            >
+              <option value="">All Wards · {{ beds().length }} beds</option>
+              <option *ngFor="let ward of wardList()" [value]="ward">
+                {{ ward }} · {{ getWardBedCount(ward) }} beds
+              </option>
+            </select>
+          </div>
+
+          <!-- Clear Filters -->
+          <button
+            *ngIf="searchQuery() || selectedStatus() || selectedWard()"
+            type="button"
+            (click)="clearGridFilters()"
+            class="px-2.5 py-2 text-xs text-[#0F766E] hover:underline font-semibold flex items-center gap-1 cursor-pointer"
+          >
+            <i class="pi pi-refresh text-[10px]"></i>
+            <span>Clear filters</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Empty Grid State -->
+      <div *ngIf="filteredBeds().length === 0" class="p-12 text-center bg-slate-50 rounded-2xl border border-dashed border-slate-200">
+        <div class="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center text-slate-400 mx-auto mb-3">
+          <i class="pi pi-inbox text-xl"></i>
+        </div>
+        <p class="text-slate-800 font-bold text-sm">No hospital beds found</p>
+        <p class="text-xs text-slate-500 max-w-sm mx-auto mt-1">
+          {{ (searchQuery() || selectedStatus() || selectedWard()) ? 'No beds match the current search or filters.' : 'Add your first hospital bed to begin managing inpatient capacity.' }}
+        </p>
+        <button
+          *ngIf="searchQuery() || selectedStatus() || selectedWard()"
+          (click)="clearGridFilters()"
+          class="mt-3 px-3.5 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold cursor-pointer"
+        >
+          Clear Filters
+        </button>
+      </div>
+
+      <!-- Bed Allocation Cards Grid (Clean White Cards, No Saturated Backgrounds) -->
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+        
+        <div
+          *ngFor="let bed of filteredBeds()"
+          class="bg-white rounded-2xl border transition-all duration-200 shadow-2xs hover:shadow-xs overflow-hidden flex flex-col justify-between"
+          [ngClass]="{
+            'border-emerald-200/80 hover:border-emerald-300': bed.status === 'Available',
+            'border-rose-200/80 hover:border-rose-300': bed.status === 'Occupied',
+            'border-amber-200/80': bed.status === 'Maintenance',
+            'border-slate-200': bed.status !== 'Available' && bed.status !== 'Occupied' && bed.status !== 'Maintenance'
+          }"
+        >
+          <!-- Card Header -->
+          <div class="p-4 border-b border-slate-100 flex items-start justify-between gap-2 bg-slate-50/50">
+            <div class="min-w-0">
+              <span class="text-[10px] font-bold uppercase tracking-wider text-[#64748B] block truncate">{{ bed.wardName }}</span>
+              <h3 class="text-base font-bold text-[#0F172A] tracking-tight mt-0.5">
+                GW-{{ bed.roomNumber }} · {{ bed.bedNumber }}
+              </h3>
+              <p class="text-xs text-[#64748B]">{{ bed.bedType }}</p>
+            </div>
+
+            <span
+              class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold shrink-0"
+              [ngClass]="{
+                'bg-emerald-50 text-emerald-700 border border-emerald-200': bed.status === 'Available',
+                'bg-rose-50 text-rose-700 border border-rose-200': bed.status === 'Occupied',
+                'bg-amber-50 text-amber-700 border border-amber-200': bed.status === 'Maintenance',
+                'bg-slate-50 text-slate-700 border border-slate-200': bed.status === 'Cleaning'
+              }"
+            >
+              {{ bed.status }}
+            </span>
+          </div>
+
+          <!-- Card Body -->
+          <div class="p-4 flex-1 flex flex-col justify-between gap-3">
+            
+            <!-- Occupant Details if Occupied -->
+            <div *ngIf="bed.status === 'Occupied'" class="p-3 rounded-xl bg-slate-50 border border-slate-200/80 space-y-1">
+              <span class="text-[10px] font-bold uppercase tracking-wider text-rose-600 block">CURRENT PATIENT</span>
+              <div class="flex items-center gap-2">
+                <div class="w-7 h-7 rounded-full bg-rose-100 text-rose-700 font-bold text-xs flex items-center justify-center shrink-0">
+                  {{ getInitials(bed.occupiedByPatientName || 'Patient') }}
+                </div>
+                <div class="min-w-0">
+                  <p class="text-xs font-bold text-[#0F172A] truncate">{{ bed.occupiedByPatientName || 'Occupied Patient' }}</p>
+                  <p class="text-[11px] text-[#64748B] font-mono">{{ bed.occupiedByPatientMrn || 'MRN-N/A' }}</p>
+                </div>
+              </div>
+            </div>
+
+            <!-- Readiness note if Available -->
+            <div *ngIf="bed.status === 'Available'" class="p-2.5 rounded-xl bg-emerald-50/50 border border-emerald-100 text-xs text-emerald-800 font-medium flex items-center gap-1.5">
+              <i class="pi pi-check-circle text-emerald-600 text-xs"></i>
+              <span>Ready for admission</span>
+            </div>
+
+            <!-- Rate -->
+            <div class="flex items-center justify-between text-xs pt-1">
+              <span class="text-[#64748B]">Daily Rate:</span>
+              <span class="font-semibold font-mono text-[#0F172A]">${{ bed.dailyRate | number:'1.2-2' }}/day</span>
+            </div>
+          </div>
+
+          <!-- Card Actions Footer -->
+          <div class="p-3 bg-slate-50/80 border-t border-slate-100 flex items-center justify-end gap-2">
+            
+            <!-- Available Action: Admit Patient -->
+            <button
+              *ngIf="bed.status === 'Available'"
+              type="button"
+              (click)="openAdmitModalForBed(bed)"
+              class="w-full inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl bg-[#0F766E] hover:bg-[#0D665F] text-white text-xs font-semibold shadow-2xs transition-all cursor-pointer"
+            >
+              <i class="pi pi-plus text-xs"></i>
+              <span>Admit Patient</span>
+            </button>
+
+            <!-- Occupied Actions: Transfer & Discharge -->
+            <button
+              *ngIf="bed.status === 'Occupied'"
+              type="button"
+              (click)="openTransferModalForBed(bed)"
+              class="flex-1 inline-flex items-center justify-center gap-1 px-2.5 py-1.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold shadow-2xs transition-all cursor-pointer"
+            >
+              <i class="pi pi-arrows-h text-[11px]"></i>
+              <span>Transfer</span>
+            </button>
+
+            <button
+              *ngIf="bed.status === 'Occupied'"
+              type="button"
+              (click)="openDischargeModalForBed(bed)"
+              class="flex-1 inline-flex items-center justify-center gap-1 px-2.5 py-1.5 rounded-xl border border-rose-200 bg-white hover:bg-rose-50 text-rose-700 text-xs font-semibold shadow-2xs transition-all cursor-pointer"
+            >
+              <i class="pi pi-sign-out text-[11px]"></i>
+              <span>Discharge</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 4B. TAB 2: ADMISSION RECORDS -->
+    <div *ngIf="activeTab() === 'admissions'" class="p-4 sm:p-6 space-y-4">
+      
+      <!-- Toolbar -->
+      <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+        <div>
+          <h3 class="text-sm font-bold text-[#0F172A]">Inpatient Admission Log</h3>
+          <p class="text-xs text-[#64748B]">Historical log of active and completed inpatient hospital stays</p>
+        </div>
+
+        <button
+          type="button"
+          (click)="toggleActiveOnlyFilter()"
+          [ngClass]="{
+            'bg-[#0F766E] text-white font-bold shadow-2xs': activeOnlyFilter(),
+            'bg-white border-slate-200 text-[#475569] hover:bg-slate-50 font-semibold': !activeOnlyFilter()
+          }"
+          class="px-3 py-1.5 text-xs rounded-xl border transition-all cursor-pointer"
+        >
+          Active Stays Only
+        </button>
+      </div>
+
+      <!-- Admission Table Container -->
+      <div class="overflow-x-auto rounded-xl border border-slate-200 bg-white">
+        <table class="w-full text-left border-collapse min-w-[820px]">
+          <thead>
+            <tr class="bg-slate-50/80 border-b border-slate-200 text-[11px] font-semibold text-[#64748B] uppercase tracking-wider">
+              <th class="py-3.5 px-4">Patient</th>
+              <th class="py-3.5 px-4">Ward & Bed</th>
+              <th class="py-3.5 px-4">Admitting Doctor</th>
+              <th class="py-3.5 px-4">Chief Complaint</th>
+              <th class="py-3.5 px-4">Admission Date</th>
+              <th class="py-3.5 px-4">Discharge Date</th>
+              <th class="py-3.5 px-4">Room Charge</th>
+              <th class="py-3.5 px-4">Status</th>
+              <th class="py-3.5 px-4 text-center">Action</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-100 text-xs sm:text-sm text-[#0F172A]">
+            
+            <!-- Loading -->
+            <tr *ngIf="loading()">
+              <td colspan="9" class="text-center py-10 text-[#64748B]">
+                <div class="inline-flex items-center gap-2 font-medium">
+                  <i class="pi pi-spin pi-spinner text-[#0F766E]"></i>
+                  <span>Loading admission log...</span>
+                </div>
+              </td>
+            </tr>
+
+            <!-- Empty -->
+            <tr *ngIf="!loading() && paginatedAdmissions().length === 0">
+              <td colspan="9" class="text-center py-12 text-[#64748B]">
+                <div class="flex flex-col items-center justify-center gap-2 max-w-sm mx-auto">
+                  <div class="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center text-slate-400">
+                    <i class="pi pi-list text-xl"></i>
+                  </div>
+                  <p class="font-bold text-slate-800 text-sm mt-1">No inpatient admissions found</p>
+                  <p class="text-xs text-slate-500">
+                    {{ activeOnlyFilter() ? 'No active inpatient stays currently recorded.' : 'Admit a patient to begin tracking inpatient stays.' }}
+                  </p>
+                </div>
+              </td>
+            </tr>
+
+            <!-- Admission Rows -->
+            <tr
+              *ngFor="let adm of paginatedAdmissions()"
+              class="hover:bg-slate-50/70 transition-colors h-[58px]"
+            >
+              <!-- Patient -->
+              <td class="py-2.5 px-4">
+                <div class="font-bold text-[#0F172A] text-xs sm:text-sm">{{ adm.patientName }}</div>
+                <div class="text-[11px] font-medium text-[#64748B] font-mono mt-0.5">{{ adm.patientMrn }}</div>
+              </td>
+
+              <!-- Ward & Bed -->
+              <td class="py-2.5 px-4">
+                <div class="font-bold text-slate-900 text-xs sm:text-sm leading-tight">{{ adm.wardName }}</div>
+                <div class="text-[11px] text-[#64748B] mt-0.5">GW-{{ adm.roomNumber }} · {{ adm.bedNumber }}</div>
+              </td>
+
+              <!-- Admitting Doctor -->
+              <td class="py-2.5 px-4 text-xs font-semibold text-slate-700">
+                Dr. {{ adm.admittingDoctorName }}
+              </td>
+
+              <!-- Chief Complaint -->
+              <td class="py-2.5 px-4 max-w-[200px] truncate text-xs text-slate-600" [title]="adm.chiefComplaint">
+                {{ adm.chiefComplaint }}
+              </td>
+
+              <!-- Admission Date -->
+              <td class="py-2.5 px-4 text-xs font-medium text-slate-700">
+                {{ formatDate(adm.admissionDateUtc) }}
+              </td>
+
+              <!-- Discharge Date -->
+              <td class="py-2.5 px-4 text-xs text-slate-700">
+                <span *ngIf="adm.dischargeDateUtc" class="font-medium">{{ formatDate(adm.dischargeDateUtc) }}</span>
+                <span *ngIf="!adm.dischargeDateUtc" class="text-slate-400 italic">In Care</span>
+              </td>
+
+              <!-- Room Charge -->
+              <td class="py-2.5 px-4 font-semibold font-mono text-slate-800 text-xs sm:text-sm">
+                <span *ngIf="adm.isDischarged">${{ adm.totalRoomCharge | number:'1.2-2' }}</span>
+                <span *ngIf="!adm.isDischarged" class="text-slate-500 font-normal">${{ adm.dailyRateSnapshot | number:'1.2-2' }}/day</span>
+              </td>
+
+              <!-- Status -->
+              <td class="py-2.5 px-4">
+                <span
+                  class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold"
+                  [ngClass]="adm.isDischarged ? 'bg-slate-100 text-slate-700 border border-slate-200' : 'bg-emerald-50 text-emerald-700 border border-emerald-200'"
+                >
+                  {{ adm.isDischarged ? 'Discharged' : 'Active Stay' }}
+                </span>
+              </td>
+
+              <!-- Action -->
+              <td class="py-2.5 px-4 text-center">
+                <button
+                  *ngIf="!adm.isDischarged"
+                  type="button"
+                  (click)="openDischargeModalForAdmission(adm)"
+                  class="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-rose-200 bg-white hover:bg-rose-50 text-rose-700 text-xs font-semibold shadow-2xs transition-all cursor-pointer"
+                >
+                  <i class="pi pi-sign-out text-[11px]"></i>
+                  <span>Discharge</span>
+                </button>
+                <span *ngIf="adm.isDischarged" class="text-xs text-slate-400 italic">Completed</span>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Pagination Footer -->
+      <div *ngIf="admissions().length > 0" class="flex flex-col sm:flex-row items-center justify-between gap-3 pt-2 text-xs text-[#64748B]">
+        <div>
+          Showing <span class="font-bold text-[#0F172A]">{{ (admCurrentPage() - 1) * admPageSize() + 1 }}</span> to
+          <span class="font-bold text-[#0F172A]">{{ Math.min(admCurrentPage() * admPageSize(), admissions().length) }}</span> of
+          <span class="font-bold text-[#0F172A]">{{ admissions().length }}</span> admissions
+        </div>
+
+        <div class="flex items-center gap-1.5" *ngIf="admTotalPages() > 1">
+          <button
+            type="button"
+            (click)="goToAdmPage(admCurrentPage() - 1)"
+            [disabled]="admCurrentPage() === 1"
+            class="px-2.5 py-1 rounded-lg border border-slate-200 bg-white disabled:opacity-40 text-slate-700 hover:bg-slate-50 text-xs font-semibold cursor-pointer"
+          >
+            Previous
+          </button>
+          <span class="px-2 py-1 font-semibold text-slate-700">
+            Page {{ admCurrentPage() }} of {{ admTotalPages() }}
+          </span>
+          <button
+            type="button"
+            (click)="goToAdmPage(admCurrentPage() + 1)"
+            [disabled]="admCurrentPage() === admTotalPages()"
+            class="px-2.5 py-1 rounded-lg border border-slate-200 bg-white disabled:opacity-40 text-slate-700 hover:bg-slate-50 text-xs font-semibold cursor-pointer"
+          >
+            Next
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================================================== -->
+  <!-- MODAL 1: ADD HOSPITAL BED                          -->
+  <!-- ================================================== -->
+  <div
+    *ngIf="showAddBedDialog()"
+    (click)="onBackdropClick($event, 'addBed')"
+    class="fixed inset-0 z-50 bg-[#0F172A]/30 backdrop-blur-[2px] flex items-center justify-center p-4 modal-backdrop"
+  >
+    <div class="relative w-full max-w-[520px] max-h-[88vh] bg-white rounded-2xl border border-[#E2E8F0] shadow-[0_24px_60px_rgba(15,23,42,0.18)] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+      
+      <!-- Header -->
+      <div class="flex items-start justify-between p-5 sm:p-6 border-b border-[#E2E8F0] shrink-0">
+        <div>
+          <h2 class="text-xl font-bold text-[#0F172A] tracking-tight">Add Hospital Bed</h2>
+          <p class="text-xs sm:text-sm text-[#64748B] mt-0.5">
+            Create a bed and assign it to a hospital ward.
+          </p>
+        </div>
+        <button
+          type="button"
+          (click)="showAddBedDialog.set(false)"
+          class="w-8 h-8 rounded-full hover:bg-slate-100 flex items-center justify-center text-slate-400 hover:text-slate-600 transition-colors cursor-pointer"
+        >
+          <i class="pi pi-times text-sm"></i>
+        </button>
+      </div>
+
+      <!-- Form Body -->
+      <form [formGroup]="bedForm" (ngSubmit)="submitAddBed()" class="flex flex-col flex-1 overflow-y-auto">
+        <div class="p-5 sm:p-6 space-y-5">
+          
+          <div *ngIf="addBedError()" class="p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-medium flex items-center gap-2">
+            <i class="pi pi-exclamation-circle text-rose-500 text-sm shrink-0"></i>
+            <span>{{ addBedError() }}</span>
+          </div>
+
+          <!-- SECTION 1: Location -->
+          <div class="space-y-3">
+            <h3 class="text-xs font-bold uppercase tracking-wider text-[#0F766E] border-b border-slate-100 pb-1">
+              SECTION — Location
+            </h3>
+
+            <div class="flex flex-col gap-1.5">
+              <label class="text-xs font-semibold text-[#0F172A]">Ward Name *</label>
+              <input
+                type="text"
+                formControlName="wardName"
+                placeholder="e.g. General Ward A, ICU Ward, Pediatric Ward"
+                class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm font-medium text-[#0F172A] focus:outline-none focus:ring-2 focus:ring-[#0F766E]/20 focus:border-[#0F766E]"
+              />
+            </div>
+
+            <div class="grid grid-cols-2 gap-3">
+              <div class="flex flex-col gap-1.5">
+                <label class="text-xs font-semibold text-[#0F172A]">Room Number *</label>
+                <input
+                  type="text"
+                  formControlName="roomNumber"
+                  placeholder="e.g. 201"
+                  class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm font-medium text-[#0F172A] focus:outline-none focus:ring-2 focus:ring-[#0F766E]/20 focus:border-[#0F766E]"
+                />
+              </div>
+
+              <div class="flex flex-col gap-1.5">
+                <label class="text-xs font-semibold text-[#0F172A]">Bed Number *</label>
+                <input
+                  type="text"
+                  formControlName="bedNumber"
+                  placeholder="e.g. Bed-01"
+                  class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm font-medium text-[#0F172A] focus:outline-none focus:ring-2 focus:ring-[#0F766E]/20 focus:border-[#0F766E]"
+                />
+              </div>
+            </div>
+          </div>
+
+          <!-- SECTION 2: Bed Details -->
+          <div class="space-y-3">
+            <h3 class="text-xs font-bold uppercase tracking-wider text-[#0F766E] border-b border-slate-100 pb-1">
+              SECTION — Bed Details
+            </h3>
+
+            <div class="grid grid-cols-2 gap-3">
+              <div class="flex flex-col gap-1.5">
+                <label class="text-xs font-semibold text-[#0F172A]">Bed Type *</label>
+                <select
+                  formControlName="bedType"
+                  class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm font-medium text-[#0F172A] focus:outline-none focus:ring-2 focus:ring-[#0F766E]/20 focus:border-[#0F766E] cursor-pointer"
+                >
+                  <option value="Standard Hospital Bed">Standard Hospital Bed</option>
+                  <option value="ICU Bed">ICU Bed</option>
+                  <option value="Pediatric Bed">Pediatric Bed</option>
+                  <option value="Private Suite Bed">Private Suite Bed</option>
+                  <option value="Surgical Recovery Bed">Surgical Recovery Bed</option>
+                </select>
+              </div>
+
+              <div class="flex flex-col gap-1.5">
+                <label class="text-xs font-semibold text-[#0F172A]">Daily Rate ($) *</label>
+                <input
+                  type="number"
+                  min="0"
+                  formControlName="dailyRate"
+                  placeholder="100.00"
+                  class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm font-medium text-[#0F172A] focus:outline-none focus:ring-2 focus:ring-[#0F766E]/20 focus:border-[#0F766E]"
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="p-4 sm:p-5 border-t border-[#E2E8F0] bg-slate-50/80 flex items-center justify-end gap-3 shrink-0">
+          <button
+            type="button"
+            (click)="showAddBedDialog.set(false)"
+            class="px-4 py-2 rounded-xl border border-slate-200 hover:bg-slate-100 text-slate-700 text-xs sm:text-sm font-semibold transition-all cursor-pointer"
+          >
+            Cancel
+          </button>
+
+          <button
+            type="submit"
+            [disabled]="submitting() || bedForm.invalid"
+            class="px-5 py-2 rounded-xl bg-[#0F766E] hover:bg-[#0D665F] disabled:opacity-50 text-white text-xs sm:text-sm font-semibold shadow-2xs transition-all flex items-center gap-2 cursor-pointer"
+          >
+            <i *ngIf="submitting()" class="pi pi-spin pi-spinner text-xs"></i>
+            <span>{{ submitting() ? 'Creating Bed...' : 'Create Bed' }}</span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ================================================== -->
+  <!-- MODAL 2: ADMIT PATIENT                             -->
+  <!-- ================================================== -->
+  <div
+    *ngIf="showAdmitDialog()"
+    (click)="onBackdropClick($event, 'admit')"
+    class="fixed inset-0 z-50 bg-[#0F172A]/30 backdrop-blur-[2px] flex items-center justify-center p-4 modal-backdrop"
+  >
+    <div class="relative w-full max-w-[580px] max-h-[88vh] bg-white rounded-2xl border border-[#E2E8F0] shadow-[0_24px_60px_rgba(15,23,42,0.18)] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+      
+      <!-- Header -->
+      <div class="flex items-start justify-between p-5 sm:p-6 border-b border-[#E2E8F0] shrink-0">
+        <div>
+          <h2 class="text-xl font-bold text-[#0F172A] tracking-tight">Admit Patient</h2>
+          <p class="text-xs sm:text-sm text-[#64748B] mt-0.5">
+            Assign a patient to an available hospital bed.
+          </p>
+        </div>
+        <button
+          type="button"
+          (click)="showAdmitDialog.set(false)"
+          class="w-8 h-8 rounded-full hover:bg-slate-100 flex items-center justify-center text-slate-400 hover:text-slate-600 transition-colors cursor-pointer"
+        >
+          <i class="pi pi-times text-sm"></i>
+        </button>
+      </div>
+
+      <!-- Form Body -->
+      <form [formGroup]="admitForm" (ngSubmit)="submitAdmitPatient()" class="flex flex-col flex-1 overflow-y-auto">
+        <div class="p-5 sm:p-6 space-y-5">
+          
+          <div *ngIf="admitError()" class="p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-medium flex items-center gap-2">
+            <i class="pi pi-exclamation-circle text-rose-500 text-sm shrink-0"></i>
+            <span>{{ admitError() }}</span>
+          </div>
+
+          <!-- SECTION 1: Patient -->
+          <div class="space-y-3">
+            <h3 class="text-xs font-bold uppercase tracking-wider text-[#0F766E] border-b border-slate-100 pb-1">
+              SECTION — Patient
+            </h3>
+
+            <div class="flex flex-col gap-1.5">
+              <label class="text-xs font-semibold text-[#0F172A]">Patient *</label>
+              <select
+                formControlName="patientId"
+                class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm font-medium text-[#0F172A] focus:outline-none focus:ring-2 focus:ring-[#0F766E]/20 focus:border-[#0F766E] cursor-pointer"
+              >
+                <option value="" disabled>Select Patient</option>
+                <option *ngFor="let p of availablePatients()" [value]="p.id">
+                  {{ p.firstName }} {{ p.lastName }} — {{ p.medicalRecordNumber }}
+                </option>
+              </select>
+            </div>
+          </div>
+
+          <!-- SECTION 2: Bed Assignment -->
+          <div class="space-y-3">
+            <h3 class="text-xs font-bold uppercase tracking-wider text-[#0F766E] border-b border-slate-100 pb-1">
+              SECTION — Bed Assignment
+            </h3>
+
+            <div class="flex flex-col gap-1.5">
+              <label class="text-xs font-semibold text-[#0F172A]">Available Bed *</label>
+              <select
+                formControlName="bedId"
+                class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm font-medium text-[#0F172A] focus:outline-none focus:ring-2 focus:ring-[#0F766E]/20 focus:border-[#0F766E] cursor-pointer"
+              >
+                <option value="" disabled>Select Available Bed</option>
+                <option *ngFor="let b of availableBedsList()" [value]="b.id">
+                  {{ b.wardName }} · GW-{{ b.roomNumber }} · {{ b.bedNumber }} · ${{ b.dailyRate }}/day
+                </option>
+              </select>
+            </div>
+          </div>
+
+          <!-- SECTION 3: Admission Details -->
+          <div class="space-y-3">
+            <h3 class="text-xs font-bold uppercase tracking-wider text-[#0F766E] border-b border-slate-100 pb-1">
+              SECTION — Admission Details
+            </h3>
+
+            <div class="flex flex-col gap-1.5">
+              <label class="text-xs font-semibold text-[#0F172A]">Admitting Physician / Doctor *</label>
+              <select
+                *ngIf="staffList().length > 0; else textDoctorInput"
+                formControlName="admittingDoctorName"
+                class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm font-medium text-[#0F172A] focus:outline-none focus:ring-2 focus:ring-[#0F766E]/20 focus:border-[#0F766E] cursor-pointer"
+              >
+                <option *ngFor="let s of staffList()" [value]="'Dr. ' + s.firstName + ' ' + s.lastName">
+                  Dr. {{ s.firstName }} {{ s.lastName }} ({{ s.specialty }})
+                </option>
+              </select>
+              <ng-template #textDoctorInput>
+                <input
+                  type="text"
+                  formControlName="admittingDoctorName"
+                  placeholder="e.g. Dr. Sarah Connor"
+                  class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm font-medium text-[#0F172A] focus:outline-none focus:ring-2 focus:ring-[#0F766E]/20 focus:border-[#0F766E]"
+                />
+              </ng-template>
+            </div>
+
+            <div class="flex flex-col gap-1.5">
+              <label class="text-xs font-semibold text-[#0F172A]">Admission Reason *</label>
+              <textarea
+                rows="3"
+                formControlName="chiefComplaint"
+                placeholder="Primary diagnosis, symptoms, or clinical admission reason..."
+                class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm font-medium text-[#0F172A] placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#0F766E]/20 focus:border-[#0F766E]"
+              ></textarea>
+            </div>
+          </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="p-4 sm:p-5 border-t border-[#E2E8F0] bg-slate-50/80 flex items-center justify-end gap-3 shrink-0">
+          <button
+            type="button"
+            (click)="showAdmitDialog.set(false)"
+            class="px-4 py-2 rounded-xl border border-slate-200 hover:bg-slate-100 text-slate-700 text-xs sm:text-sm font-semibold transition-all cursor-pointer"
+          >
+            Cancel
+          </button>
+
+          <button
+            type="submit"
+            [disabled]="submitting() || admitForm.invalid"
+            class="px-5 py-2 rounded-xl bg-[#0F766E] hover:bg-[#0D665F] disabled:opacity-50 text-white text-xs sm:text-sm font-semibold shadow-2xs transition-all flex items-center gap-2 cursor-pointer"
+          >
+            <i *ngIf="submitting()" class="pi pi-spin pi-spinner text-xs"></i>
+            <span>{{ submitting() ? 'Confirming Admission...' : 'Confirm Admission' }}</span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ================================================== -->
+  <!-- MODAL 3: TRANSFER BED                              -->
+  <!-- ================================================== -->
+  <div
+    *ngIf="showTransferDialog()"
+    (click)="onBackdropClick($event, 'transfer')"
+    class="fixed inset-0 z-50 bg-[#0F172A]/30 backdrop-blur-[2px] flex items-center justify-center p-4 modal-backdrop"
+  >
+    <div class="relative w-full max-w-[500px] max-h-[88vh] bg-white rounded-2xl border border-[#E2E8F0] shadow-[0_24px_60px_rgba(15,23,42,0.18)] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+      
+      <!-- Header -->
+      <div class="flex items-start justify-between p-5 sm:p-6 border-b border-[#E2E8F0] shrink-0">
+        <div>
+          <h2 class="text-xl font-bold text-[#0F172A] tracking-tight">Transfer Patient</h2>
+          <p class="text-xs sm:text-sm text-[#64748B] mt-0.5">
+            Reassign a patient to a different available hospital bed.
+          </p>
+        </div>
+        <button
+          type="button"
+          (click)="showTransferDialog.set(false)"
+          class="w-8 h-8 rounded-full hover:bg-slate-100 flex items-center justify-center text-slate-400 hover:text-slate-600 transition-colors cursor-pointer"
+        >
+          <i class="pi pi-times text-sm"></i>
+        </button>
+      </div>
+
+      <!-- Body -->
+      <div *ngIf="selectedAdmissionForTransfer()" class="p-5 sm:p-6 space-y-4 overflow-y-auto">
+        
+        <!-- Patient Summary Box -->
+        <div class="p-3.5 rounded-xl bg-slate-50 border border-slate-200 space-y-1">
+          <div class="flex items-center justify-between">
+            <span class="font-bold text-[#0F172A] text-sm">{{ selectedAdmissionForTransfer()?.patientName }}</span>
+            <span class="text-xs font-mono text-[#64748B]">{{ selectedAdmissionForTransfer()?.patientMrn }}</span>
+          </div>
+          <div class="text-xs text-[#64748B]">
+            Current Bed: <span class="font-semibold text-slate-800">{{ selectedAdmissionForTransfer()?.wardName }} · GW-{{ selectedAdmissionForTransfer()?.roomNumber }} · {{ selectedAdmissionForTransfer()?.bedNumber }}</span>
+          </div>
+        </div>
+
+        <form [formGroup]="transferForm" (ngSubmit)="submitTransferPatient()" class="space-y-4">
+          <div class="flex flex-col gap-1.5">
+            <label class="text-xs font-semibold text-[#0F172A]">Transfer To *</label>
+            <select
+              formControlName="newBedId"
+              class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm font-medium text-[#0F172A] focus:outline-none focus:ring-2 focus:ring-[#0F766E]/20 focus:border-[#0F766E] cursor-pointer"
+            >
+              <option value="" disabled>Select Available Bed</option>
+              <option *ngFor="let b of availableBedsList()" [value]="b.id">
+                {{ b.wardName }} · GW-{{ b.roomNumber }} · {{ b.bedNumber }} · ${{ b.dailyRate }}/day
+              </option>
+            </select>
+          </div>
+
+          <div class="flex flex-col gap-1.5">
+            <label class="text-xs font-semibold text-[#0F172A]">Transfer Reason</label>
+            <textarea
+              rows="3"
+              formControlName="transferReason"
+              placeholder="e.g. Transferred to ICU for specialized monitoring"
+              class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm font-medium text-[#0F172A] placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#0F766E]/20 focus:border-[#0F766E]"
+            ></textarea>
+          </div>
+
+          <!-- Footer -->
+          <div class="pt-3 border-t border-[#E2E8F0] flex items-center justify-end gap-3">
+            <button
+              type="button"
+              (click)="showTransferDialog.set(false)"
+              class="px-4 py-2 rounded-xl border border-slate-200 hover:bg-slate-100 text-slate-700 text-xs font-semibold transition-all cursor-pointer"
+            >
+              Cancel
+            </button>
+
+            <button
+              type="submit"
+              [disabled]="submitting() || transferForm.invalid"
+              class="px-4 py-2 rounded-xl bg-[#0F766E] hover:bg-[#0D665F] disabled:opacity-50 text-white text-xs font-semibold shadow-2xs transition-all flex items-center gap-2 cursor-pointer"
+            >
+              <i *ngIf="submitting()" class="pi pi-spin pi-spinner text-xs"></i>
+              <span>{{ submitting() ? 'Transferring...' : 'Transfer Patient' }}</span>
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================================================== -->
+  <!-- MODAL 4: DISCHARGE PATIENT CONFIRMATION            -->
+  <!-- ================================================== -->
+  <div
+    *ngIf="showDischargeDialog()"
+    (click)="onBackdropClick($event, 'discharge')"
+    class="fixed inset-0 z-50 bg-[#0F172A]/30 backdrop-blur-[2px] flex items-center justify-center p-4 modal-backdrop"
+  >
+    <div class="relative w-full max-w-[500px] max-h-[88vh] bg-white rounded-2xl border border-[#E2E8F0] shadow-[0_24px_60px_rgba(15,23,42,0.18)] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+      
+      <!-- Header -->
+      <div class="flex items-start justify-between p-5 sm:p-6 border-b border-[#E2E8F0] shrink-0">
+        <div>
+          <h2 class="text-xl font-bold text-[#0F172A] tracking-tight">Discharge Patient</h2>
+          <p class="text-xs sm:text-sm text-[#64748B] mt-0.5">
+            Confirm inpatient discharge and release hospital bed.
+          </p>
+        </div>
+        <button
+          type="button"
+          (click)="showDischargeDialog.set(false)"
+          class="w-8 h-8 rounded-full hover:bg-slate-100 flex items-center justify-center text-slate-400 hover:text-slate-600 transition-colors cursor-pointer"
+        >
+          <i class="pi pi-times text-sm"></i>
+        </button>
+      </div>
+
+      <!-- Body -->
+      <div *ngIf="selectedAdmissionForDischarge()" class="p-5 sm:p-6 space-y-4 overflow-y-auto">
+        
+        <!-- Summary Box -->
+        <div class="p-3.5 rounded-xl bg-rose-50/70 border border-rose-200 space-y-1">
+          <div class="flex items-center justify-between">
+            <span class="font-bold text-[#0F172A] text-sm">{{ selectedAdmissionForDischarge()?.patientName }}</span>
+            <span class="text-xs font-mono text-[#64748B]">{{ selectedAdmissionForDischarge()?.patientMrn }}</span>
+          </div>
+          <div class="text-xs text-[#64748B]">
+            Current Bed: <span class="font-semibold text-slate-800">{{ selectedAdmissionForDischarge()?.wardName }} · GW-{{ selectedAdmissionForDischarge()?.roomNumber }} · {{ selectedAdmissionForDischarge()?.bedNumber }}</span>
+          </div>
+          <div class="text-xs text-[#64748B]">
+            Admitted: {{ formatDate(selectedAdmissionForDischarge()?.admissionDateUtc!) }}
+          </div>
+        </div>
+
+        <form [formGroup]="dischargeForm" (ngSubmit)="submitDischargePatient()" class="space-y-4">
+          <div class="flex flex-col gap-1.5">
+            <label class="text-xs font-semibold text-[#0F172A]">Discharge Summary & Instructions *</label>
+            <textarea
+              rows="3"
+              formControlName="dischargeSummary"
+              placeholder="Patient recovered, discharge medications prescribed, follow-up instructions..."
+              class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm font-medium text-[#0F172A] placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-rose-500/20 focus:border-rose-500"
+            ></textarea>
+          </div>
+
+          <!-- Confirmation Footer -->
+          <div class="pt-3 border-t border-[#E2E8F0] flex items-center justify-end gap-3">
+            <button
+              type="button"
+              (click)="showDischargeDialog.set(false)"
+              class="px-4 py-2 rounded-xl border border-slate-200 hover:bg-slate-100 text-slate-700 text-xs font-semibold transition-all cursor-pointer"
+            >
+              Cancel
+            </button>
+
+            <button
+              type="submit"
+              [disabled]="submitting() || dischargeForm.invalid"
+              class="px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 disabled:opacity-50 text-white text-xs font-semibold shadow-2xs transition-all flex items-center gap-2 cursor-pointer"
+            >
+              <i *ngIf="submitting()" class="pi pi-spin pi-spinner text-xs"></i>
+              <span>{{ submitting() ? 'Discharging...' : 'Confirm Discharge' }}</span>
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,549 @@
+<div class="space-y-6 w-full max-w-full min-w-0 pb-6" *ngIf="ehr() as p; else loadingState">
+
+  <!-- 1. Patient Clinical Header / Identity Banner -->
+  <div class="bg-white rounded-2xl border border-[#E2E8F0] shadow-2xs p-5 sm:p-6 min-w-0 space-y-4">
+    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+      
+      <!-- Left: Back Button, Avatar & Identity -->
+      <div class="flex items-start sm:items-center gap-3.5">
+        <a
+          routerLink="/patients"
+          class="w-9 h-9 rounded-xl border border-slate-200/90 bg-slate-50 hover:bg-slate-100 text-[#475569] flex items-center justify-center transition-all shrink-0 mt-0.5 sm:mt-0"
+          title="Back to Patients"
+        >
+          <i class="pi pi-arrow-left text-xs"></i>
+        </a>
+
+        <!-- Initials Avatar -->
+        <div class="w-12 h-12 rounded-full bg-teal-50 text-[#0F766E] border border-teal-200/60 font-bold text-base flex items-center justify-center shrink-0 shadow-2xs">
+          {{ getInitials(p.firstName, p.lastName) }}
+        </div>
+
+        <div>
+          <div class="flex flex-wrap items-center gap-2">
+            <h1 class="text-xl sm:text-2xl font-bold text-[#0F172A] tracking-tight">
+              {{ p.firstName }} {{ p.lastName }}
+            </h1>
+            <span class="font-mono text-xs font-bold text-[#0F766E] bg-teal-50 px-2.5 py-0.5 rounded-md border border-teal-200/60">
+              {{ p.medicalRecordNumber }}
+            </span>
+          </div>
+          <p class="text-xs sm:text-sm font-medium text-[#64748B] mt-0.5">
+            {{ calculateAge(p.dateOfBirth) || (p.age + ' years') }} &bull; {{ p.gender || 'Unspecified' }} &bull; DOB: {{ p.dateOfBirth | date:'MMM dd, yyyy' }}
+          </p>
+        </div>
+      </div>
+
+      <!-- Right: Action Button -->
+      <div class="flex items-center gap-2 shrink-0">
+        <button
+          type="button"
+          (click)="openAddEncounterModal()"
+          class="inline-flex items-center justify-center gap-2 px-4 h-[42px] rounded-xl bg-[#0F766E] hover:bg-[#0D665F] text-white text-xs sm:text-sm font-semibold shadow-2xs hover:shadow-xs transition-all cursor-pointer"
+        >
+          <i class="pi pi-plus text-xs sm:text-sm"></i>
+          <span>Record Encounter</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- 2. Clinical Safety Strip -->
+    <div class="pt-3.5 border-t border-slate-100 grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+      <div class="bg-slate-50/80 p-2.5 rounded-xl border border-slate-100 flex items-center justify-between">
+        <span class="font-semibold text-[#64748B] flex items-center gap-1.5">
+          <i class="pi pi-exclamation-triangle text-amber-500 text-xs"></i> Allergies:
+        </span>
+        <span class="font-medium text-slate-500 italic">Not recorded</span>
+      </div>
+
+      <div class="bg-slate-50/80 p-2.5 rounded-xl border border-slate-100 flex items-center justify-between">
+        <span class="font-semibold text-[#64748B] flex items-center gap-1.5">
+          <i class="pi pi-shield text-teal-600 text-xs"></i> Blood Type:
+        </span>
+        <span class="font-medium text-slate-500 italic">Not recorded</span>
+      </div>
+
+      <div class="bg-slate-50/80 p-2.5 rounded-xl border border-slate-100 flex items-center justify-between">
+        <span class="font-semibold text-[#64748B] flex items-center gap-1.5">
+          <i class="pi pi-info-circle text-sky-600 text-xs"></i> Known Conditions:
+        </span>
+        <span class="font-medium text-slate-500 italic">Not recorded</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- 3. Clinical Summary Cards (3 Cards in one row) -->
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-5">
+    
+    <!-- CARD 1: Latest Patient Vitals -->
+    <div class="bg-white rounded-2xl border border-[#E2E8F0] p-5 shadow-2xs flex flex-col justify-between">
+      <div>
+        <div class="flex items-center justify-between border-b border-slate-100 pb-3 mb-3">
+          <span class="text-xs font-bold uppercase tracking-wider text-[#64748B] flex items-center gap-2">
+            <i class="pi pi-heart-fill text-rose-500"></i> Latest Vitals
+          </span>
+        </div>
+
+        <div *ngIf="p.latestVitals as v; else noVitals" class="space-y-2">
+          <div class="grid grid-cols-2 gap-2.5 text-xs">
+            <div class="bg-slate-50/80 p-2.5 rounded-xl border border-slate-100">
+              <span class="text-[11px] text-slate-500 block">BP</span>
+              <span class="font-bold text-[#0F172A] text-sm mt-0.5 block">{{ v.bloodPressure || 'N/A' }}</span>
+            </div>
+            <div class="bg-slate-50/80 p-2.5 rounded-xl border border-slate-100">
+              <span class="text-[11px] text-slate-500 block">Heart Rate</span>
+              <span class="font-bold text-[#0F172A] text-sm mt-0.5 block">{{ v.heartRateBpm ? v.heartRateBpm + ' bpm' : 'N/A' }}</span>
+            </div>
+            <div class="bg-slate-50/80 p-2.5 rounded-xl border border-slate-100">
+              <span class="text-[11px] text-slate-500 block">Temperature</span>
+              <span class="font-bold text-[#0F172A] text-sm mt-0.5 block">{{ v.temperatureCelsius ? v.temperatureCelsius + ' °C' : 'N/A' }}</span>
+            </div>
+            <div class="bg-slate-50/80 p-2.5 rounded-xl border border-slate-100">
+              <span class="text-[11px] text-slate-500 block">Weight</span>
+              <span class="font-bold text-[#0F172A] text-sm mt-0.5 block">{{ v.weightKg ? v.weightKg + ' kg' : 'N/A' }}</span>
+            </div>
+          </div>
+          <div *ngIf="v.recordedAtUtc" class="text-[11px] font-medium text-slate-400 pt-1 text-right">
+            Recorded {{ v.recordedAtUtc | date:'MMM dd, yyyy • h:mm a' }}
+          </div>
+        </div>
+      </div>
+      <ng-template #noVitals>
+        <p class="text-xs text-slate-400 italic py-4 text-center">No recorded vital signs</p>
+      </ng-template>
+    </div>
+
+    <!-- CARD 2: Active Medications -->
+    <div class="bg-white rounded-2xl border border-[#E2E8F0] p-5 shadow-2xs flex flex-col justify-between">
+      <div class="flex items-center justify-between border-b border-slate-100 pb-3 mb-3">
+        <span class="text-xs font-bold uppercase tracking-wider text-[#64748B] flex items-center gap-2">
+          <i class="pi pi-briefcase text-[#0F766E]"></i> Active Medications
+        </span>
+        <span class="text-xs font-bold text-[#0F766E] bg-teal-50 px-2 py-0.5 rounded-full border border-teal-200/60">
+          {{ p.activeMedications.length }}
+        </span>
+      </div>
+
+      <div *ngIf="p.activeMedications.length > 0; else noMeds" class="space-y-2 max-h-36 overflow-y-auto pr-1">
+        <div *ngFor="let med of p.activeMedications.slice(0, 3)" class="text-xs p-2.5 bg-slate-50/90 border border-slate-100 rounded-xl flex items-center justify-between">
+          <div>
+            <span class="font-bold text-[#0F172A] block">{{ med.medicationName }}</span>
+            <span class="text-[11px] text-slate-500">{{ med.dosage }} &bull; {{ med.frequency }}</span>
+          </div>
+          <span class="px-2 py-0.5 bg-emerald-50 text-emerald-700 font-semibold rounded-full border border-emerald-200/60 text-[10px]">
+            {{ med.status }}
+          </span>
+        </div>
+      </div>
+      <ng-template #noMeds>
+        <p class="text-xs text-slate-400 italic py-4 text-center">No active medications</p>
+      </ng-template>
+    </div>
+
+    <!-- CARD 3: Pending Lab Orders -->
+    <div class="bg-white rounded-2xl border border-[#E2E8F0] p-5 shadow-2xs flex flex-col justify-between">
+      <div class="flex items-center justify-between border-b border-slate-100 pb-3 mb-3">
+        <span class="text-xs font-bold uppercase tracking-wider text-[#64748B] flex items-center gap-2">
+          <i class="pi pi-compass text-amber-500"></i> Pending Lab Orders
+        </span>
+        <span class="text-xs font-bold text-amber-700 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200/60">
+          {{ p.pendingLabResults.length }}
+        </span>
+      </div>
+
+      <div *ngIf="p.pendingLabResults.length > 0; else noLabs" class="space-y-2 max-h-36 overflow-y-auto pr-1">
+        <div *ngFor="let lab of p.pendingLabResults.slice(0, 3)" class="text-xs p-2.5 bg-slate-50/90 border border-slate-100 rounded-xl flex items-center justify-between">
+          <div>
+            <span class="font-bold text-[#0F172A] block">{{ lab.testName }}</span>
+            <span class="text-[11px] text-slate-500">Dr. {{ lab.orderingDoctorName }}</span>
+          </div>
+          <span class="px-2 py-0.5 bg-amber-50 text-amber-700 font-semibold rounded-full border border-amber-200/60 text-[10px]">
+            {{ lab.status }}
+          </span>
+        </div>
+      </div>
+      <ng-template #noLabs>
+        <p class="text-xs text-slate-400 italic py-4 text-center">No pending laboratory orders</p>
+      </ng-template>
+    </div>
+
+  </div>
+
+  <!-- 4. Health History Timeline & Segmented Record Navigation -->
+  <div class="bg-white rounded-2xl border border-[#E2E8F0] shadow-2xs p-5 sm:p-6 space-y-6">
+
+    <!-- Navigation Segmented Control Header -->
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-4">
+      <div>
+        <h2 class="text-base sm:text-lg font-bold text-[#0F172A] flex items-center gap-2">
+          <i class="pi pi-history text-[#0F766E]"></i> Health History
+        </h2>
+        <p class="text-xs text-[#64748B] mt-0.5">
+          Chronological patient record ({{ filteredTimeline().length }} events)
+        </p>
+      </div>
+
+      <!-- Category Filter Tabs -->
+      <div class="flex flex-wrap items-center gap-1.5 bg-slate-100/80 p-1 rounded-xl border border-slate-200/60">
+        <button
+          type="button"
+          (click)="setEventTypeFilter(null)"
+          [ngClass]="{
+            'bg-[#0F766E] text-white font-bold shadow-2xs': eventTypeFilter() === null,
+            'text-[#475569] hover:bg-slate-200/60 font-semibold': eventTypeFilter() !== null
+          }"
+          class="px-3 py-1.5 rounded-lg text-xs transition-all cursor-pointer"
+        >
+          All Events
+        </button>
+
+        <button
+          type="button"
+          (click)="setEventTypeFilter('ClinicalNote')"
+          [ngClass]="{
+            'bg-[#0F766E] text-white font-bold shadow-2xs': eventTypeFilter() === 'ClinicalNote',
+            'text-[#475569] hover:bg-slate-200/60 font-semibold': eventTypeFilter() !== 'ClinicalNote'
+          }"
+          class="px-3 py-1.5 rounded-lg text-xs transition-all cursor-pointer"
+        >
+          Encounters
+        </button>
+
+        <button
+          type="button"
+          (click)="setEventTypeFilter('Prescription')"
+          [ngClass]="{
+            'bg-[#0F766E] text-white font-bold shadow-2xs': eventTypeFilter() === 'Prescription',
+            'text-[#475569] hover:bg-slate-200/60 font-semibold': eventTypeFilter() !== 'Prescription'
+          }"
+          class="px-3 py-1.5 rounded-lg text-xs transition-all cursor-pointer"
+        >
+          Prescriptions
+        </button>
+
+        <button
+          type="button"
+          (click)="setEventTypeFilter('LabOrder')"
+          [ngClass]="{
+            'bg-[#0F766E] text-white font-bold shadow-2xs': eventTypeFilter() === 'LabOrder',
+            'text-[#475569] hover:bg-slate-200/60 font-semibold': eventTypeFilter() !== 'LabOrder'
+          }"
+          class="px-3 py-1.5 rounded-lg text-xs transition-all cursor-pointer"
+        >
+          Diagnostics
+        </button>
+
+        <button
+          type="button"
+          (click)="setEventTypeFilter('Invoice')"
+          [ngClass]="{
+            'bg-[#0F766E] text-white font-bold shadow-2xs': eventTypeFilter() === 'Invoice',
+            'text-[#475569] hover:bg-slate-200/60 font-semibold': eventTypeFilter() !== 'Invoice'
+          }"
+          class="px-3 py-1.5 rounded-lg text-xs transition-all cursor-pointer"
+        >
+          Billing
+        </button>
+      </div>
+    </div>
+
+    <!-- Timeline Stream List -->
+    <div *ngIf="filteredTimeline().length > 0; else emptyTimeline" class="relative border-l-2 border-slate-200 ml-4 pl-6 space-y-4 my-2">
+      <div *ngFor="let ev of filteredTimeline()" class="relative group">
+        
+        <!-- Timeline Marker Icon Node -->
+        <div
+          class="absolute -left-[37px] top-0 w-8 h-8 rounded-full border-2 border-white shadow-2xs flex items-center justify-center text-white text-xs font-bold shrink-0"
+          [ngClass]="{
+            'bg-[#0F766E]': ev.eventType === 'ClinicalNote',
+            'bg-emerald-600': ev.eventType === 'Prescription',
+            'bg-indigo-600': ev.eventType === 'LabOrder',
+            'bg-slate-700': ev.eventType === 'Invoice',
+            'bg-sky-600': ev.eventType === 'Appointment'
+          }"
+        >
+          <i [class]="'pi ' + ev.icon"></i>
+        </div>
+
+        <!-- Timeline Event Card -->
+        <div class="bg-slate-50/90 border border-slate-200/90 hover:border-[#0F766E]/40 rounded-2xl p-3.5 sm:p-4 transition-all shadow-2xs hover:shadow-xs">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-200/60 pb-2 mb-2">
+            <div class="flex items-center gap-2.5">
+              <span class="font-bold text-[#0F172A] text-sm sm:text-base">{{ ev.title }}</span>
+              <span
+                class="px-2.5 py-0.5 rounded-full text-[11px] font-semibold border"
+                [ngClass]="{
+                  'bg-emerald-50 text-emerald-700 border-emerald-200': ev.status === 'Completed' || ev.status === 'Fulfilled' || ev.status === 'Paid',
+                  'bg-sky-50 text-sky-700 border-sky-200': ev.status === 'Confirmed' || ev.status === 'Active',
+                  'bg-amber-50 text-amber-700 border-amber-200': ev.status === 'Pending' || ev.status === 'Ordered',
+                  'bg-slate-100 text-slate-700 border-slate-200': ev.status === 'Scheduled'
+                }"
+              >
+                {{ ev.status }}
+              </span>
+            </div>
+            <!-- Clean Formatted Timestamp (without seconds) -->
+            <span class="text-xs font-semibold text-[#64748B]">
+              {{ ev.timestampUtc | date:'MMM dd, yyyy • h:mm a' }}
+            </span>
+          </div>
+
+          <!-- Description Text -->
+          <p class="text-xs sm:text-sm text-[#334155] leading-relaxed whitespace-pre-line">
+            {{ ev.description }}
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Empty Timeline State -->
+    <ng-template #emptyTimeline>
+      <div class="text-center py-12 text-[#64748B]">
+        <i class="pi pi-info-circle text-3xl mb-2 text-slate-400 block"></i>
+        <p class="text-xs sm:text-sm font-medium">No health history records match selected filter criteria.</p>
+      </div>
+    </ng-template>
+
+  </div>
+
+  <!-- 5. Record Clinical Encounter Modal -->
+  <div
+    *ngIf="showEncounterModal()"
+    (click)="onBackdropClick($event)"
+    class="modal-backdrop fixed inset-0 bg-[#0F172A]/30 backdrop-blur-[2px] z-50 flex items-center justify-center p-4 sm:p-6 overflow-y-auto animate-fadeIn"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="encounter-modal-title"
+  >
+    <div
+      class="relative bg-white border border-[#E2E8F0] rounded-2xl shadow-[0_24px_60px_rgba(15,23,42,0.18)] w-full max-w-[640px] max-h-[88vh] flex flex-col my-auto overflow-hidden animate-scaleUp"
+      (click)="$event.stopPropagation()"
+    >
+      <!-- Modal Header -->
+      <div class="px-5 sm:px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-white shrink-0">
+        <div>
+          <div class="flex items-center gap-2">
+            <h2 id="encounter-modal-title" class="text-lg sm:text-xl font-bold text-[#0F172A] tracking-tight">
+              Record Clinical Encounter
+            </h2>
+            <span class="text-xs font-semibold text-[#0F766E] bg-teal-50 px-2.5 py-0.5 rounded-full border border-teal-200/60">
+              {{ p.firstName }} {{ p.lastName }} &bull; {{ p.medicalRecordNumber }}
+            </span>
+          </div>
+          <p class="text-xs text-[#64748B] mt-0.5">
+            Document the consultation, diagnosis and patient vitals.
+          </p>
+        </div>
+
+        <button
+          type="button"
+          (click)="closeAddEncounterModal()"
+          [disabled]="submitting()"
+          aria-label="Close modal"
+          class="w-8 h-8 rounded-lg text-slate-400 hover:text-[#0F172A] hover:bg-slate-100 flex items-center justify-center transition-colors disabled:opacity-50"
+        >
+          <i class="pi pi-times text-sm"></i>
+        </button>
+      </div>
+
+      <!-- Modal Body Form Scrollable Area -->
+      <form [formGroup]="addEncounterForm" (ngSubmit)="saveClinicalEncounter()" class="p-5 sm:p-6 space-y-5 overflow-y-auto flex-1">
+
+        <!-- Error Banner -->
+        <div
+          *ngIf="errorMessage()"
+          class="bg-rose-50 border border-rose-200/80 text-[#DC2626] text-xs font-semibold p-3 rounded-xl flex items-center gap-2"
+        >
+          <i class="pi pi-exclamation-circle text-sm shrink-0"></i>
+          <span>{{ errorMessage() }}</span>
+        </div>
+
+        <!-- SECTION 1: Encounter Details -->
+        <div class="space-y-3.5">
+          <h3 class="text-xs font-bold uppercase tracking-wider text-[#0F766E] border-b border-slate-100 pb-1.5">
+            Encounter Details
+          </h3>
+
+          <!-- Attending Physician -->
+          <div>
+            <label for="doctorName" class="text-[13px] font-semibold text-[#334155] mb-1 block">
+              Attending Physician / Doctor <span class="text-rose-500">*</span>
+            </label>
+            <input
+              id="doctorName"
+              type="text"
+              formControlName="doctorName"
+              placeholder="e.g. Dr. Sarah Jenkins"
+              class="w-full h-[44px] px-3.5 bg-white border border-[#CBD5E1] rounded-xl text-xs sm:text-sm font-medium text-[#0F172A] placeholder:text-slate-400 focus:outline-none focus:border-[#0F766E] focus:ring-3 focus:ring-[#0F766E]/10 transition-all"
+              [ngClass]="{ 'border-[#DC2626] focus:border-[#DC2626] focus:ring-rose-500/10': addEncounterForm.get('doctorName')?.invalid && (addEncounterForm.get('doctorName')?.touched || formSubmitted()) }"
+            />
+            <p *ngIf="addEncounterForm.get('doctorName')?.invalid && (addEncounterForm.get('doctorName')?.touched || formSubmitted())" class="text-xs font-medium text-[#DC2626] mt-1">
+              Attending physician is required
+            </p>
+          </div>
+
+          <!-- Chief Complaint -->
+          <div>
+            <label for="chiefComplaint" class="text-[13px] font-semibold text-[#334155] mb-1 block">
+              Chief Complaint <span class="text-rose-500">*</span>
+            </label>
+            <input
+              id="chiefComplaint"
+              type="text"
+              formControlName="chiefComplaint"
+              placeholder="e.g. Persistent fever and cough for 3 days"
+              class="w-full h-[44px] px-3.5 bg-white border border-[#CBD5E1] rounded-xl text-xs sm:text-sm font-medium text-[#0F172A] placeholder:text-slate-400 focus:outline-none focus:border-[#0F766E] focus:ring-3 focus:ring-[#0F766E]/10 transition-all"
+              [ngClass]="{ 'border-[#DC2626] focus:border-[#DC2626] focus:ring-rose-500/10': addEncounterForm.get('chiefComplaint')?.invalid && (addEncounterForm.get('chiefComplaint')?.touched || formSubmitted()) }"
+            />
+            <p *ngIf="addEncounterForm.get('chiefComplaint')?.invalid && (addEncounterForm.get('chiefComplaint')?.touched || formSubmitted())" class="text-xs font-medium text-[#DC2626] mt-1">
+              Chief complaint is required
+            </p>
+          </div>
+
+          <!-- Clinical Diagnosis -->
+          <div>
+            <label for="diagnosis" class="text-[13px] font-semibold text-[#334155] mb-1 block">
+              Clinical Diagnosis <span class="text-rose-500">*</span>
+            </label>
+            <input
+              id="diagnosis"
+              type="text"
+              formControlName="diagnosis"
+              placeholder="e.g. Acute Upper Respiratory Tract Infection"
+              class="w-full h-[44px] px-3.5 bg-white border border-[#CBD5E1] rounded-xl text-xs sm:text-sm font-medium text-[#0F172A] placeholder:text-slate-400 focus:outline-none focus:border-[#0F766E] focus:ring-3 focus:ring-[#0F766E]/10 transition-all"
+              [ngClass]="{ 'border-[#DC2626] focus:border-[#DC2626] focus:ring-rose-500/10': addEncounterForm.get('diagnosis')?.invalid && (addEncounterForm.get('diagnosis')?.touched || formSubmitted()) }"
+            />
+            <p *ngIf="addEncounterForm.get('diagnosis')?.invalid && (addEncounterForm.get('diagnosis')?.touched || formSubmitted())" class="text-xs font-medium text-[#DC2626] mt-1">
+              Clinical diagnosis is required
+            </p>
+          </div>
+        </div>
+
+        <!-- SECTION 2: Vital Signs (2 Column Grid) -->
+        <div class="space-y-3.5">
+          <h3 class="text-xs font-bold uppercase tracking-wider text-[#0F766E] border-b border-slate-100 pb-1.5">
+            Vital Signs
+          </h3>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <!-- Blood Pressure -->
+            <div>
+              <label for="bloodPressure" class="text-[13px] font-semibold text-[#334155] mb-1 block">
+                Blood Pressure
+              </label>
+              <input
+                id="bloodPressure"
+                type="text"
+                formControlName="bloodPressure"
+                placeholder="e.g. 120/80"
+                class="w-full h-[44px] px-3.5 bg-white border border-[#CBD5E1] rounded-xl text-xs sm:text-sm font-medium text-[#0F172A] placeholder:text-slate-400 focus:outline-none focus:border-[#0F766E] focus:ring-3 focus:ring-[#0F766E]/10 transition-all"
+              />
+            </div>
+
+            <!-- Heart Rate -->
+            <div>
+              <label for="heartRateBpm" class="text-[13px] font-semibold text-[#334155] mb-1 block">
+                Heart Rate <span class="text-xs font-normal text-slate-400">(bpm)</span>
+              </label>
+              <div class="relative">
+                <input
+                  id="heartRateBpm"
+                  type="number"
+                  formControlName="heartRateBpm"
+                  placeholder="72"
+                  class="w-full h-[44px] pl-3.5 pr-12 bg-white border border-[#CBD5E1] rounded-xl text-xs sm:text-sm font-medium text-[#0F172A] placeholder:text-slate-400 focus:outline-none focus:border-[#0F766E] focus:ring-3 focus:ring-[#0F766E]/10 transition-all"
+                />
+                <span class="absolute right-3.5 top-1/2 -translate-y-1/2 text-xs font-semibold text-slate-400 pointer-events-none">bpm</span>
+              </div>
+            </div>
+
+            <!-- Body Temperature -->
+            <div>
+              <label for="temperatureCelsius" class="text-[13px] font-semibold text-[#334155] mb-1 block">
+                Body Temperature <span class="text-xs font-normal text-slate-400">(°C)</span>
+              </label>
+              <div class="relative">
+                <input
+                  id="temperatureCelsius"
+                  type="number"
+                  step="0.1"
+                  formControlName="temperatureCelsius"
+                  placeholder="37.0"
+                  class="w-full h-[44px] pl-3.5 pr-10 bg-white border border-[#CBD5E1] rounded-xl text-xs sm:text-sm font-medium text-[#0F172A] placeholder:text-slate-400 focus:outline-none focus:border-[#0F766E] focus:ring-3 focus:ring-[#0F766E]/10 transition-all"
+                />
+                <span class="absolute right-3.5 top-1/2 -translate-y-1/2 text-xs font-semibold text-slate-400 pointer-events-none">°C</span>
+              </div>
+            </div>
+
+            <!-- Weight -->
+            <div>
+              <label for="weightKg" class="text-[13px] font-semibold text-[#334155] mb-1 block">
+                Body Weight <span class="text-xs font-normal text-slate-400">(kg)</span>
+              </label>
+              <div class="relative">
+                <input
+                  id="weightKg"
+                  type="number"
+                  step="0.5"
+                  formControlName="weightKg"
+                  placeholder="70.0"
+                  class="w-full h-[44px] pl-3.5 pr-10 bg-white border border-[#CBD5E1] rounded-xl text-xs sm:text-sm font-medium text-[#0F172A] placeholder:text-slate-400 focus:outline-none focus:border-[#0F766E] focus:ring-3 focus:ring-[#0F766E]/10 transition-all"
+                />
+                <span class="absolute right-3.5 top-1/2 -translate-y-1/2 text-xs font-semibold text-slate-400 pointer-events-none">kg</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- SECTION 3: Clinical Notes & Treatment Plan -->
+        <div class="space-y-3.5">
+          <h3 class="text-xs font-bold uppercase tracking-wider text-[#0F766E] border-b border-slate-100 pb-1.5">
+            Clinical Notes & Treatment Plan
+          </h3>
+
+          <div>
+            <textarea
+              id="notes"
+              formControlName="notes"
+              rows="3"
+              placeholder="Document treatment plan, medications, follow-up instructions or additional clinical notes..."
+              class="w-full p-3.5 bg-white border border-[#CBD5E1] rounded-xl text-xs sm:text-sm font-medium text-[#0F172A] placeholder:text-slate-400 focus:outline-none focus:border-[#0F766E] focus:ring-3 focus:ring-[#0F766E]/10 transition-all resize-y min-h-[100px]"
+            ></textarea>
+          </div>
+        </div>
+
+        <!-- Modal Footer Actions (Sticky bottom) -->
+        <div class="pt-4 border-t border-slate-100 flex items-center justify-end gap-3 shrink-0">
+          <button
+            type="button"
+            (click)="closeAddEncounterModal()"
+            [disabled]="submitting()"
+            class="px-4 h-[42px] rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-[#475569] text-xs sm:text-sm font-semibold transition-all disabled:opacity-50 cursor-pointer"
+          >
+            Cancel
+          </button>
+
+          <button
+            type="submit"
+            [disabled]="submitting()"
+            class="inline-flex items-center justify-center gap-2 px-5 h-[42px] rounded-xl bg-[#0F766E] hover:bg-[#0D665F] text-white text-xs sm:text-sm font-semibold shadow-2xs hover:shadow-xs transition-all disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+          >
+            <i *ngIf="submitting()" class="pi pi-spin pi-spinner text-xs"></i>
+            <i *ngIf="!submitting()" class="pi pi-check text-xs"></i>
+            <span>{{ submitting() ? 'Saving...' : 'Save Encounter' }}</span>
+          </button>
+        </div>
+
+      </form>
+    </div>
+  </div>
+
+</div>
+
+<!-- Loading View -->
+<ng-template #loadingState>
+  <div class="flex flex-col items-center justify-center py-24 text-[#64748B] space-y-3">
+    <i class="pi pi-spin pi-spinner text-3xl text-[#0F766E]"></i>
+    <p class="text-xs sm:text-sm font-semibold">Loading clinical patient record timeline...</p>
+  </div>
+</ng-template>

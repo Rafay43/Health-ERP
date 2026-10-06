@@ -1,0 +1,601 @@
+<div class="space-y-6 w-full max-w-full min-w-0 pb-6">
+
+  <!-- 1. Header Bar -->
+  <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+    <div>
+      <h1 class="text-2xl sm:text-[28px] font-bold text-[#0F172A] tracking-tight">Doctors & Staff Directory</h1>
+      <p class="text-xs sm:text-sm font-normal text-[#64748B] mt-0.5">
+        Manage clinical staff, specialties, departments and professional licenses
+      </p>
+    </div>
+
+    <div class="flex flex-wrap items-center gap-3">
+      <!-- Primary Action: Add Staff Member -->
+      <button
+        type="button"
+        (click)="openAddStaffModal()"
+        class="inline-flex items-center justify-center gap-2 px-4 h-[42px] rounded-xl bg-[#0F766E] hover:bg-[#0D655E] text-white text-xs sm:text-sm font-bold shadow-2xs hover:shadow-xs transition-all shrink-0 cursor-pointer"
+      >
+        <i class="pi pi-user-plus text-xs sm:text-sm"></i>
+        <span>Add Staff Member</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- 2. Dynamic KPI Summary Cards -->
+  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+    
+    <!-- Total Staff -->
+    <div
+      (click)="onKpiClick('total')"
+      class="bg-white p-4 sm:p-5 rounded-2xl border border-[#E2E8F0] hover:border-teal-300 shadow-2xs flex items-center gap-4 cursor-pointer transition-all hover:bg-teal-50/30 group"
+      title="Click to reset filters and view total staff"
+    >
+      <div class="w-12 h-12 rounded-xl bg-teal-50 border border-teal-100 flex items-center justify-center text-[#0F766E] shrink-0 group-hover:scale-105 transition-transform">
+        <i class="pi pi-users text-xl font-bold"></i>
+      </div>
+      <div class="min-w-0">
+        <p class="text-xs font-semibold text-[#64748B] group-hover:text-[#0F766E] uppercase tracking-wider transition-colors">TOTAL STAFF</p>
+        <p class="text-[11px] text-[#64748B]">All registered personnel</p>
+        <h3 class="text-2xl font-bold text-[#0F172A] tracking-tight mt-0.5">{{ totalStaffCount() }}</h3>
+      </div>
+    </div>
+
+    <!-- Active Staff -->
+    <div
+      (click)="onKpiClick('active')"
+      class="bg-white p-4 sm:p-5 rounded-2xl border border-[#E2E8F0] hover:border-emerald-300 shadow-2xs flex items-center gap-4 cursor-pointer transition-all hover:bg-emerald-50/30 group"
+      title="Click to filter active staff"
+    >
+      <div class="w-12 h-12 rounded-xl bg-emerald-50 border border-emerald-100 flex items-center justify-center text-emerald-600 shrink-0 group-hover:scale-105 transition-transform">
+        <i class="pi pi-check-circle text-xl"></i>
+      </div>
+      <div class="min-w-0">
+        <p class="text-xs font-semibold text-[#64748B] group-hover:text-emerald-700 uppercase tracking-wider transition-colors">ACTIVE STAFF</p>
+        <p class="text-[11px] text-[#64748B]">Currently practicing</p>
+        <h3 class="text-2xl font-black text-emerald-600 tracking-tight mt-0.5">{{ activeStaffCount() }}</h3>
+      </div>
+    </div>
+
+    <!-- Departments -->
+    <div
+      (click)="onKpiClick('dept')"
+      class="bg-white p-4 sm:p-5 rounded-2xl border border-[#E2E8F0] hover:border-violet-300 shadow-2xs flex items-center gap-4 cursor-pointer transition-all hover:bg-violet-50/30 group"
+      title="Click to view department overview"
+    >
+      <div class="w-12 h-12 rounded-xl bg-violet-50 border border-violet-100 flex items-center justify-center text-violet-600 shrink-0 group-hover:scale-105 transition-transform">
+        <i class="pi pi-building text-xl"></i>
+      </div>
+      <div class="min-w-0">
+        <p class="text-xs font-semibold text-[#64748B] group-hover:text-violet-700 uppercase tracking-wider transition-colors">DEPARTMENTS</p>
+        <p class="text-[11px] text-[#64748B]">Hospital service units</p>
+        <h3 class="text-2xl font-bold text-violet-700 tracking-tight mt-0.5">{{ departmentsCount() }}</h3>
+      </div>
+    </div>
+
+    <!-- Specialties -->
+    <div
+      (click)="onKpiClick('spec')"
+      class="bg-white p-4 sm:p-5 rounded-2xl border border-[#E2E8F0] hover:border-amber-300 shadow-2xs flex items-center gap-4 cursor-pointer transition-all hover:bg-amber-50/30 group"
+      title="Click to view specialty areas"
+    >
+      <div class="w-12 h-12 rounded-xl bg-amber-50 border border-amber-100 flex items-center justify-center text-amber-600 shrink-0 group-hover:scale-105 transition-transform">
+        <i class="pi pi-bookmark text-xl"></i>
+      </div>
+      <div class="min-w-0">
+        <p class="text-xs font-semibold text-[#64748B] group-hover:text-amber-700 uppercase tracking-wider transition-colors">SPECIALTIES</p>
+        <p class="text-[11px] text-[#64748B]">Medical disciplines</p>
+        <h3 class="text-2xl font-bold text-amber-600 tracking-tight mt-0.5">{{ specialtiesCount() }}</h3>
+      </div>
+    </div>
+  </div>
+
+  <!-- 3. Main Workspace Container -->
+  <div class="bg-white rounded-2xl border border-[#E2E8F0] shadow-2xs overflow-hidden min-w-0 p-4 sm:p-6 space-y-4">
+    
+    <!-- Directory Toolbar: Search + Department + Specialty + Status Filters -->
+    <div class="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3">
+      
+      <!-- Search Input -->
+      <div class="relative flex-1 max-w-md">
+        <i class="pi pi-search absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs sm:text-sm pointer-events-none"></i>
+        <input
+          type="text"
+          [ngModel]="searchQuery()"
+          (ngModelChange)="searchQuery.set($event); currentPage.set(1)"
+          placeholder="Search staff by name, specialty, email or license..."
+          class="w-full pl-10 pr-4 h-10 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm text-[#0F172A] placeholder:text-slate-400 focus:bg-white focus:border-[#0F766E] focus:outline-none focus:ring-2 focus:ring-[#0F766E]/20 transition-all"
+        />
+      </div>
+
+      <!-- Filters Right -->
+      <div class="flex flex-wrap items-center gap-2.5">
+        
+        <!-- Department Filter -->
+        <div class="flex items-center gap-1.5">
+          <label class="text-xs font-semibold text-[#64748B] uppercase tracking-wider hidden sm:inline">Dept:</label>
+          <select
+            [ngModel]="selectedDepartment()"
+            (ngModelChange)="selectedDepartment.set($event); currentPage.set(1)"
+            class="h-10 px-3 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm font-medium text-[#0F172A] focus:outline-none focus:border-[#0F766E] cursor-pointer"
+          >
+            <option value="">All Departments</option>
+            <option *ngFor="let d of uniqueDepartments()" [value]="d">{{ d }}</option>
+          </select>
+        </div>
+
+        <!-- Specialty Filter -->
+        <div class="flex items-center gap-1.5">
+          <label class="text-xs font-semibold text-[#64748B] uppercase tracking-wider hidden sm:inline">Specialty:</label>
+          <select
+            [ngModel]="selectedSpecialty()"
+            (ngModelChange)="selectedSpecialty.set($event); currentPage.set(1)"
+            class="h-10 px-3 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm font-medium text-[#0F172A] focus:outline-none focus:border-[#0F766E] cursor-pointer"
+          >
+            <option value="">All Specialties</option>
+            <option *ngFor="let s of uniqueSpecialties()" [value]="s">{{ s }}</option>
+          </select>
+        </div>
+
+        <!-- Status Filter -->
+        <div class="flex items-center gap-1.5">
+          <label class="text-xs font-semibold text-[#64748B] uppercase tracking-wider hidden sm:inline">Status:</label>
+          <select
+            [ngModel]="selectedStatus()"
+            (ngModelChange)="selectedStatus.set($event); currentPage.set(1)"
+            class="h-10 px-3 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm font-medium text-[#0F172A] focus:outline-none focus:border-[#0F766E] cursor-pointer"
+          >
+            <option value="">All Statuses</option>
+            <option value="active">Active</option>
+            <option value="inactive">Inactive</option>
+          </select>
+        </div>
+
+        <!-- Clear Filters Button -->
+        <button
+          *ngIf="searchQuery() || selectedDepartment() || selectedSpecialty() || selectedStatus()"
+          type="button"
+          (click)="clearFilters()"
+          class="px-2.5 py-2 text-xs text-[#0F766E] hover:underline font-semibold flex items-center gap-1 cursor-pointer shrink-0"
+        >
+          <i class="pi pi-refresh text-[10px]"></i>
+          <span>Clear filters</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Staff Directory Table Container -->
+    <div class="overflow-x-auto rounded-xl border border-slate-200 bg-white">
+      <table class="w-full text-left border-collapse min-w-[840px]">
+        <thead>
+          <tr class="bg-slate-50/80 border-b border-slate-200 text-[11px] font-semibold text-[#64748B] uppercase tracking-wider">
+            <th class="py-3.5 px-4">Staff Member</th>
+            <th class="py-3.5 px-4">Specialty</th>
+            <th class="py-3.5 px-4">Department</th>
+            <th class="py-3.5 px-4">Contact</th>
+            <th class="py-3.5 px-4">License #</th>
+            <th class="py-3.5 px-4">Status</th>
+            <th class="py-3.5 px-4 text-center">Actions</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-slate-100 text-xs sm:text-sm text-[#0F172A]">
+          
+          <!-- Loading -->
+          <tr *ngIf="loading()">
+            <td colspan="7" class="text-center py-10 text-[#64748B]">
+              <div class="inline-flex items-center gap-2 font-medium">
+                <i class="pi pi-spin pi-spinner text-[#0F766E]"></i>
+                <span>Loading staff directory...</span>
+              </div>
+            </td>
+          </tr>
+
+          <!-- Empty State -->
+          <tr *ngIf="!loading() && filteredStaff().length === 0">
+            <td colspan="7" class="text-center py-12 text-[#64748B]">
+              <div class="flex flex-col items-center justify-center gap-2 max-w-sm mx-auto">
+                <div class="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center text-slate-500">
+                  <i class="pi pi-user-minus text-xl"></i>
+                </div>
+                <p class="font-bold text-slate-800 text-sm mt-1">No staff members found</p>
+                <p class="text-xs text-slate-500">
+                  {{ (searchQuery() || selectedDepartment() || selectedSpecialty() || selectedStatus()) ? 'No clinical staff match your current search or filter criteria.' : 'Add doctors and clinical staff to begin building your hospital directory.' }}
+                </p>
+                
+                <div class="flex items-center gap-2 mt-2">
+                  <button
+                    *ngIf="searchQuery() || selectedDepartment() || selectedSpecialty() || selectedStatus()"
+                    (click)="clearFilters()"
+                    class="px-3.5 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold"
+                  >
+                    Clear Filters
+                  </button>
+
+                  <button
+                    (click)="openAddStaffModal()"
+                    class="px-3.5 py-1.5 rounded-lg bg-[#0F766E] hover:bg-[#0D655E] text-white text-xs font-semibold"
+                  >
+                    + Add Staff Member
+                  </button>
+                </div>
+              </div>
+            </td>
+          </tr>
+
+          <!-- Staff Member Rows -->
+          <tr
+            *ngFor="let member of paginatedStaff()"
+            class="hover:bg-slate-50/70 transition-colors h-[64px]"
+          >
+            <!-- Staff Member Name & Avatar -->
+            <td class="py-3 px-4">
+              <div class="flex items-center gap-3">
+                <!-- Initials Avatar -->
+                <div
+                  class="w-9 h-9 rounded-full border flex items-center justify-center font-bold text-xs shrink-0 shadow-2xs"
+                  [ngClass]="getAvatarColorClass(member.firstName)"
+                >
+                  {{ getInitials(member.firstName, member.lastName) }}
+                </div>
+
+                <div class="min-w-0">
+                  <div
+                    (click)="openStaffDetailModal(member)"
+                    class="font-bold text-[#0F172A] hover:text-[#0F766E] text-xs sm:text-sm leading-tight hover:underline cursor-pointer"
+                  >
+                    {{ member.firstName }} {{ member.lastName }}
+                  </div>
+                  <div class="text-[11px] text-[#64748B] mt-0.5 font-medium">
+                    Doctor / Clinical Staff
+                  </div>
+                </div>
+              </div>
+            </td>
+
+            <!-- Specialty -->
+            <td class="py-3 px-4 font-semibold text-slate-800 text-xs sm:text-sm">
+              {{ member.specialty }}
+            </td>
+
+            <!-- Department Badge -->
+            <td class="py-3 px-4">
+              <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-slate-100 text-slate-700 border border-slate-200">
+                {{ member.department }}
+              </span>
+            </td>
+
+            <!-- Contact Information Cell (Email + Phone) -->
+            <td class="py-3 px-4">
+              <div class="font-medium text-[#0F172A] text-xs truncate max-w-[220px]" [title]="member.email">
+                {{ member.email }}
+              </div>
+              <div class="text-[11px] text-[#64748B] font-mono mt-0.5">
+                {{ formatPhoneDisplay(member.phoneNumber) }}
+              </div>
+            </td>
+
+            <!-- License Number Code Badge -->
+            <td class="py-3 px-4">
+              <span *ngIf="member.licenseNumber" class="inline-flex items-center px-2 py-0.5 rounded bg-slate-100 border border-slate-200 text-slate-700 font-mono text-xs font-semibold">
+                {{ member.licenseNumber }}
+              </span>
+              <span *ngIf="!member.licenseNumber" class="text-xs text-slate-400 italic">
+                -
+              </span>
+            </td>
+
+            <!-- Status Badge -->
+            <td class="py-3 px-4">
+              <span
+                class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold"
+                [ngClass]="member.isActive ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-slate-100 text-slate-600 border border-slate-200'"
+              >
+                {{ member.isActive ? 'Active' : 'Inactive' }}
+              </span>
+            </td>
+
+            <!-- Actions -->
+            <td class="py-3 px-4 text-center">
+              <button
+                type="button"
+                (click)="openStaffDetailModal(member)"
+                class="px-3 py-1.5 rounded-lg border border-slate-200 hover:bg-slate-100 text-slate-700 text-xs font-semibold transition-all cursor-pointer"
+              >
+                View Details
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Table Footer / Pagination -->
+    <div class="flex flex-col sm:flex-row items-center justify-between gap-3 pt-2">
+      <div class="text-xs text-[#64748B]">
+        Showing {{ paginatedStaff().length }} of {{ filteredStaff().length }} staff members
+      </div>
+
+      <div class="flex items-center gap-1.5" *ngIf="totalPages() > 1">
+        <button
+          type="button"
+          (click)="goToPage(currentPage() - 1)"
+          [disabled]="currentPage() === 1"
+          class="px-2.5 py-1 rounded-lg border border-slate-200 text-xs font-semibold disabled:opacity-40 hover:bg-slate-50 cursor-pointer"
+        >
+          Prev
+        </button>
+        <span class="text-xs font-semibold px-2 text-slate-700">
+          Page {{ currentPage() }} of {{ totalPages() }}
+        </span>
+        <button
+          type="button"
+          (click)="goToPage(currentPage() + 1)"
+          [disabled]="currentPage() === totalPages()"
+          class="px-2.5 py-1 rounded-lg border border-slate-200 text-xs font-semibold disabled:opacity-40 hover:bg-slate-50 cursor-pointer"
+        >
+          Next
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================================================== -->
+  <!-- MODAL 1: IN-PAGE ADD STAFF MEMBER MODAL            -->
+  <!-- ================================================== -->
+  <div
+    *ngIf="showAddStaffModal()"
+    (click)="onBackdropClick($event, 'add')"
+    class="fixed inset-0 z-50 bg-[#0F172A]/30 backdrop-blur-[2px] flex items-center justify-center p-4 modal-backdrop"
+  >
+    <div class="relative w-full max-w-[640px] max-h-[88vh] bg-white rounded-2xl border border-[#E2E8F0] shadow-[0_24px_60px_rgba(15,23,42,0.18)] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+      
+      <!-- Header -->
+      <div class="flex items-start justify-between p-5 sm:p-6 border-b border-[#E2E8F0] shrink-0">
+        <div>
+          <h2 class="text-xl font-bold text-[#0F172A] tracking-tight">Add Staff Member</h2>
+          <p class="text-xs sm:text-sm text-[#64748B] mt-0.5">
+            Add a doctor or clinical staff member to the hospital directory.
+          </p>
+        </div>
+        <button
+          type="button"
+          (click)="showAddStaffModal.set(false)"
+          class="w-8 h-8 rounded-full hover:bg-slate-100 flex items-center justify-center text-slate-400 hover:text-slate-600 transition-colors cursor-pointer"
+        >
+          <i class="pi pi-times text-sm"></i>
+        </button>
+      </div>
+
+      <!-- Form Body -->
+      <form [formGroup]="staffForm" (ngSubmit)="submitAddStaff()" class="flex flex-col flex-1 overflow-hidden">
+        <div class="p-5 sm:p-6 space-y-4 overflow-y-auto">
+          
+          <!-- Inline Error Alert -->
+          <div *ngIf="createError()" class="p-3.5 rounded-xl bg-rose-50 border border-rose-200 text-xs font-semibold text-rose-800 flex items-center gap-2">
+            <i class="pi pi-exclamation-circle text-rose-600 shrink-0"></i>
+            <span>{{ createError() }}</span>
+          </div>
+
+          <!-- Row 1: First Name | Last Name -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+            <div class="flex flex-col gap-1.5">
+              <label class="text-xs font-semibold text-[#0F172A]">First Name *</label>
+              <input
+                type="text"
+                formControlName="firstName"
+                placeholder="e.g. Sarah"
+                class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm font-medium text-[#0F172A] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0F766E]/20 focus:border-[#0F766E]"
+              />
+              <span *ngIf="staffForm.get('firstName')?.touched && staffForm.get('firstName')?.errors?.['required']" class="text-[11px] font-semibold text-rose-600">
+                First name is required.
+              </span>
+            </div>
+
+            <div class="flex flex-col gap-1.5">
+              <label class="text-xs font-semibold text-[#0F172A]">Last Name *</label>
+              <input
+                type="text"
+                formControlName="lastName"
+                placeholder="e.g. Connor"
+                class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm font-medium text-[#0F172A] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0F766E]/20 focus:border-[#0F766E]"
+              />
+              <span *ngIf="staffForm.get('lastName')?.touched && staffForm.get('lastName')?.errors?.['required']" class="text-[11px] font-semibold text-rose-600">
+                Last name is required.
+              </span>
+            </div>
+          </div>
+
+          <!-- Row 2: Email Address | Phone Number -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+            <div class="flex flex-col gap-1.5">
+              <label class="text-xs font-semibold text-[#0F172A]">Email Address *</label>
+              <input
+                type="email"
+                formControlName="email"
+                placeholder="sarah.connor@healtherp.com"
+                class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm font-medium text-[#0F172A] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0F766E]/20 focus:border-[#0F766E]"
+              />
+              <span *ngIf="staffForm.get('email')?.touched && staffForm.get('email')?.errors?.['required']" class="text-[11px] font-semibold text-rose-600">
+                Email address is required.
+              </span>
+              <span *ngIf="staffForm.get('email')?.touched && staffForm.get('email')?.errors?.['email']" class="text-[11px] font-semibold text-rose-600">
+                Please enter a valid email address.
+              </span>
+            </div>
+
+            <div class="flex flex-col gap-1.5">
+              <label class="text-xs font-semibold text-[#0F172A]">Phone Number</label>
+              <input
+                type="text"
+                formControlName="phoneNumber"
+                placeholder="e.g. +1 555-0192"
+                class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm font-medium text-[#0F172A] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0F766E]/20 focus:border-[#0F766E]"
+              />
+            </div>
+          </div>
+
+          <!-- Row 3: Specialty | Department -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+            <div class="flex flex-col gap-1.5">
+              <label class="text-xs font-semibold text-[#0F172A]">Specialty *</label>
+              <input
+                type="text"
+                formControlName="specialty"
+                placeholder="e.g. Cardiology, Emergency Medicine"
+                class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm font-medium text-[#0F172A] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0F766E]/20 focus:border-[#0F766E]"
+              />
+              <span *ngIf="staffForm.get('specialty')?.touched && staffForm.get('specialty')?.errors?.['required']" class="text-[11px] font-semibold text-rose-600">
+                Specialty is required.
+              </span>
+            </div>
+
+            <div class="flex flex-col gap-1.5">
+              <label class="text-xs font-semibold text-[#0F172A]">Department *</label>
+              <input
+                type="text"
+                formControlName="department"
+                placeholder="e.g. Outpatient, Emergency, Cardiology"
+                class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm font-medium text-[#0F172A] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0F766E]/20 focus:border-[#0F766E]"
+              />
+              <span *ngIf="staffForm.get('department')?.touched && staffForm.get('department')?.errors?.['required']" class="text-[11px] font-semibold text-rose-600">
+                Department is required.
+              </span>
+            </div>
+          </div>
+
+          <!-- Row 4: License Number -->
+          <div class="flex flex-col gap-1.5">
+            <label class="text-xs font-semibold text-[#0F172A]">License Number</label>
+            <input
+              type="text"
+              formControlName="licenseNumber"
+              placeholder="e.g. MD-89210"
+              class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm font-medium text-[#0F172A] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0F766E]/20 focus:border-[#0F766E]"
+            />
+          </div>
+
+        </div>
+
+        <!-- Footer -->
+        <div class="p-4 sm:p-5 border-t border-[#E2E8F0] bg-slate-50/80 flex items-center justify-end gap-3 shrink-0">
+          <button
+            type="button"
+            (click)="showAddStaffModal.set(false)"
+            class="px-4 py-2 rounded-xl border border-slate-200 hover:bg-slate-100 text-slate-700 text-xs sm:text-sm font-semibold transition-all cursor-pointer"
+          >
+            Cancel
+          </button>
+
+          <button
+            type="submit"
+            [disabled]="submitting() || staffForm.invalid"
+            class="px-5 py-2 rounded-xl bg-[#0F766E] hover:bg-[#0D655E] disabled:opacity-50 text-white text-xs sm:text-sm font-bold shadow-2xs transition-all flex items-center gap-2 cursor-pointer"
+          >
+            <i *ngIf="submitting()" class="pi pi-spin pi-spinner text-xs"></i>
+            <span>{{ submitting() ? 'Adding Staff...' : 'Add Staff Member' }}</span>
+          </button>
+        </div>
+      </form>
+
+    </div>
+  </div>
+
+  <!-- ================================================== -->
+  <!-- MODAL 2: VIEW STAFF MEMBER DETAILS                 -->
+  <!-- ================================================== -->
+  <div
+    *ngIf="showDetailModal()"
+    (click)="onBackdropClick($event, 'detail')"
+    class="fixed inset-0 z-50 bg-[#0F172A]/30 backdrop-blur-[2px] flex items-center justify-center p-4 modal-backdrop"
+  >
+    <div class="relative w-full max-w-[480px] max-h-[88vh] bg-white rounded-2xl border border-[#E2E8F0] shadow-[0_24px_60px_rgba(15,23,42,0.18)] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+      
+      <!-- Header -->
+      <div class="flex items-start justify-between p-5 sm:p-6 border-b border-[#E2E8F0] shrink-0">
+        <div>
+          <h2 class="text-xl font-bold text-[#0F172A] tracking-tight">Staff Member Details</h2>
+          <p class="text-xs sm:text-sm text-[#64748B] mt-0.5">
+            Clinical practitioner information profile
+          </p>
+        </div>
+        <button
+          type="button"
+          (click)="showDetailModal.set(false)"
+          class="w-8 h-8 rounded-full hover:bg-slate-100 flex items-center justify-center text-slate-400 hover:text-slate-600 transition-colors cursor-pointer"
+        >
+          <i class="pi pi-times text-sm"></i>
+        </button>
+      </div>
+
+      <!-- Body -->
+      <div *ngIf="selectedStaffForDetail()" class="p-5 sm:p-6 space-y-5 overflow-y-auto">
+        
+        <!-- Profile Banner -->
+        <div class="flex items-center gap-4 p-4 rounded-xl bg-slate-50 border border-slate-200">
+          <div
+            class="w-14 h-14 rounded-full border-2 flex items-center justify-center font-bold text-base shrink-0 shadow-2xs"
+            [ngClass]="getAvatarColorClass(selectedStaffForDetail()!.firstName)"
+          >
+            {{ getInitials(selectedStaffForDetail()!.firstName, selectedStaffForDetail()!.lastName) }}
+          </div>
+
+          <div class="min-w-0">
+            <h3 class="text-base font-bold text-[#0F172A] leading-tight">
+              Dr. {{ selectedStaffForDetail()?.firstName }} {{ selectedStaffForDetail()?.lastName }}
+            </h3>
+            <p class="text-xs font-semibold text-[#0F766E] mt-0.5">
+              {{ selectedStaffForDetail()?.specialty }} Specialist
+            </p>
+            <span
+              class="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-bold mt-1.5"
+              [ngClass]="selectedStaffForDetail()?.isActive ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-slate-100 text-slate-600 border border-slate-200'"
+            >
+              {{ selectedStaffForDetail()?.isActive ? 'Active Staff' : 'Inactive Staff' }}
+            </span>
+          </div>
+        </div>
+
+        <!-- Info Grid -->
+        <div class="grid grid-cols-2 gap-4 text-xs">
+          <div class="p-3 rounded-xl bg-slate-50/60 border border-slate-100">
+            <span class="text-slate-400 font-semibold uppercase tracking-wider block">Department</span>
+            <span class="font-bold text-slate-800 text-sm block mt-1">{{ selectedStaffForDetail()?.department }}</span>
+          </div>
+
+          <div class="p-3 rounded-xl bg-slate-50/60 border border-slate-100">
+            <span class="text-slate-400 font-semibold uppercase tracking-wider block">License Number</span>
+            <span class="font-mono font-bold text-slate-800 text-sm block mt-1">
+              {{ selectedStaffForDetail()?.licenseNumber || '-' }}
+            </span>
+          </div>
+
+          <div class="p-3 rounded-xl bg-slate-50/60 border border-slate-100">
+            <span class="text-slate-400 font-semibold uppercase tracking-wider block">Email Address</span>
+            <span class="font-medium text-slate-800 text-xs block mt-1 break-all">{{ selectedStaffForDetail()?.email }}</span>
+          </div>
+
+          <div class="p-3 rounded-xl bg-slate-50/60 border border-slate-100">
+            <span class="text-slate-400 font-semibold uppercase tracking-wider block">Phone Number</span>
+            <span class="font-mono font-medium text-slate-800 text-xs block mt-1">
+              {{ formatPhoneDisplay(selectedStaffForDetail()!.phoneNumber) }}
+            </span>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Footer -->
+      <div class="p-4 sm:p-5 border-t border-[#E2E8F0] bg-slate-50/80 flex items-center justify-end shrink-0">
+        <button
+          type="button"
+          (click)="showDetailModal.set(false)"
+          class="px-4 py-2 rounded-xl border border-slate-200 hover:bg-slate-100 text-slate-700 text-xs sm:text-sm font-semibold transition-all cursor-pointer"
+        >
+          Close Profile
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+</div>

@@ -1,6 +1,6 @@
 import { Component, inject, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterLink, Router } from '@angular/router';
+import { Router } from '@angular/router';
 
 import { CardModule } from 'primeng/card';
 import { ButtonModule } from 'primeng/button';
@@ -18,7 +18,6 @@ import Swal from 'sweetalert2';
   standalone: true,
   imports: [
     CommonModule,
-    RouterLink,
     CardModule,
     ButtonModule,
     TagModule,

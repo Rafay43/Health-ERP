@@ -49,3 +49,9 @@ export interface AdmitPatientRequest {
 export interface DischargeRequest {
   dischargeSummary: string;
 }
+
+export interface TransferBedRequest {
+  newBedId: string;
+  transferReason?: string;
+}
+

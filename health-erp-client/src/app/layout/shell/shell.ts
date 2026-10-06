@@ -71,15 +71,24 @@ export class Shell implements OnInit {
     { label: 'Dashboard', icon: 'pi pi-home', route: '/dashboard' },
     { label: 'Patients', icon: 'pi pi-users', route: '/patients' },
     { label: 'Appointments', icon: 'pi pi-calendar', route: '/appointments' },
-    { label: 'Billing', icon: 'pi pi-wallet', route: '/billing' },
     { label: 'Pharmacy', icon: 'pi pi-heart', route: '/pharmacy' },
     { label: 'Laboratory', icon: 'pi pi-list', route: '/laboratory' },
     { label: 'Inpatient Wards', icon: 'pi pi-building', route: '/inpatient' },
     { label: 'Emergency (ER)', icon: 'pi pi-bolt', route: '/emergency' },
+    { label: 'Billing', icon: 'pi pi-wallet', route: '/billing' },
     { label: 'Staff', icon: 'pi pi-id-card', route: '/staff' },
     { label: 'Reports', icon: 'pi pi-chart-bar', route: '/reports' },
     { label: 'Admin', icon: 'pi pi-cog', route: '/admin' },
   ];
+
+  get clinicalNavItems() {
+    return this.navItems.slice(0, 7);
+  }
+
+  get operationsNavItems() {
+    return this.navItems.slice(7, 10);
+  }
+
 
   sidebarCollapsed = false;
 
