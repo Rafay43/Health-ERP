@@ -3,6 +3,8 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Hosting;
 using HealthERP.Infrastructure.Identity;
 
 namespace HealthERP.Infrastructure.Persistence;
@@ -26,17 +28,23 @@ public class ApplicationDbContextInitialiser
     private readonly ApplicationDbContext _context;
     private readonly UserManager<ApplicationUser> _userManager;
     private readonly RoleManager<ApplicationRole> _roleManager;
+    private readonly IConfiguration _configuration;
+    private readonly IHostEnvironment _environment;
 
     public ApplicationDbContextInitialiser(
         ILogger<ApplicationDbContextInitialiser> logger,
         ApplicationDbContext context,
         UserManager<ApplicationUser> userManager,
-        RoleManager<ApplicationRole> roleManager)
+        RoleManager<ApplicationRole> roleManager,
+        IConfiguration configuration,
+        IHostEnvironment environment)
     {
         _logger = logger;
         _context = context;
         _userManager = userManager;
         _roleManager = roleManager;
+        _configuration = configuration;
+        _environment = environment;
     }
 
     public async Task InitialiseAsync()
@@ -67,6 +75,9 @@ public class ApplicationDbContextInitialiser
 
     public async Task TrySeedAsync()
     {
+        if (!_environment.IsDevelopment())
+            throw new InvalidOperationException("Demo initialization is restricted to Development.");
+
         // 1. Seed Security Roles (Idempotent)
         var defaultRoles = new[]
         {
@@ -89,53 +100,20 @@ public class ApplicationDbContextInitialiser
             }
         }
 
-        // 2. Seed Default Admin User
-        var adminEmail = "admin@healtherp.com";
-        var administrator = await _userManager.FindByEmailAsync(adminEmail);
+        // Synthetic demo accounts/catalogs require explicit opt-in and external credentials.
+        if (!_configuration.GetValue<bool>("DevelopmentSeed:Enabled")) return;
+        var adminEmail = _configuration["DevelopmentSeed:AdminEmail"];
+        var adminPassword = _configuration["DevelopmentSeed:AdminPassword"];
+        var doctorEmail = _configuration["DevelopmentSeed:DoctorEmail"];
+        var doctorPassword = _configuration["DevelopmentSeed:DoctorPassword"];
+        if (string.IsNullOrWhiteSpace(adminEmail) || string.IsNullOrWhiteSpace(adminPassword))
+            throw new InvalidOperationException("DevelopmentSeed requires AdminEmail and AdminPassword from local configuration.");
+        if (string.IsNullOrWhiteSpace(doctorEmail) != string.IsNullOrWhiteSpace(doctorPassword))
+            throw new InvalidOperationException("Configure both DevelopmentSeed doctor fields or neither.");
 
-        if (administrator is null)
-        {
-            administrator = new ApplicationUser
-            {
-                UserName = adminEmail,
-                Email = adminEmail,
-                FirstName = "System",
-                LastName = "Administrator",
-                EmailConfirmed = true,
-                CreatedAtUtc = DateTime.UtcNow
-            };
-
-            var result = await _userManager.CreateAsync(administrator, string.Empty);
-            if (result.Succeeded)
-            {
-                await _userManager.AddToRoleAsync(administrator, HealthERP.Application.Common.Security.Roles.Admin);
-                _logger.LogInformation("Default Admin user created successfully: {Email}", adminEmail);
-            }
-        }
-
-        // 3. Seed Default Doctor User (Demo)
-        var doctorEmail = "doctor@healtherp.com";
-        var doctorUser = await _userManager.FindByEmailAsync(doctorEmail);
-
-        if (doctorUser is null)
-        {
-            doctorUser = new ApplicationUser
-            {
-                UserName = doctorEmail,
-                Email = doctorEmail,
-                FirstName = "Dr. Ahmer",
-                LastName = "Zia",
-                EmailConfirmed = true,
-                CreatedAtUtc = DateTime.UtcNow
-            };
-
-            var result = await _userManager.CreateAsync(doctorUser, string.Empty);
-            if (result.Succeeded)
-            {
-                await _userManager.AddToRoleAsync(doctorUser, HealthERP.Application.Common.Security.Roles.Doctor);
-                _logger.LogInformation("Default Doctor demo user created successfully: {Email}", doctorEmail);
-            }
-        }
+        await CreateDemoAccountAsync(adminEmail, adminPassword, "System", "Administrator", HealthERP.Application.Common.Security.Roles.Admin);
+        if (!string.IsNullOrWhiteSpace(doctorEmail))
+            await CreateDemoAccountAsync(doctorEmail, doctorPassword!, "Demo", "Doctor", HealthERP.Application.Common.Security.Roles.Doctor);
 
         // 3. Seed Initial Pharmacy Inventory
         if (!await _context.Drugs.AnyAsync())
@@ -231,5 +209,23 @@ public class ApplicationDbContextInitialiser
                 _logger.LogInformation("Initial emergency triage cases seeded successfully.");
             }
         }
+    }
+    private async Task CreateDemoAccountAsync(string email, string password, string firstName, string lastName, string role)
+    {
+        if (await _userManager.FindByEmailAsync(email) is not null)
+        {
+            _logger.LogWarning("A configured development account already exists; its credentials were not changed.");
+            return;
+        }
+        var user = new ApplicationUser
+        {
+            UserName = email, Email = email, FirstName = firstName, LastName = lastName,
+            EmailConfirmed = true, CreatedAtUtc = DateTime.UtcNow
+        };
+        var created = await _userManager.CreateAsync(user, password);
+        if (!created.Succeeded) throw new InvalidOperationException("Development account creation failed; check the configured password policy.");
+        var assigned = await _userManager.AddToRoleAsync(user, role);
+        if (!assigned.Succeeded) throw new InvalidOperationException("Development account role assignment failed.");
+        _logger.LogInformation("Configured development account created.");
     }
 }

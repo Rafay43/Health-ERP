@@ -3,7 +3,7 @@
   "version": 1,
   "cli": {
     "packageManager": "npm",
-    "analytics": "156b24fe-f3ad-41be-a6ae-771ed7c4e8cb"
+    "analytics": false
   },
   "newProjectRoot": "projects",
   "projects": {
@@ -74,7 +74,11 @@
           "defaultConfiguration": "development"
         },
         "test": {
-          "builder": "@angular/build:unit-test"
+          "builder": "@angular/build:unit-test",
+          "options": {
+            "isolate": true,
+            "splitting": false
+          }
         }
       }
     }

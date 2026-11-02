@@ -60,7 +60,7 @@ import Swal from 'sweetalert2';
             
             <!-- Error Alert -->
             <div *ngIf="errorMessage()" class="mb-1">
-              <p-message severity="error" [text]="errorMessage()!"></p-message>
+              <p-message severity="error">{{ errorMessage()! }}</p-message>
             </div>
 
             <!-- Email Address Field -->
@@ -118,42 +118,16 @@ import Swal from 'sweetalert2';
 
             <!-- Primary Sign In Button -->
             <div class="mt-1 flex flex-col gap-4">
-              <button
+              <p-button
                 type="submit"
-                pButton
                 label="Sign in to Health ERP"
                 icon="pi pi-arrow-right"
                 iconPos="right"
                 [loading]="isLoading()"
                 [disabled]="loginForm.invalid || isLoading()"
-                class="w-full !h-[50px] !rounded-[10px] !bg-[#0F766E] hover:!bg-[#0D665F] !border-[#0F766E] text-white font-semibold text-sm shadow-md shadow-[#0F766E]/20 hover:-translate-y-0.5 transition-all duration-200 cursor-pointer flex items-center justify-center gap-2"
-              ></button>
+                styleClass="w-full !h-[50px] !rounded-[10px] !bg-[#0F766E] hover:!bg-[#0D665F] !border-[#0F766E] text-white font-semibold text-sm shadow-md shadow-[#0F766E]/20 hover:-translate-y-0.5 transition-all duration-200 cursor-pointer flex items-center justify-center gap-2"
+              ></p-button>
 
-              <!-- Subtle Divider -->
-              <div class="relative flex items-center justify-center my-1.5">
-                <div class="border-t border-slate-200 w-full"></div>
-                <span class="bg-white px-3 text-[11px] font-medium text-[#64748B] uppercase tracking-wider whitespace-nowrap absolute">
-                  Quick demo access
-                </span>
-              </div>
-
-              <!-- Quick Demo Access Buttons -->
-              <div class="grid grid-cols-2 gap-3">
-                <button
-                  type="button"
-                  class="py-2.5 px-3 rounded-lg text-xs font-semibold bg-slate-50 text-slate-700 border border-slate-200 shadow-2xs hover:bg-teal-50/70 hover:border-teal-300 hover:text-[#0F766E] transition-all duration-150 cursor-pointer flex items-center justify-center gap-2"
-                  (click)="fillDemoCredentials('admin@healtherp.com', '')"
-                >
-                  <i class="pi pi-shield text-xs text-[#0F766E]"></i> Admin Demo
-                </button>
-                <button
-                  type="button"
-                  class="py-2.5 px-3 rounded-lg text-xs font-semibold bg-slate-50 text-slate-700 border border-slate-200 shadow-2xs hover:bg-teal-50/70 hover:border-teal-300 hover:text-[#0F766E] transition-all duration-150 cursor-pointer flex items-center justify-center gap-2"
-                  (click)="fillDemoCredentials('doctor@healtherp.com', '')"
-                >
-                  <i class="pi pi-user text-xs text-teal-600"></i> Doctor Demo
-                </button>
-              </div>
 
               <!-- Create Account Link -->
               <div class="text-center text-sm font-medium text-[#64748B] mt-2">
@@ -323,13 +297,9 @@ export class Login {
   currentYear = new Date().getFullYear();
 
   loginForm = this.fb.group({
-    email: ['admin@healtherp.com', [Validators.required, Validators.email]],
+    email: ['', [Validators.required, Validators.email]],
     password: ['', [Validators.required]],
   });
-
-  fillDemoCredentials(email: string, pass: string): void {
-    this.loginForm.patchValue({ email, password: pass });
-  }
 
   onSubmit(): void {
     if (this.loginForm.invalid) return;

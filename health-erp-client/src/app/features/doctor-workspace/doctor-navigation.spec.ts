@@ -27,6 +27,11 @@ describe('Doctor Workspace navigation and login', () => {
   let status: { getStatus: ReturnType<typeof vi.fn> };
   const shellRoute = routes.find(r => r.component === Shell)!;
   const doctorRoute = shellRoute.children!.find(r => r.path === 'doctor')!;
+  function submitLogin() {
+    const login = TestBed.createComponent(Login).componentInstance;
+    login.loginForm.setValue({ email: 'test@example.invalid', password: 'isolated-login-test-password' });
+    login.onSubmit();
+  }
   function user(roles: string[], authenticated = true) {
     auth.token.set(authenticated ? 'test-token' : null);
     auth.currentUser.set(authenticated ? { id: 'account-id', firstName: 'Browser', lastName: 'Identity', email: 'test@example.invalid', roles } : null);
@@ -77,14 +82,31 @@ describe('Doctor Workspace navigation and login', () => {
   });
   it.each([[Roles.Doctor, '/doctor'], [Roles.Admin, '/dashboard'], [Roles.Nurse, '/dashboard'], [Roles.Receptionist, '/dashboard'], [Roles.Pharmacist, '/dashboard'], [Roles.LabTechnician, '/dashboard'], [Roles.BillingStaff, '/dashboard']])('routes successful %s login to %s', (role, destination) => {
     user([role]); vi.spyOn(auth, 'login').mockReturnValue(of({ firstName: 'Identity' } as any));
-    TestBed.createComponent(Login).componentInstance.onSubmit(); expect(router.navigate).toHaveBeenCalledWith([destination]); expect(status.getStatus).not.toHaveBeenCalled(); expect(Swal.fire).toHaveBeenCalled();
+    submitLogin(); expect(router.navigate).toHaveBeenCalledWith([destination]); expect(status.getStatus).not.toHaveBeenCalled(); expect(Swal.fire).toHaveBeenCalled();
   });
   it('preserves Admin precedence on Admin+Doctor login', () => {
-    user([Roles.Admin, Roles.Doctor]); vi.spyOn(auth, 'login').mockReturnValue(of({} as any)); TestBed.createComponent(Login).componentInstance.onSubmit(); expect(router.navigate).toHaveBeenCalledWith(['/dashboard']);
+    user([Roles.Admin, Roles.Doctor]); vi.spyOn(auth, 'login').mockReturnValue(of({} as any)); submitLogin(); expect(router.navigate).toHaveBeenCalledWith(['/dashboard']);
   });
   it.each([[true, '/portal'], [false, '/portal-activation']])('preserves Patient-only login/link-status behavior (%s)', (linked, destination) => {
     user([Roles.Patient]); status.getStatus.mockReturnValue(of({ isLinked: linked })); vi.spyOn(auth, 'login').mockReturnValue(of({} as any));
-    TestBed.createComponent(Login).componentInstance.onSubmit(); expect(router.navigate).toHaveBeenCalledWith([destination]); expect(status.getStatus).toHaveBeenCalledOnce();
+    submitLogin(); expect(router.navigate).toHaveBeenCalledWith([destination]); expect(status.getStatus).toHaveBeenCalledOnce();
+  });
+  it('starts without demo credentials and rejects an empty submission', () => {
+    const fixture = TestBed.createComponent(Login);
+    const login = fixture.componentInstance;
+    const authenticate = vi.spyOn(auth, 'login');
+    expect(login.loginForm.value).toEqual({ email: '', password: '' });
+    fixture.detectChanges();
+    const submit = fixture.nativeElement.querySelector('button[type="submit"]') as HTMLButtonElement;
+    expect(submit.textContent).toContain('Sign in to Health ERP');
+    expect(submit.disabled).toBe(true);
+    login.onSubmit();
+    expect(login.loginForm.invalid).toBe(true);
+    expect(authenticate).not.toHaveBeenCalled();
+    expect(router.navigate).not.toHaveBeenCalled();
+    login.errorMessage.set('Authentication failed for the test account.');
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('p-message')?.textContent).toContain('Authentication failed for the test account.');
   });
   it('preserves existing non-Doctor route roles and module destinations', () => {
     const byPath = (path: string) => shellRoute.children!.find(r => r.path === path)!;

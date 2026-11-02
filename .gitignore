@@ -22,3 +22,25 @@ secrets.json
 docker-compose.override.yml
 .DS_Store
 Thumbs.db
+
+# Generated build, test and coverage output
+/artifacts/
+**/TestResults/
+*.trx
+coverage/
+coverage.*
+*.coverage
+*.coveragexml
+
+# Local database exports and private key material
+*.dump
+*.backup
+*.bak
+*.db-shm
+*.db-wal
+pgdata/
+*.key
+
+# Sanitized examples may be committed; real environment files stay private
+!.env.example
+!.env.*.example

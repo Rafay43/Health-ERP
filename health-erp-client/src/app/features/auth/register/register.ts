@@ -68,7 +68,7 @@ function passwordMatchValidator(control: AbstractControl): ValidationErrors | nu
             
             <!-- Error Alert -->
             <div *ngIf="errorMessage()" class="mb-1">
-              <p-message severity="error" [text]="errorMessage()!"></p-message>
+              <p-message severity="error">{{ errorMessage()! }}</p-message>
             </div>
 
             <!-- Two-column First Name | Last Name Grid -->
@@ -193,16 +193,15 @@ function passwordMatchValidator(control: AbstractControl): ValidationErrors | nu
 
             <!-- Primary Create Account Button -->
             <div class="mt-1 flex flex-col gap-3">
-              <button
+              <p-button
                 type="submit"
-                pButton
                 [label]="isLoading() ? 'Creating Account...' : 'Create Account'"
                 icon="pi pi-arrow-right"
                 iconPos="right"
                 [loading]="isLoading()"
                 [disabled]="registerForm.invalid || isLoading()"
-                class="w-full !h-[48px] !rounded-[10px] !bg-[#0F766E] hover:!bg-[#0D665F] !border-[#0F766E] text-white font-semibold text-sm shadow-md shadow-[#0F766E]/20 hover:-translate-y-0.5 transition-all duration-200 cursor-pointer flex items-center justify-center gap-2"
-              ></button>
+                styleClass="w-full !h-[48px] !rounded-[10px] !bg-[#0F766E] hover:!bg-[#0D665F] !border-[#0F766E] text-white font-semibold text-sm shadow-md shadow-[#0F766E]/20 hover:-translate-y-0.5 transition-all duration-200 cursor-pointer flex items-center justify-center gap-2"
+              ></p-button>
 
               <!-- Sign In Link -->
               <div class="text-center text-sm font-medium text-[#64748B] mt-1">

@@ -96,16 +96,16 @@ public class EmailService : IEmailService
                 }
 
                 await client.SendMailAsync(message, cancellationToken);
-                _logger.LogInformation("Password reset email sent to {Email}", toEmail);
+                _logger.LogInformation("Password reset email delivery succeeded.");
             }
             else
             {
-                _logger.LogInformation("Simulated sending password reset email to {Email}. Reset Link: {ResetLink}", toEmail, resetLink);
+                _logger.LogWarning("Password reset email was not sent because SMTP delivery is not configured.");
             }
         }
-        catch (Exception ex)
+        catch (Exception)
         {
-            _logger.LogError(ex, "Failed to send password reset email to {Email}. Reset link was: {ResetLink}", toEmail, resetLink);
+            _logger.LogError("Password reset email delivery failed.");
         }
     }
 
@@ -167,18 +167,18 @@ public class EmailService : IEmailService
                 }
 
                 await client.SendMailAsync(message, cancellationToken);
-                _logger.LogInformation("Patient activation verification code email successfully sent to {Email}", toEmail);
+                _logger.LogInformation("Patient activation email delivery succeeded.");
             }
             else
             {
                 if (!_environment.IsDevelopment())
                     throw new InvalidOperationException("Activation email delivery is not configured.");
-                _logger.LogWarning("[DEV SIMULATION MODE] Patient Activation Verification Code for {Email} ({PatientName}): [ {Code} ]", toEmail, patientName, verificationCode);
+                _logger.LogWarning("Development activation email simulation completed without delivery. Configure SMTP to receive the code.");
             }
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to send patient activation email to {Email}", toEmail);
+            _logger.LogError("Patient activation email delivery failed.");
             throw new ActivationEmailDeliveryException(ex);
         }
     }

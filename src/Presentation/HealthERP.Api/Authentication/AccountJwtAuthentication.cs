@@ -13,6 +13,10 @@ public static class AccountJwtAuthentication
 {
     public static IServiceCollection AddAccountJwtAuthentication(this IServiceCollection services, JwtSettings settings)
     {
+        if (string.IsNullOrWhiteSpace(settings.Secret) || Encoding.UTF8.GetByteCount(settings.Secret) < 32 || settings.Secret.StartsWith("<"))
+            throw new InvalidOperationException("Configure JwtSettings:Secret with at least 32 bytes through user secrets or environment configuration.");
+        if (string.IsNullOrWhiteSpace(settings.Issuer) || string.IsNullOrWhiteSpace(settings.Audience))
+            throw new InvalidOperationException("Configure JwtSettings:Issuer and JwtSettings:Audience.");
         services.AddScoped<AccountJwtBearerEvents>();
         services.AddAuthentication(options =>
         {

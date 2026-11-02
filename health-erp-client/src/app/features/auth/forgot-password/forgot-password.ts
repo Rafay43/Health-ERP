@@ -60,7 +60,7 @@ import { AuthService } from '../../../core/services/auth.service';
               
               <!-- Error Alert -->
               <div *ngIf="errorMessage()" class="mb-1">
-                <p-message severity="error" [text]="errorMessage()!"></p-message>
+                <p-message severity="error">{{ errorMessage()! }}</p-message>
               </div>
 
               <!-- Email Field -->
@@ -84,16 +84,15 @@ import { AuthService } from '../../../core/services/auth.service';
 
               <!-- Primary Submit Button -->
               <div class="mt-2 flex flex-col gap-4">
-                <button
+                <p-button
                   type="submit"
-                  pButton
                   label="Send Reset Link"
                   icon="pi pi-send"
                   iconPos="right"
                   [loading]="isLoading()"
                   [disabled]="forgotForm.invalid || isLoading()"
-                  class="w-full !h-[50px] !rounded-[10px] !bg-[#0F766E] hover:!bg-[#0D665F] !border-[#0F766E] text-white font-semibold text-sm shadow-md shadow-[#0F766E]/20 hover:-translate-y-0.5 transition-all duration-200 cursor-pointer flex items-center justify-center gap-2"
-                ></button>
+                  styleClass="w-full !h-[50px] !rounded-[10px] !bg-[#0F766E] hover:!bg-[#0D665F] !border-[#0F766E] text-white font-semibold text-sm shadow-md shadow-[#0F766E]/20 hover:-translate-y-0.5 transition-all duration-200 cursor-pointer flex items-center justify-center gap-2"
+                ></p-button>
 
                 <!-- Return to Sign In Link -->
                 <div class="text-center text-sm font-medium text-[#64748B] mt-2">

@@ -129,20 +129,18 @@ import Swal from 'sweetalert2';
                 <td>{{ u.createdAtUtc | date:'shortDate' }}</td>
                 <td class="text-center">
                   <div class="flex items-center justify-center gap-2">
-                    <button
-                      pButton
+                    <p-button
                       icon="pi pi-user-edit"
                       label="Assign Role"
-                      class="p-button-outlined p-button-sm p-button-primary"
+                      styleClass="p-button-outlined p-button-sm p-button-primary"
                       (click)="openAssignRoleDialog(u)"
-                    ></button>
-                    <button
-                      pButton
+                    ></p-button>
+                    <p-button
                       [icon]="u.isActive ? 'pi pi-lock' : 'pi pi-lock-open'"
                       [label]="u.isActive ? 'Lock Account' : 'Unlock'"
-                      [class]="u.isActive ? 'p-button-text p-button-sm p-button-danger' : 'p-button-text p-button-sm p-button-success'"
+                      [styleClass]="u.isActive ? 'p-button-text p-button-sm p-button-danger' : 'p-button-text p-button-sm p-button-success'"
                       (click)="toggleAccountStatus(u)"
-                    ></button>
+                    ></p-button>
                   </div>
                 </td>
               </tr>
@@ -162,36 +160,31 @@ import Swal from 'sweetalert2';
           <div class="flex items-center justify-between gap-4">
             <h3 class="text-base font-bold text-[var(--color-text-primary)]">System-Wide Entity Audit Trail Log</h3>
             <div class="flex items-center gap-2">
-              <button
-                pButton
+              <p-button
                 label="All Entities"
-                [class]="auditFilter() === null ? 'p-button-primary p-button-sm' : 'p-button-outlined p-button-secondary p-button-sm'"
+                [styleClass]="auditFilter() === null ? 'p-button-primary p-button-sm' : 'p-button-outlined p-button-secondary p-button-sm'"
                 (click)="setAuditFilter(null)"
-              ></button>
-              <button
-                pButton
+              ></p-button>
+              <p-button
                 label="Patients"
-                [class]="auditFilter() === 'Patient' ? 'p-button-info p-button-sm' : 'p-button-outlined p-button-secondary p-button-sm'"
+                [styleClass]="auditFilter() === 'Patient' ? 'p-button-info p-button-sm' : 'p-button-outlined p-button-secondary p-button-sm'"
                 (click)="setAuditFilter('Patient')"
-              ></button>
-              <button
-                pButton
+              ></p-button>
+              <p-button
                 label="Prescriptions"
-                [class]="auditFilter() === 'Prescription' ? 'p-button-warning p-button-sm' : 'p-button-outlined p-button-secondary p-button-sm'"
+                [styleClass]="auditFilter() === 'Prescription' ? 'p-button-warning p-button-sm' : 'p-button-outlined p-button-secondary p-button-sm'"
                 (click)="setAuditFilter('Prescription')"
-              ></button>
-              <button
-                pButton
+              ></p-button>
+              <p-button
                 label="Lab Orders"
-                [class]="auditFilter() === 'LabOrder' ? 'p-button-help p-button-sm' : 'p-button-outlined p-button-secondary p-button-sm'"
+                [styleClass]="auditFilter() === 'LabOrder' ? 'p-button-help p-button-sm' : 'p-button-outlined p-button-secondary p-button-sm'"
                 (click)="setAuditFilter('LabOrder')"
-              ></button>
-              <button
-                pButton
+              ></p-button>
+              <p-button
                 label="Invoices"
-                [class]="auditFilter() === 'Invoice' ? 'p-button-success p-button-sm' : 'p-button-outlined p-button-secondary p-button-sm'"
+                [styleClass]="auditFilter() === 'Invoice' ? 'p-button-success p-button-sm' : 'p-button-outlined p-button-secondary p-button-sm'"
                 (click)="setAuditFilter('Invoice')"
-              ></button>
+              ></p-button>
             </div>
           </div>
 
@@ -295,21 +288,19 @@ import Swal from 'sweetalert2';
           </div>
 
           <div class="flex justify-end gap-2 mt-4">
-            <button
-              pButton
+            <p-button
               type="button"
               label="Cancel"
-              class="p-button-text p-button-secondary"
+              styleClass="p-button-text p-button-secondary"
               (click)="displayAssignRoleDialog = false"
-            ></button>
-            <button
-              pButton
+            ></p-button>
+            <p-button
               type="button"
               label="Save Role"
-              class="p-button-primary"
+              styleClass="p-button-primary"
               (click)="saveUserRole()"
               [disabled]="submitting()"
-            ></button>
+            ></p-button>
           </div>
         </div>
       </p-dialog>

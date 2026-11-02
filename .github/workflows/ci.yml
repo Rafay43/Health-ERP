@@ -1,0 +1,72 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  backend:
+    name: .NET build and tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: health_erp_tests
+          # Ephemeral CI credentials, never application credentials.
+          POSTGRES_PASSWORD: ci-test-only
+          POSTGRES_DB: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U health_erp_tests -d postgres"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      HEALTHERP_PHARMACY_TEST_CONNECTION: Host=127.0.0.1;Port=5432;Database=postgres;Username=health_erp_tests;Password=ci-test-only
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: '10.0.x'
+      - name: Restore
+        run: dotnet restore HealthERP.slnx
+      - name: Build
+        run: dotnet build HealthERP.slnx --configuration Release --no-restore
+      - name: Test
+        run: dotnet test HealthERP.slnx --configuration Release --no-build --logger trx
+
+  frontend:
+    name: Angular build and tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: health-erp-client
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: health-erp-client/package-lock.json
+      - name: Install locked dependencies
+        run: npm ci
+      - name: Production build
+        run: npm run build
+      - name: Test
+        run: npm test -- --watch=false

@@ -17,6 +17,9 @@ public static class DependencyInjection
         this IServiceCollection services,
         IConfiguration configuration)
     {
+        var connectionString = configuration.GetConnectionString("DefaultConnection");
+        if (string.IsNullOrWhiteSpace(connectionString) || connectionString.Contains('<'))
+            throw new InvalidOperationException("Configure ConnectionStrings:DefaultConnection through user secrets or environment configuration.");
         services.Configure<JwtSettings>(configuration.GetSection(JwtSettings.SectionName));
         services.Configure<EmailSettings>(configuration.GetSection(EmailSettings.SectionName));
         services.AddSingleton<TimeProvider>(TimeProvider.System);
@@ -44,7 +47,7 @@ public static class DependencyInjection
 
         services.AddDbContext<ApplicationDbContext>((sp, options) =>
         {
-            options.UseNpgsql(configuration.GetConnectionString("DefaultConnection"));
+            options.UseNpgsql(connectionString);
             options.AddInterceptors(sp.GetRequiredService<AuditableEntitySaveChangesInterceptor>());
         });
 

@@ -2,7 +2,7 @@
   <h1 class="text-2xl font-bold text-[var(--color-text-primary)] mb-6">Register Patient</h1>
 
   @if (errorMessage()) {
-    <p-message severity="error" [text]="errorMessage()!" styleClass="mb-4 w-full"></p-message>
+    <p-message severity="error" styleClass="mb-4 w-full">{{ errorMessage()! }}</p-message>
   }
 
   <form [formGroup]="form" (ngSubmit)="onSubmit()" class="flex flex-col gap-4">

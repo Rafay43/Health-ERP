@@ -38,7 +38,7 @@ import Swal from 'sweetalert2';
       <p-card header="Book New Appointment">
         <form [formGroup]="appointmentForm" (ngSubmit)="onSubmit()" class="flex flex-col gap-4 mt-2">
           <div *ngIf="errorMessage()" class="mb-2">
-            <p-message severity="error" [text]="errorMessage()!"></p-message>
+            <p-message severity="error">{{ errorMessage()! }}</p-message>
           </div>
 
           <div class="grid grid-cols-2 gap-4">
