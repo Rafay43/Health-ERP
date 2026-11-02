@@ -1,4 +1,4 @@
-# Health ERP
+# Hospital ERP built with ASP.NET Core, Angular & PostgreSQL featuring RBAC, patient self-service, clinical workflows and transaction-safe operations.
 
 **A full-stack hospital management application connecting clinical workflows, patient self-service, and role-based staff workspaces.**
 
