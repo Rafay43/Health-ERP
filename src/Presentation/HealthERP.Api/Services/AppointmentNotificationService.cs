@@ -15,6 +15,6 @@ public class AppointmentNotificationService : IAppointmentNotificationService
 
     public async Task NotifyAppointmentChangedAsync(CancellationToken cancellationToken = default)
     {
-        await _hubContext.Clients.All.SendAsync("AppointmentUpdated", cancellationToken: cancellationToken);
+        await _hubContext.Clients.Group(AppointmentHub.ViewersGroup).SendAsync("AppointmentUpdated", cancellationToken: cancellationToken);
     }
 }

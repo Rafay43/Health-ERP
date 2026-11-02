@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using HealthERP.Domain.Patients;
+using HealthERP.Domain.StaffMembers;
 
 namespace HealthERP.Infrastructure.Persistence.Configurations;
 
@@ -49,5 +50,10 @@ public class ClinicalNoteConfiguration : IEntityTypeConfiguration<ClinicalNote>
             .OnDelete(DeleteBehavior.Cascade);
 
         builder.HasIndex(c => c.NoteDateUtc);
+        builder.Property(c => c.RecordedByStaffId).HasConversion(
+            (StaffId? id) => id.HasValue ? id.Value.Value : (Guid?)null,
+            (Guid? value) => value.HasValue ? new StaffId(value.Value) : (StaffId?)null);
+        builder.HasOne(c => c.RecordedByStaff).WithMany().HasForeignKey(c => c.RecordedByStaffId)
+            .OnDelete(DeleteBehavior.Restrict);
     }
 }

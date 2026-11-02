@@ -23,11 +23,16 @@ export class PatientRegistration implements OnInit {
   errorMessage = signal<string | null>(null);
   loadingMrn = signal(true);
 
+  genderOptions = ['Male', 'Female', 'Other', 'Prefer not to say'];
+
   form = this.fb.group({
     medicalRecordNumber: [{ value: '', disabled: true }, [Validators.required]],
     firstName: ['', [Validators.required, Validators.maxLength(100)]],
     lastName: ['', [Validators.required, Validators.maxLength(100)]],
     dateOfBirth: [null as Date | null, [Validators.required]],
+    gender: ['', [Validators.required]],
+    email: ['', [Validators.required, Validators.email]],
+    phoneNumber: [''],
   });
 
   ngOnInit() {
@@ -65,6 +70,9 @@ export class PatientRegistration implements OnInit {
         firstName: raw.firstName!,
         lastName: raw.lastName!,
         dateOfBirth: dateOfBirthString,
+        gender: raw.gender!,
+        email: raw.email!,
+        phoneNumber: raw.phoneNumber || undefined,
       })
       .subscribe({
         next: () => {

@@ -14,8 +14,7 @@ public static class PharmacyEndpoints
     public static void MapPharmacyEndpoints(this IEndpointRouteBuilder app)
     {
         var group = app.MapGroup("/api/v1/pharmacy")
-            .WithTags("Pharmacy")
-            .RequireAuthorization();
+            .WithTags("Pharmacy");
 
         group.MapGet("/inventory", async (
             IMediator mediator,
@@ -30,6 +29,7 @@ public static class PharmacyEndpoints
             return Results.Ok(result);
         })
         .WithName("GetInventory")
+        .RequireAuthorization(HealthERP.Application.Common.Security.Policies.CanDispenseMedication)
         .Produces<List<DrugDto>>(200);
 
         group.MapPost("/inventory", async (CreateDrugCommand command, IMediator mediator) =>
@@ -38,6 +38,7 @@ public static class PharmacyEndpoints
             return Results.Created($"/api/v1/pharmacy/inventory/{result.Id}", result);
         })
         .WithName("CreateDrug")
+        .RequireAuthorization(HealthERP.Application.Common.Security.Policies.CanDispenseMedication)
         .Produces<DrugDto>(201)
         .Produces(400);
 
@@ -47,6 +48,7 @@ public static class PharmacyEndpoints
             return Results.Ok(result);
         })
         .WithName("UpdateDrugStock")
+        .RequireAuthorization(HealthERP.Application.Common.Security.Policies.CanDispenseMedication)
         .Produces<DrugDto>(200)
         .Produces(404);
 
@@ -61,6 +63,7 @@ public static class PharmacyEndpoints
             return Results.Ok(result);
         })
         .WithName("GetPrescriptions")
+        .RequireAuthorization(HealthERP.Application.Common.Security.Policies.CanViewPatients)
         .Produces<List<PrescriptionDto>>(200);
 
         group.MapPost("/prescriptions", async (CreatePrescriptionCommand command, IMediator mediator) =>
@@ -69,6 +72,7 @@ public static class PharmacyEndpoints
             return Results.Created($"/api/v1/pharmacy/prescriptions/{result.Id}", result);
         })
         .WithName("CreatePrescription")
+        .RequireAuthorization(HealthERP.Application.Common.Security.Policies.CanPrescribeMedication)
         .Produces<PrescriptionDto>(201)
         .Produces(400);
 
@@ -79,9 +83,11 @@ public static class PharmacyEndpoints
             return Results.Ok(result);
         })
         .WithName("DispensePrescription")
+        .RequireAuthorization(HealthERP.Application.Common.Security.Policies.CanDispenseMedication)
         .Produces<PrescriptionDto>(200)
         .Produces(400)
-        .Produces(404);
+        .Produces(404)
+        .Produces(409);
     }
 }
 

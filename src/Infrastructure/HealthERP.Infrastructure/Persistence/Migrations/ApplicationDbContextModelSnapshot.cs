@@ -164,7 +164,6 @@ namespace HealthERP.Infrastructure.Persistence.Migrations
             modelBuilder.Entity("HealthERP.Domain.Billing.Payment", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
                     b.Property<decimal>("Amount")
@@ -578,6 +577,9 @@ namespace HealthERP.Infrastructure.Persistence.Migrations
                     b.Property<Guid>("PatientId")
                         .HasColumnType("uuid");
 
+                    b.Property<Guid?>("RecordedByStaffId")
+                        .HasColumnType("uuid");
+
                     b.Property<decimal?>("TemperatureCelsius")
                         .HasPrecision(5, 2)
                         .HasColumnType("numeric(5,2)");
@@ -591,6 +593,8 @@ namespace HealthERP.Infrastructure.Persistence.Migrations
                     b.HasIndex("NoteDateUtc");
 
                     b.HasIndex("PatientId");
+
+                    b.HasIndex("RecordedByStaffId");
 
                     b.ToTable("clinical_notes", "patients");
                 });
@@ -646,12 +650,75 @@ namespace HealthERP.Infrastructure.Persistence.Migrations
                         .HasMaxLength(20)
                         .HasColumnType("character varying(20)");
 
+                    b.Property<Guid?>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<uint>("xmin")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
                     b.HasKey("Id");
 
                     b.HasIndex("MedicalRecordNumber")
                         .IsUnique();
 
+                    b.HasIndex("UserId")
+                        .IsUnique()
+                        .HasFilter("\"UserId\" IS NOT NULL");
+
                     b.ToTable("patients", "patients");
+                });
+
+            modelBuilder.Entity("HealthERP.Domain.Patients.PatientActivationChallenge", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("AttemptCount")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("CodeHash")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("CreatedBy")
+                        .HasColumnType("text");
+
+                    b.Property<DateTime>("ExpiresAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool>("IsConsumed")
+                        .HasColumnType("boolean");
+
+                    b.Property<DateTime?>("ModifiedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("ModifiedBy")
+                        .HasColumnType("text");
+
+                    b.Property<Guid>("PatientId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime?>("ResendCooldownUntilUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ExpiresAtUtc");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("patient_activation_challenges", "patients");
                 });
 
             modelBuilder.Entity("HealthERP.Domain.Pharmacy.Drug", b =>
@@ -839,7 +906,19 @@ namespace HealthERP.Infrastructure.Persistence.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)");
 
+                    b.Property<int>("StaffKind")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(0);
+
+                    b.Property<Guid?>("UserId")
+                        .HasColumnType("uuid");
+
                     b.HasKey("Id");
+
+                    b.HasIndex("UserId")
+                        .IsUnique()
+                        .HasFilter("\"UserId\" IS NOT NULL");
 
                     b.ToTable("staff", "staff");
                 });
@@ -1234,7 +1313,14 @@ namespace HealthERP.Infrastructure.Persistence.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("HealthERP.Domain.StaffMembers.StaffMembers", "RecordedByStaff")
+                        .WithMany()
+                        .HasForeignKey("RecordedByStaffId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.Navigation("Patient");
+
+                    b.Navigation("RecordedByStaff");
                 });
 
             modelBuilder.Entity("HealthERP.Domain.Pharmacy.Prescription", b =>
@@ -1253,6 +1339,14 @@ namespace HealthERP.Infrastructure.Persistence.Migrations
                     b.Navigation("Drug");
 
                     b.Navigation("Patient");
+                });
+
+            modelBuilder.Entity("HealthERP.Domain.StaffMembers.StaffMembers", b =>
+                {
+                    b.HasOne("HealthERP.Infrastructure.Identity.ApplicationUser", null)
+                        .WithOne()
+                        .HasForeignKey("HealthERP.Domain.StaffMembers.StaffMembers", "UserId")
+                        .OnDelete(DeleteBehavior.Restrict);
                 });
 
             modelBuilder.Entity("HealthERP.Domain.Triage.TriageRecord", b =>

@@ -8,6 +8,8 @@ import { PatientService } from '../patients/data-access/patient.service';
 import { Patient } from '../patients/data-access/patient.model';
 import { StaffService } from '../staff/data-access/staff.service';
 import { Staff } from '../staff/data-access/staff.model';
+import { AuthService } from '../../core/services/auth.service';
+import { Roles } from '../../core/constants/roles';
 import Swal from 'sweetalert2';
 
 @Component({
@@ -24,7 +26,20 @@ export class LaboratoryListComponent implements OnInit {
   private labService = inject(LaboratoryService);
   private patientService = inject(PatientService);
   private staffService = inject(StaffService);
+  private authService = inject(AuthService);
   private fb = inject(FormBuilder);
+
+  get canOrderLabTest(): boolean {
+    return this.authService.hasAnyRole([Roles.Admin, Roles.Doctor]);
+  }
+
+  get canEnterLabResult(): boolean {
+    return this.authService.hasAnyRole([Roles.Admin, Roles.LabTechnician]);
+  }
+
+  get canManageCatalog(): boolean {
+    return this.authService.hasAnyRole([Roles.Admin, Roles.LabTechnician]);
+  }
 
   // Global Math for template expressions
   Math = Math;

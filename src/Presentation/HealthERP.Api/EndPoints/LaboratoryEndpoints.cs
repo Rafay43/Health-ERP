@@ -13,8 +13,7 @@ public static class LaboratoryEndpoints
     public static void MapLaboratoryEndpoints(this IEndpointRouteBuilder app)
     {
         var group = app.MapGroup("/api/v1/laboratory")
-            .WithTags("Laboratory")
-            .RequireAuthorization();
+            .WithTags("Laboratory");
 
         group.MapGet("/catalog", async (
             IMediator mediator,
@@ -28,6 +27,7 @@ public static class LaboratoryEndpoints
             return Results.Ok(result);
         })
         .WithName("GetLabCatalog")
+        .RequireAuthorization(HealthERP.Application.Common.Security.Policies.CanViewPatients)
         .Produces<List<LabTestDto>>(200);
 
         group.MapPost("/catalog", async (CreateLabTestCommand command, IMediator mediator) =>
@@ -36,6 +36,7 @@ public static class LaboratoryEndpoints
             return Results.Created($"/api/v1/laboratory/catalog/{result.Id}", result);
         })
         .WithName("CreateLabTest")
+        .RequireAuthorization(HealthERP.Application.Common.Security.Policies.CanEnterLabResult)
         .Produces<LabTestDto>(201)
         .Produces(400);
 
@@ -52,6 +53,7 @@ public static class LaboratoryEndpoints
             return Results.Ok(result);
         })
         .WithName("GetLabOrders")
+        .RequireAuthorization(HealthERP.Application.Common.Security.Policies.CanViewPatients)
         .Produces<List<LabOrderDto>>(200);
 
         group.MapPost("/orders", async (CreateLabOrderCommand command, IMediator mediator) =>
@@ -60,6 +62,7 @@ public static class LaboratoryEndpoints
             return Results.Created($"/api/v1/laboratory/orders/{result.Id}", result);
         })
         .WithName("CreateLabOrder")
+        .RequireAuthorization(HealthERP.Application.Common.Security.Policies.CanOrderLabTest)
         .Produces<LabOrderDto>(201)
         .Produces(400);
 
@@ -74,6 +77,7 @@ public static class LaboratoryEndpoints
             return Results.Ok(result);
         })
         .WithName("RecordLabResult")
+        .RequireAuthorization(HealthERP.Application.Common.Security.Policies.CanEnterLabResult)
         .Produces<LabOrderDto>(200)
         .Produces(400)
         .Produces(404);

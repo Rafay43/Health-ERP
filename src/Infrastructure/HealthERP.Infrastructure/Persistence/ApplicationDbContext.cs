@@ -35,6 +35,7 @@ public class ApplicationDbContext
     public DbSet<Admission> Admissions => Set<Admission>();
     public DbSet<TriageRecord> TriageRecords => Set<TriageRecord>();
     public DbSet<Notification> Notifications => Set<Notification>();
+    public DbSet<PatientActivationChallenge> PatientActivationChallenges => Set<PatientActivationChallenge>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

@@ -3,6 +3,11 @@ using FluentValidation;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Npgsql;
+using HealthERP.Application.Pharmacy;
+using HealthERP.Application.Billing;
+using HealthERP.Application.Inpatient;
+using HealthERP.Application.PatientAccount;
+using HealthERP.Application.StaffMembers;
 
 namespace HealthERP.Api.Middleware;
 
@@ -27,7 +32,8 @@ public class GlobalExceptionHandlingMiddleware
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Unhandled exception occurred");
+            if (ex is not (UnauthorizedAccessException or StaffAccessDeniedException or PharmacyDispenseConflictException or BillingPaymentConflictException or InpatientConflictException))
+                _logger.LogError(ex, "Unhandled exception occurred");
             await HandleExceptionAsync(context, ex);
         }
     }
@@ -36,6 +42,37 @@ public class GlobalExceptionHandlingMiddleware
     {
         var (statusCode, title, detail) = exception switch
         {
+            BadHttpRequestException => (HttpStatusCode.BadRequest, "Invalid Request", "Request body or parameters are invalid."),
+            StaffAccountForbiddenException => (HttpStatusCode.Forbidden, "Staff Account Access Denied", "Admin permission is required to manage staff accounts."),
+            StaffAccountConflictException conflict => (HttpStatusCode.Conflict, "Staff Account Conflict", conflict.Message),
+            StaffAccountStorageException => (HttpStatusCode.InternalServerError, "Staff Account Change Failed", "Unable to confirm the account change. Refresh staff and account state before retrying."),
+            StaffAccessDeniedException => (
+                HttpStatusCode.Forbidden, "Staff Access Denied", "An eligible staff association is required for this operation."),
+            ActivationConflictException => (
+                HttpStatusCode.Conflict, "Activation Conflict", "Activation state changed. Refresh account status before retrying."),
+            ActivationStorageException => (
+                HttpStatusCode.InternalServerError, "Activation Failed", "Unable to confirm activation. Refresh account status before retrying."),
+            InpatientConflictException conflict => (
+                HttpStatusCode.Conflict, "Inpatient Conflict", conflict.Message),
+            InpatientStorageException => (
+                HttpStatusCode.InternalServerError, "Inpatient Operation Failed",
+                "Unable to confirm the inpatient operation. Refresh beds and admissions before retrying."),
+            BillingPaymentConflictException conflict => (
+                HttpStatusCode.Conflict, "Payment Conflict", conflict.Message),
+            BillingPaymentStorageException => (
+                HttpStatusCode.InternalServerError, "Payment Failed",
+                "Unable to confirm payment. Refresh the invoice and payment history before retrying."),
+            PharmacyDispenseConflictException conflict => (
+                HttpStatusCode.Conflict, "Dispensing Conflict", conflict.Message),
+            PharmacyDispenseStorageException => (
+                HttpStatusCode.InternalServerError, "Dispensing Failed",
+                "Unable to confirm dispensing. Refresh the prescription and inventory before retrying."),
+
+            UnauthorizedAccessException => (
+                HttpStatusCode.Unauthorized,
+                "Authentication Failed",
+                "Invalid credentials."),
+
             ValidationException validationEx => (
                 HttpStatusCode.BadRequest,
                 "Validation Failed",

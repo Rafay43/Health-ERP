@@ -3,6 +3,18 @@ export interface RegisterPatientRequest {
   firstName: string;
   lastName: string;
   dateOfBirth: string;
+  gender: string;
+  email: string;
+  phoneNumber?: string;
+}
+
+export interface UpdatePatientRequest {
+  firstName: string;
+  lastName: string;
+  dateOfBirth: string;
+  gender: string;
+  email: string;
+  phoneNumber?: string;
 }
 
 export interface RegisterPatientResponse {
@@ -15,6 +27,10 @@ export interface Patient {
   firstName: string;
   lastName: string;
   dateOfBirth: string;
+  gender?: string | null;
+  email?: string | null;
+  phoneNumber?: string | null;
+  isLinked?: boolean;
 }
 
 export interface NextMrnResponse {

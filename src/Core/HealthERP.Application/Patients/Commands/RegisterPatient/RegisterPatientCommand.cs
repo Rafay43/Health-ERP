@@ -6,4 +6,7 @@ public record RegisterPatientCommand(
     string MedicalRecordNumber,
     string FirstName,
     string LastName,
-    DateOnly DateOfBirth) : IRequest<Guid>;
+    DateOnly DateOfBirth,
+    string Gender,
+    string Email,
+    string? PhoneNumber = null) : IRequest<Guid>;

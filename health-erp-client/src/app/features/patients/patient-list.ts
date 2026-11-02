@@ -4,6 +4,8 @@ import { CommonModule, DatePipe } from '@angular/common';
 import { FormsModule, ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import { PatientService } from './data-access/patient.service';
 import { Patient } from './data-access/patient.model';
+import { AuthService } from '../../core/services/auth.service';
+import { Roles } from '../../core/constants/roles';
 import Swal from 'sweetalert2';
 
 @Component({
@@ -14,7 +16,10 @@ import Swal from 'sweetalert2';
 })
 export class PatientList implements OnInit {
   private patientService = inject(PatientService);
+  private authService = inject(AuthService);
   private fb = inject(FormBuilder);
+
+  canEditPatients = computed(() => this.authService.hasAnyRole([Roles.Admin, Roles.Doctor, Roles.Nurse, Roles.Receptionist]));
 
   // Table Data & Filters
   patients = signal<Patient[]>([]);
@@ -24,6 +29,9 @@ export class PatientList implements OnInit {
   currentPage = signal(1);
   pageSize = signal(10);
 
+  // Supported Gender Options
+  genderOptions = ['Male', 'Female', 'Other', 'Prefer not to say'];
+
   // Registration Modal State
   showRegisterModal = signal(false);
   submitting = signal(false);
@@ -31,12 +39,32 @@ export class PatientList implements OnInit {
   loadingMrn = signal(false);
   errorMessage = signal<string | null>(null);
 
+  // Edit Modal State
+  showEditModal = signal(false);
+  editingPatient = signal<Patient | null>(null);
+  editSubmitting = signal(false);
+  editFormSubmitted = signal(false);
+  editErrorMessage = signal<string | null>(null);
+
   // Registration Reactive Form
   registerForm = this.fb.group({
     medicalRecordNumber: [{ value: '', disabled: true }, [Validators.required]],
     firstName: ['', [Validators.required, Validators.maxLength(100)]],
     lastName: ['', [Validators.required, Validators.maxLength(100)]],
     dateOfBirth: ['', [Validators.required]],
+    gender: ['', [Validators.required]],
+    email: ['', [Validators.required, Validators.email, Validators.maxLength(256)]],
+    phoneNumber: ['', [Validators.maxLength(50)]],
+  });
+
+  // Edit Reactive Form
+  editForm = this.fb.group({
+    firstName: ['', [Validators.required, Validators.maxLength(100)]],
+    lastName: ['', [Validators.required, Validators.maxLength(100)]],
+    dateOfBirth: ['', [Validators.required]],
+    gender: ['', [Validators.required]],
+    email: ['', [Validators.required, Validators.email, Validators.maxLength(256)]],
+    phoneNumber: ['', [Validators.maxLength(50)]],
   });
 
   ngOnInit() {
@@ -66,6 +94,7 @@ export class PatientList implements OnInit {
         (p.firstName && p.firstName.toLowerCase().includes(term)) ||
         (p.lastName && p.lastName.toLowerCase().includes(term)) ||
         (p.medicalRecordNumber && p.medicalRecordNumber.toLowerCase().includes(term)) ||
+        (p.email && p.email.toLowerCase().includes(term)) ||
         (`${p.firstName} ${p.lastName}`.toLowerCase().includes(term))
       );
     }
@@ -139,7 +168,7 @@ export class PatientList implements OnInit {
     return `${y}-${m}-${d}`;
   }
 
-  // Modal Handlers
+  // Modal Handlers - Register
   openRegisterModal() {
     this.errorMessage.set(null);
     this.submitting.set(false);
@@ -173,10 +202,61 @@ export class PatientList implements OnInit {
     }
   }
 
+  // Modal Handlers - Edit
+  openEditModal(patient: Patient, event?: MouseEvent) {
+    if (event) event.stopPropagation();
+    this.editingPatient.set(patient);
+    this.editErrorMessage.set(null);
+    this.editSubmitting.set(false);
+    this.editFormSubmitted.set(false);
+
+    let formattedDob = '';
+    if (patient.dateOfBirth) {
+      const d = new Date(patient.dateOfBirth);
+      if (!isNaN(d.getTime())) {
+        const y = d.getFullYear();
+        const m = String(d.getMonth() + 1).padStart(2, '0');
+        const day = String(d.getDate()).padStart(2, '0');
+        formattedDob = `${y}-${m}-${day}`;
+      } else {
+        formattedDob = patient.dateOfBirth.substring(0, 10);
+      }
+    }
+
+    this.editForm.setValue({
+      firstName: patient.firstName || '',
+      lastName: patient.lastName || '',
+      dateOfBirth: formattedDob,
+      gender: patient.gender || '',
+      email: patient.email || '',
+      phoneNumber: patient.phoneNumber || '',
+    });
+
+    this.showEditModal.set(true);
+
+    if (typeof document !== 'undefined') {
+      document.body.classList.add('overflow-hidden');
+    }
+  }
+
+  closeEditModal() {
+    this.showEditModal.set(false);
+    this.editingPatient.set(null);
+    this.editErrorMessage.set(null);
+    this.editSubmitting.set(false);
+    this.editFormSubmitted.set(false);
+    if (typeof document !== 'undefined') {
+      document.body.classList.remove('overflow-hidden');
+    }
+  }
+
   onBackdropClick(event: MouseEvent) {
     if ((event.target as HTMLElement).classList.contains('modal-backdrop')) {
       if (!this.registerForm.dirty || this.submitting()) {
         this.closeRegisterModal();
+      }
+      if (!this.editForm.dirty || this.editSubmitting()) {
+        this.closeEditModal();
       }
     }
   }
@@ -185,6 +265,9 @@ export class PatientList implements OnInit {
   onKeydownHandler() {
     if (this.showRegisterModal() && !this.submitting()) {
       this.closeRegisterModal();
+    }
+    if (this.showEditModal() && !this.editSubmitting()) {
+      this.closeEditModal();
     }
   }
 
@@ -218,6 +301,9 @@ export class PatientList implements OnInit {
         firstName: raw.firstName!,
         lastName: raw.lastName!,
         dateOfBirth: dateOfBirthString,
+        gender: raw.gender!,
+        email: raw.email!,
+        phoneNumber: raw.phoneNumber || undefined,
       })
       .subscribe({
         next: () => {
@@ -239,9 +325,72 @@ export class PatientList implements OnInit {
           if (err.status === 409) {
             this.errorMessage.set('A patient with this medical record number already exists.');
           } else if (err.status === 400) {
-            this.errorMessage.set('Please check the form for errors and try again.');
+            const detail = err.error?.detail || err.error?.title || 'Please check the form for errors and try again.';
+            this.errorMessage.set(detail);
           } else {
             this.errorMessage.set('Unable to register patient. Please try again.');
+          }
+        },
+      });
+  }
+
+  onEditSubmit() {
+    this.editFormSubmitted.set(true);
+    const patient = this.editingPatient();
+    if (!patient || this.editForm.invalid) {
+      this.editForm.markAllAsTouched();
+      return;
+    }
+
+    this.editSubmitting.set(true);
+    this.editErrorMessage.set(null);
+
+    const raw = this.editForm.getRawValue();
+    const dobVal = raw.dateOfBirth as any;
+    let dateOfBirthString = '';
+    
+    if (typeof dobVal === 'string') {
+      dateOfBirthString = dobVal;
+    } else if (dobVal && typeof dobVal === 'object' && 'getFullYear' in dobVal) {
+      const y = dobVal.getFullYear();
+      const m = String(dobVal.getMonth() + 1).padStart(2, '0');
+      const d = String(dobVal.getDate()).padStart(2, '0');
+      dateOfBirthString = `${y}-${m}-${d}`;
+    }
+
+    const trimmedEmail = (raw.email || '').trim();
+
+    this.patientService
+      .updatePatient(patient.id, {
+        firstName: raw.firstName!,
+        lastName: raw.lastName!,
+        dateOfBirth: dateOfBirthString,
+        gender: raw.gender!,
+        email: trimmedEmail,
+        phoneNumber: raw.phoneNumber ? raw.phoneNumber.trim() : undefined,
+      })
+      .subscribe({
+        next: () => {
+          this.editSubmitting.set(false);
+          this.closeEditModal();
+          this.fetchPatients();
+
+          Swal.fire({
+            title: 'Patient Updated!',
+            text: 'Patient information updated successfully.',
+            icon: 'success',
+            confirmButtonColor: '#0F766E',
+            timer: 2500,
+            timerProgressBar: true
+          });
+        },
+        error: (err) => {
+          this.editSubmitting.set(false);
+          if (err.status === 400) {
+            const detail = err.error?.detail || err.error?.title || 'Please check the form for errors and try again.';
+            this.editErrorMessage.set(detail);
+          } else {
+            this.editErrorMessage.set('Unable to update patient. Please try again.');
           }
         },
       });

@@ -63,8 +63,8 @@ public class Bed : BaseEntity<BedId>, IAuditable
 
     public void Occupy()
     {
-        if (Status == BedStatus.Occupied)
-            throw new InvalidOperationException("Bed is already occupied.");
+        if (Status != BedStatus.Available)
+            throw new InvalidOperationException("Only an available bed can be occupied.");
         Status = BedStatus.Occupied;
     }
 

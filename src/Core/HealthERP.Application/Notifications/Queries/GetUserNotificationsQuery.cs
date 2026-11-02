@@ -5,29 +5,27 @@ using Microsoft.EntityFrameworkCore;
 
 namespace HealthERP.Application.Notifications.Queries;
 
-public record GetUserNotificationsQuery(Guid? UserId = null, string? Role = null, bool UnreadOnly = false) : IRequest<List<NotificationDto>>;
+public record GetUserNotificationsQuery(bool UnreadOnly = false) : IRequest<List<NotificationDto>>;
 
 public class GetUserNotificationsQueryHandler : IRequestHandler<GetUserNotificationsQuery, List<NotificationDto>>
 {
     private readonly IApplicationDbContext _context;
+    private readonly ICurrentUserService _currentUser;
 
-    public GetUserNotificationsQueryHandler(IApplicationDbContext context)
+    public GetUserNotificationsQueryHandler(IApplicationDbContext context, ICurrentUserService currentUser)
     {
         _context = context;
+        _currentUser = currentUser;
     }
 
     public async Task<List<NotificationDto>> Handle(GetUserNotificationsQuery request, CancellationToken cancellationToken)
     {
-        var query = _context.Notifications.AsNoTracking().AsQueryable();
+        var ownerId = _currentUser.GetRequiredId();
+        var query = _context.Notifications.AsNoTracking().Where(n => n.TargetUserId == ownerId);
 
         if (request.UnreadOnly)
         {
             query = query.Where(n => !n.IsRead);
-        }
-
-        if (request.UserId.HasValue && request.UserId.Value != Guid.Empty)
-        {
-            query = query.Where(n => n.TargetUserId == request.UserId.Value || n.TargetRole == "All" || (request.Role != null && n.TargetRole == request.Role));
         }
 
         var notifications = await query
@@ -35,20 +33,6 @@ public class GetUserNotificationsQueryHandler : IRequestHandler<GetUserNotificat
             .Take(50)
             .ToListAsync(cancellationToken);
 
-        return notifications.Select(n => new NotificationDto(
-            n.Id.Value,
-            n.TargetUserId,
-            n.TargetRole,
-            n.Title,
-            n.Message,
-            n.LinkUrl,
-            n.Type.ToString(),
-            (int)n.Type,
-            n.Severity.ToString(),
-            (int)n.Severity,
-            n.IsRead,
-            n.ReadAtUtc,
-            n.CreatedAtUtc
-        )).ToList();
+        return notifications.Select(NotificationDto.FromEntity).ToList();
     }
 }

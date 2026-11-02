@@ -1,1 +1,16 @@
 // Layout-specific styles beyond Tailwind utilities go here
+@media (max-width: 1023px) {
+  .doctor-workspace-shell > div > header {
+    justify-content: flex-end;
+    > div:first-child { display: none; }
+  }
+}
+@media (max-width: 639px) {
+  .doctor-workspace-shell {
+    aside { width: 64px !important; }
+    aside > div > div, aside nav span, aside nav .uppercase { display: none; }
+    > div > header { padding: 0 12px; justify-content: flex-end; }
+    > div > header > div:first-child { display: none; }
+    main { padding: 16px 12px; }
+  }
+}

@@ -1,0 +1,21 @@
+<section class="rounded-xl border border-teal-200 bg-teal-50/40 p-4 mt-5" aria-labelledby="new-note-title">
+  <h3 id="new-note-title" class="font-bold text-slate-900">Add Clinical Note</h3>
+  <p class="text-xs text-slate-600 mt-1 mb-4">All fields are optional. Record at least one clinical detail or vital. Author and recorded time are assigned by the server.</p>
+  <form [formGroup]="form" (ngSubmit)="submit()">
+    <fieldset [disabled]="saving()" class="space-y-4 min-w-0">
+      @for (field of [{key: 'chiefComplaint', label: 'Chief complaint', limit: 500}, {key: 'diagnosis', label: 'Diagnosis', limit: 300}, {key: 'notes', label: 'Notes', limit: 2000}]; track field.key) {
+        <div><label [for]="'clinical-' + field.key" class="block text-sm font-medium mb-1">{{ field.label }} <span class="text-slate-500 text-xs">(optional)</span></label><textarea [id]="'clinical-' + field.key" [formControlName]="field.key" [attr.maxlength]="field.limit" [rows]="field.key === 'notes' ? 4 : 2" class="w-full rounded-lg border border-slate-300 bg-white p-2 text-sm focus:outline-2 focus:outline-teal-600"></textarea></div>
+      }
+      <h4 class="font-semibold text-sm">Vitals <span class="font-normal text-xs text-slate-500">— leave unmeasured values empty</span></h4>
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div><label for="clinical-bp" class="block text-sm font-medium mb-1">Blood pressure (optional)</label><input id="clinical-bp" type="text" formControlName="bloodPressure" maxlength="50" aria-describedby="bp-help" class="w-full rounded-lg border border-slate-300 bg-white p-2 text-sm focus:outline-2 focus:outline-teal-600"/><p id="bp-help" class="text-xs text-slate-600 mt-1">Systolic/diastolic: 40–300 / 20–200 mmHg; systolic must be higher.</p>@if (form.controls.bloodPressure.invalid && form.controls.bloodPressure.touched) { <p class="text-xs text-rose-700 mt-1" role="alert">Enter a valid systolic/diastolic blood pressure.</p> }</div>
+        @for (field of [{key: 'heartRateBpm', label: 'Heart rate (bpm)', help: 'Whole number, 1–300 bpm.', min: 1, max: 300, step: '1'}, {key: 'temperatureCelsius', label: 'Temperature (°C)', help: '25–45 °C, up to 2 decimals.', min: 25, max: 45, step: '0.01'}, {key: 'weightKg', label: 'Weight (kg)', help: 'Greater than 0, up to 500 kg and 2 decimals.', min: 0.01, max: 500, step: '0.01'}]; track field.key) {
+          <div><label [for]="'clinical-' + field.key" class="block text-sm font-medium mb-1">{{ field.label }} (optional)</label><input [id]="'clinical-' + field.key" type="number" [formControlName]="field.key" [min]="field.min" [max]="field.max" [step]="field.step" [attr.aria-describedby]="field.key + '-help'" class="w-full rounded-lg border border-slate-300 bg-white p-2 text-sm focus:outline-2 focus:outline-teal-600"/><p [id]="field.key + '-help'" class="text-xs text-slate-600 mt-1">{{ field.help }}</p>@if (form.get(field.key)?.invalid && form.get(field.key)?.touched) { <p class="text-xs text-rose-700 mt-1" role="alert">Check the range and format for {{ field.label }}.</p> }</div>
+        }
+      </div>
+    </fieldset>
+    @if (error(); as message) { <p class="mt-4 text-sm text-rose-700" role="alert">{{ message }}</p> }
+    @if (saving()) { <p class="mt-4 text-sm text-teal-800" role="status">Saving clinical note… Keep this Patient open until the result is confirmed.</p> }
+    <div class="flex flex-wrap justify-end gap-3 mt-5"><button type="button" class="px-4 py-2 rounded-lg border border-slate-300 text-sm focus:outline-2 focus:outline-teal-600 disabled:opacity-50" [disabled]="saving()" (click)="cancel()">Cancel</button><button type="submit" class="bg-teal-700 text-white px-4 py-2 rounded-lg text-sm font-semibold focus:outline-2 focus:outline-teal-600 disabled:opacity-50" [disabled]="saving() || form.invalid">Save Clinical Note</button></div>
+  </form>
+</section>

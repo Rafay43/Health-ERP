@@ -67,8 +67,19 @@ public class ApplicationDbContextInitialiser
 
     public async Task TrySeedAsync()
     {
-        // 1. Seed Roles
-        var defaultRoles = new[] { "Admin", "Doctor", "Nurse", "Staff" };
+        // 1. Seed Security Roles (Idempotent)
+        var defaultRoles = new[]
+        {
+            HealthERP.Application.Common.Security.Roles.Admin,
+            HealthERP.Application.Common.Security.Roles.Doctor,
+            HealthERP.Application.Common.Security.Roles.Nurse,
+            HealthERP.Application.Common.Security.Roles.Pharmacist,
+            HealthERP.Application.Common.Security.Roles.LabTechnician,
+            HealthERP.Application.Common.Security.Roles.Receptionist,
+            HealthERP.Application.Common.Security.Roles.BillingStaff,
+            HealthERP.Application.Common.Security.Roles.Patient,
+            "Staff"
+        };
 
         foreach (var roleName in defaultRoles)
         {
@@ -97,8 +108,32 @@ public class ApplicationDbContextInitialiser
             var result = await _userManager.CreateAsync(administrator, string.Empty);
             if (result.Succeeded)
             {
-                await _userManager.AddToRoleAsync(administrator, "Admin");
+                await _userManager.AddToRoleAsync(administrator, HealthERP.Application.Common.Security.Roles.Admin);
                 _logger.LogInformation("Default Admin user created successfully: {Email}", adminEmail);
+            }
+        }
+
+        // 3. Seed Default Doctor User (Demo)
+        var doctorEmail = "doctor@healtherp.com";
+        var doctorUser = await _userManager.FindByEmailAsync(doctorEmail);
+
+        if (doctorUser is null)
+        {
+            doctorUser = new ApplicationUser
+            {
+                UserName = doctorEmail,
+                Email = doctorEmail,
+                FirstName = "Dr. Ahmer",
+                LastName = "Zia",
+                EmailConfirmed = true,
+                CreatedAtUtc = DateTime.UtcNow
+            };
+
+            var result = await _userManager.CreateAsync(doctorUser, string.Empty);
+            if (result.Succeeded)
+            {
+                await _userManager.AddToRoleAsync(doctorUser, HealthERP.Application.Common.Security.Roles.Doctor);
+                _logger.LogInformation("Default Doctor demo user created successfully: {Email}", doctorEmail);
             }
         }
 

@@ -18,10 +18,24 @@ public static class DependencyInjection
         IConfiguration configuration)
     {
         services.Configure<JwtSettings>(configuration.GetSection(JwtSettings.SectionName));
+        services.Configure<EmailSettings>(configuration.GetSection(EmailSettings.SectionName));
+        services.AddSingleton<TimeProvider>(TimeProvider.System);
+        // Resolve at startup: missing/invalid facility configuration must fail explicitly.
+        services.AddSingleton(new FacilityTimeZone(configuration["Facility:TimeZoneId"]
+            ?? throw new InvalidOperationException("Facility:TimeZoneId must be configured.")));
 
         services.AddHttpContextAccessor();
         services.AddScoped<ICurrentUserService, CurrentUserService>();
+        services.AddScoped<ICurrentPatientService, CurrentPatientService>();
+        services.AddScoped<ICurrentStaffService, CurrentStaffService>();
+        services.AddScoped<IStaffAccountService, StaffAccountService>();
         services.AddSingleton<IJwtTokenGenerator, JwtTokenGenerator>();
+        services.AddScoped<IJwtSessionValidator, JwtSessionValidator>();
+        services.AddScoped<IPharmacyDispensingService, PharmacyDispensingService>();
+        services.AddScoped<IBillingPaymentService, BillingPaymentService>();
+        services.AddScoped<IInpatientTransitionService, InpatientTransitionService>();
+        services.AddScoped<IPatientActivationService, PatientActivationService>();
+        services.AddTransient<IEmailService, EmailService>();
         services.AddTransient<IIdentityService, IdentityService>();
         services.AddHostedService<NoShowTrackingWorker>();
 
@@ -46,6 +60,11 @@ public static class DependencyInjection
         .AddRoles<ApplicationRole>()
         .AddEntityFrameworkStores<ApplicationDbContext>()
         .AddDefaultTokenProviders();
+
+        services.Configure<DataProtectionTokenProviderOptions>(options =>
+        {
+            options.TokenLifespan = TimeSpan.FromMinutes(30);
+        });
 
         return services;
     }

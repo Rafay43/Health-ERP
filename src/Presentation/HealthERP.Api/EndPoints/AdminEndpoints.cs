@@ -14,7 +14,7 @@ public static class AdminEndpoints
     {
         var group = app.MapGroup("/api/v1/admin")
             .WithTags("Admin")
-            .RequireAuthorization();
+            .RequireAuthorization(HealthERP.Application.Common.Security.Policies.CanManageStaff);
 
         group.MapGet("/users", async (IMediator mediator) =>
         {

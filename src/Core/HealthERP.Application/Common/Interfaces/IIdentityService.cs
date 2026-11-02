@@ -23,4 +23,14 @@ public interface IIdentityService
     Task<HealthERP.Application.Admin.Models.UserAccountDto> ToggleUserAccountStatusAsync(Guid userId, bool enableAccount, CancellationToken cancellationToken = default);
 
     Task<HealthERP.Application.Admin.Models.SystemHealthDto> GetSystemHealthAsync(CancellationToken cancellationToken = default);
+
+    Task<(bool Success, string Message)> ForgotPasswordAsync(
+        string email,
+        CancellationToken cancellationToken = default);
+
+    Task<(bool Success, string Message, string[] Errors)> ResetPasswordAsync(
+        string email,
+        string token,
+        string newPassword,
+        CancellationToken cancellationToken = default);
 }

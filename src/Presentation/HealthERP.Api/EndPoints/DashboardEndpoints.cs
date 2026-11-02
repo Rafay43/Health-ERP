@@ -9,7 +9,7 @@ public static class DashboardEndpoints
     {
         var group = app.MapGroup("/api/v1/dashboard")
             .WithTags("Dashboard")
-            .RequireAuthorization();
+            .RequireAuthorization(HealthERP.Application.Common.Security.Policies.CanViewPatients);
 
         group.MapGet("/metrics", async (ISender sender, CancellationToken cancellationToken) =>
         {

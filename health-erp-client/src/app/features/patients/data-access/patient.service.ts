@@ -1,7 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { RegisterPatientRequest, RegisterPatientResponse, Patient, NextMrnResponse } from './patient.model';
+import { RegisterPatientRequest, RegisterPatientResponse, Patient, NextMrnResponse, UpdatePatientRequest } from './patient.model';
 
 @Injectable({ providedIn: 'root' })
 export class PatientService {
@@ -10,6 +10,10 @@ export class PatientService {
 
   registerPatient(request: RegisterPatientRequest): Observable<RegisterPatientResponse> {
     return this.http.post<RegisterPatientResponse>(this.baseUrl, request);
+  }
+
+  updatePatient(id: string, request: UpdatePatientRequest): Observable<Patient> {
+    return this.http.put<Patient>(`${this.baseUrl}/${id}`, request);
   }
 
   getPatients(): Observable<Patient[]> {

@@ -12,6 +12,7 @@
     <div class="flex flex-wrap items-center gap-3">
       <!-- Primary: Admit Patient -->
       <button
+        *ngIf="canAdmit"
         type="button"
         (click)="openAdmitModal()"
         class="inline-flex items-center justify-center gap-2 px-4 h-[42px] rounded-xl bg-[#0F766E] hover:bg-[#0D665F] text-white text-xs sm:text-sm font-semibold shadow-2xs hover:shadow-xs transition-all shrink-0 cursor-pointer"
@@ -22,6 +23,7 @@
 
       <!-- Secondary Outlined: Add Hospital Bed -->
       <button
+        *ngIf="canAddBed"
         type="button"
         (click)="openAddBedModal()"
         class="inline-flex items-center justify-center gap-2 px-4 h-[42px] rounded-xl bg-white border border-[#CBD5E1] hover:bg-slate-50 text-[#334155] text-xs sm:text-sm font-semibold shadow-2xs hover:shadow-xs transition-all shrink-0 cursor-pointer"
@@ -338,7 +340,7 @@
             
             <!-- Available Action: Admit Patient -->
             <button
-              *ngIf="bed.status === 'Available'"
+              *ngIf="bed.status === 'Available' && canAdmit"
               type="button"
               (click)="openAdmitModalForBed(bed)"
               class="w-full inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl bg-[#0F766E] hover:bg-[#0D665F] text-white text-xs font-semibold shadow-2xs transition-all cursor-pointer"
@@ -349,7 +351,7 @@
 
             <!-- Occupied Actions: Transfer & Discharge -->
             <button
-              *ngIf="bed.status === 'Occupied'"
+              *ngIf="bed.status === 'Occupied' && canTransfer"
               type="button"
               (click)="openTransferModalForBed(bed)"
               class="flex-1 inline-flex items-center justify-center gap-1 px-2.5 py-1.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold shadow-2xs transition-all cursor-pointer"
@@ -359,7 +361,7 @@
             </button>
 
             <button
-              *ngIf="bed.status === 'Occupied'"
+              *ngIf="bed.status === 'Occupied' && canDischarge"
               type="button"
               (click)="openDischargeModalForBed(bed)"
               class="flex-1 inline-flex items-center justify-center gap-1 px-2.5 py-1.5 rounded-xl border border-rose-200 bg-white hover:bg-rose-50 text-rose-700 text-xs font-semibold shadow-2xs transition-all cursor-pointer"
@@ -408,14 +410,14 @@
               <th class="py-3.5 px-4">Discharge Date</th>
               <th class="py-3.5 px-4">Room Charge</th>
               <th class="py-3.5 px-4">Status</th>
-              <th class="py-3.5 px-4 text-center">Action</th>
+              <th class="py-3.5 px-4 text-center" *ngIf="canDischarge">Action</th>
             </tr>
           </thead>
           <tbody class="divide-y divide-slate-100 text-xs sm:text-sm text-[#0F172A]">
             
             <!-- Loading -->
             <tr *ngIf="loading()">
-              <td colspan="9" class="text-center py-10 text-[#64748B]">
+              <td [attr.colspan]="canDischarge ? 9 : 8" class="text-center py-10 text-[#64748B]">
                 <div class="inline-flex items-center gap-2 font-medium">
                   <i class="pi pi-spin pi-spinner text-[#0F766E]"></i>
                   <span>Loading admission log...</span>
@@ -425,7 +427,7 @@
 
             <!-- Empty -->
             <tr *ngIf="!loading() && paginatedAdmissions().length === 0">
-              <td colspan="9" class="text-center py-12 text-[#64748B]">
+              <td [attr.colspan]="canDischarge ? 9 : 8" class="text-center py-12 text-[#64748B]">
                 <div class="flex flex-col items-center justify-center gap-2 max-w-sm mx-auto">
                   <div class="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center text-slate-400">
                     <i class="pi pi-list text-xl"></i>
@@ -493,7 +495,7 @@
               </td>
 
               <!-- Action -->
-              <td class="py-2.5 px-4 text-center">
+              <td class="py-2.5 px-4 text-center" *ngIf="canDischarge">
                 <button
                   *ngIf="!adm.isDischarged"
                   type="button"

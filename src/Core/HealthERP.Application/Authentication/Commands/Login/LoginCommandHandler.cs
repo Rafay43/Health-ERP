@@ -22,7 +22,7 @@ public class LoginCommandHandler : IRequestHandler<LoginCommand, AuthResponse>
 
         if (!success || response is null)
         {
-            throw new InvalidOperationException(string.Join("; ", errors));
+            throw new UnauthorizedAccessException("Invalid credentials.");
         }
 
         return response;

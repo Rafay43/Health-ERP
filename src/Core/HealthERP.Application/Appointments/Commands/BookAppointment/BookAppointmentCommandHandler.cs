@@ -4,6 +4,7 @@ using HealthERP.Application.Common.Interfaces;
 using HealthERP.Domain.Appointments;
 using HealthERP.Domain.Patients;
 using HealthERP.Domain.StaffMembers;
+using HealthERP.Application.Notifications;
 
 namespace HealthERP.Application.Appointments.Commands.BookAppointment;
 
@@ -11,13 +12,19 @@ public class BookAppointmentCommandHandler : IRequestHandler<BookAppointmentComm
 {
     private readonly IApplicationDbContext _context;
     private readonly IAppointmentNotificationService _notificationService;
+    private readonly ICurrentUserService _currentUser;
+    private readonly IPrivateNotificationPublisher _publisher;
 
     public BookAppointmentCommandHandler(
         IApplicationDbContext context,
-        IAppointmentNotificationService notificationService)
+        IAppointmentNotificationService notificationService,
+        ICurrentUserService currentUser,
+        IPrivateNotificationPublisher publisher)
     {
         _context = context;
         _notificationService = notificationService;
+        _currentUser = currentUser;
+        _publisher = publisher;
     }
 
     public async Task<Guid> Handle(BookAppointmentCommand request, CancellationToken cancellationToken)
@@ -49,19 +56,18 @@ public class BookAppointmentCommandHandler : IRequestHandler<BookAppointmentComm
 
         _context.Appointments.Add(appointment);
 
-        var patient = await _context.Patients.FirstOrDefaultAsync(p => p.Id == patientId, cancellationToken);
-        var patientName = patient != null ? $"{patient.FirstName} {patient.LastName}" : "Patient";
-
         var notification = HealthERP.Domain.Notifications.Notification.Create(
             "New Appointment Booked",
-            $"Appointment scheduled for {patientName} (Reason: {request.Reason}).",
+            "An appointment was scheduled. Open appointments for details.",
             HealthERP.Domain.Notifications.NotificationType.AppointmentReminder,
             HealthERP.Domain.Notifications.NotificationSeverity.Info,
-            "/appointments"
+            "/appointments",
+            targetUserId: _currentUser.GetRequiredId()
         );
         _context.Notifications.Add(notification);
 
         await _context.SaveChangesAsync(cancellationToken);
+        await _publisher.PublishAsync(notification, cancellationToken);
 
         await _notificationService.NotifyAppointmentChangedAsync(cancellationToken);
 

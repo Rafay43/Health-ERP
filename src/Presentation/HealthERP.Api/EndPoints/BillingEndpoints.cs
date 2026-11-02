@@ -13,7 +13,7 @@ public static class BillingEndpoints
     {
         var group = app.MapGroup("/api/v1/invoices")
             .WithTags("Billing")
-            .RequireAuthorization();
+            .RequireAuthorization(HealthERP.Application.Common.Security.Policies.CanManageBilling);
 
         group.MapGet("/", async (IMediator mediator, int page = 1, int pageSize = 25, string? status = null, Guid? patientId = null) =>
         {
@@ -40,6 +40,7 @@ public static class BillingEndpoints
         .WithName("RecordPayment")
         .Produces(204)
         .Produces(400)
+        .Produces(409)
         .Produces(404);
     }
 }

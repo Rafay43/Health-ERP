@@ -1,4 +1,4 @@
-import { Component, inject, OnInit, signal, computed } from '@angular/core';
+import { Component, inject, OnInit, OnDestroy, signal, computed } from '@angular/core';
 import { RouterOutlet, RouterLink, RouterLinkActive, Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -18,6 +18,8 @@ import { EmergencyService } from '../../features/emergency/data-access/emergency
 import { TriageRecord } from '../../features/emergency/data-access/emergency.model';
 import { AppointmentService } from '../../features/appointments/data-access/appointment.service';
 import { Appointment } from '../../features/appointments/data-access/appointment.model';
+
+import { Roles } from '../../core/constants/roles';
 
 export interface SearchResult {
   id: string;
@@ -45,8 +47,8 @@ export interface SearchResult {
   templateUrl: './shell.html',
   styleUrl: './shell.scss',
 })
-export class Shell implements OnInit {
-  private authService = inject(AuthService);
+export class Shell implements OnInit, OnDestroy {
+  public authService = inject(AuthService);
   public notificationService = inject(NotificationService);
   private patientService = inject(PatientService);
   private staffService = inject(StaffService);
@@ -68,25 +70,47 @@ export class Shell implements OnInit {
   private dataLoaded = false;
 
   navItems = [
-    { label: 'Dashboard', icon: 'pi pi-home', route: '/dashboard' },
-    { label: 'Patients', icon: 'pi pi-users', route: '/patients' },
-    { label: 'Appointments', icon: 'pi pi-calendar', route: '/appointments' },
-    { label: 'Pharmacy', icon: 'pi pi-heart', route: '/pharmacy' },
-    { label: 'Laboratory', icon: 'pi pi-list', route: '/laboratory' },
-    { label: 'Inpatient Wards', icon: 'pi pi-building', route: '/inpatient' },
-    { label: 'Emergency (ER)', icon: 'pi pi-bolt', route: '/emergency' },
-    { label: 'Billing', icon: 'pi pi-wallet', route: '/billing' },
-    { label: 'Staff', icon: 'pi pi-id-card', route: '/staff' },
-    { label: 'Reports', icon: 'pi pi-chart-bar', route: '/reports' },
-    { label: 'Admin', icon: 'pi pi-cog', route: '/admin' },
+    { label: 'Doctor Workspace', icon: 'pi pi-calendar-plus', route: '/doctor', allowedRoles: [Roles.Doctor] },
+    { label: 'Dashboard', icon: 'pi pi-home', route: '/dashboard', allowedRoles: [Roles.Admin, Roles.Doctor, Roles.Nurse, Roles.Pharmacist, Roles.LabTechnician, Roles.Receptionist, Roles.BillingStaff] },
+    { label: 'Patients', icon: 'pi pi-users', route: '/patients', allowedRoles: [Roles.Admin, Roles.Doctor, Roles.Nurse, Roles.Receptionist] },
+    { label: 'Appointments', icon: 'pi pi-calendar', route: '/appointments', allowedRoles: [Roles.Admin, Roles.Doctor, Roles.Nurse, Roles.Receptionist] },
+    { label: 'Pharmacy', icon: 'pi pi-heart', route: '/pharmacy', allowedRoles: [Roles.Admin, Roles.Doctor, Roles.Nurse, Roles.Pharmacist] },
+    { label: 'Laboratory', icon: 'pi pi-list', route: '/laboratory', allowedRoles: [Roles.Admin, Roles.Doctor, Roles.Nurse, Roles.LabTechnician] },
+    { label: 'Inpatient Wards', icon: 'pi pi-building', route: '/inpatient', allowedRoles: [Roles.Admin, Roles.Doctor, Roles.Nurse, Roles.Receptionist] },
+    { label: 'Emergency (ER)', icon: 'pi pi-bolt', route: '/emergency', allowedRoles: [Roles.Admin, Roles.Doctor, Roles.Nurse, Roles.Receptionist] },
+    { label: 'Billing', icon: 'pi pi-wallet', route: '/billing', allowedRoles: [Roles.Admin, Roles.BillingStaff] },
+    { label: 'Staff', icon: 'pi pi-id-card', route: '/staff', allowedRoles: [Roles.Admin] },
+    { label: 'Reports', icon: 'pi pi-chart-bar', route: '/reports', allowedRoles: [Roles.Admin] },
+    { label: 'Admin', icon: 'pi pi-cog', route: '/admin', allowedRoles: [Roles.Admin] },
   ];
 
+  get visibleNavItems() {
+    return this.navItems.filter((item) => this.authService.hasAnyRole(item.allowedRoles)
+      && (item.route !== '/dashboard' || !this.authService.hasRole(Roles.Doctor) || this.authService.isAdmin()));
+  }
+
   get clinicalNavItems() {
-    return this.navItems.slice(0, 7);
+    return this.visibleNavItems.filter((item) =>
+      ['/doctor', '/dashboard', '/patients', '/appointments', '/pharmacy', '/laboratory', '/inpatient', '/emergency'].includes(item.route)
+    );
   }
 
   get operationsNavItems() {
-    return this.navItems.slice(7, 10);
+    return this.visibleNavItems.filter((item) =>
+      ['/billing', '/staff', '/reports'].includes(item.route)
+    );
+  }
+
+  get isAdminView(): boolean {
+    return this.authService.isAdmin();
+  }
+
+  get primaryRoleDisplay(): string {
+    return this.authService.getPrimaryRoleDisplay();
+  }
+
+  get isDoctorWorkspace(): boolean {
+    return this.router.url.split('?')[0] === '/doctor';
   }
 
 
@@ -94,6 +118,10 @@ export class Shell implements OnInit {
 
   ngOnInit() {
     this.notificationService.init();
+  }
+
+  ngOnDestroy() {
+    this.notificationService.stop();
   }
 
   loadSearchData(): void {

@@ -40,7 +40,7 @@
 
     <div>
       <label class="block text-sm font-medium text-[var(--color-text-secondary)] mb-1">
-        Date of Birth
+        Date of Birth *
       </label>
       <p-datepicker
         formControlName="dateOfBirth"
@@ -51,6 +51,41 @@
       @if (form.get('dateOfBirth')?.invalid && form.get('dateOfBirth')?.touched) {
         <span class="text-xs text-[var(--color-danger)]">Date of birth is required.</span>
       }
+    </div>
+
+    <div>
+      <label class="block text-sm font-medium text-[var(--color-text-secondary)] mb-1">
+        Gender *
+      </label>
+      <select
+        formControlName="gender"
+        class="w-full h-10 px-3 bg-white border border-slate-300 rounded-lg text-sm text-slate-800 focus:outline-none focus:border-[#0F766E]"
+      >
+        <option value="" disabled selected>Select Gender &#9660;</option>
+        @for (opt of genderOptions; track opt) {
+          <option [value]="opt">{{ opt }}</option>
+        }
+      </select>
+      @if (form.get('gender')?.invalid && form.get('gender')?.touched) {
+        <span class="text-xs text-[var(--color-danger)]">Gender is required.</span>
+      }
+    </div>
+
+    <div>
+      <label class="block text-sm font-medium text-[var(--color-text-secondary)] mb-1">
+        Email Address *
+      </label>
+      <input pInputText type="email" formControlName="email" class="w-full" placeholder="patient@example.com" />
+      @if (form.get('email')?.invalid && form.get('email')?.touched) {
+        <span class="text-xs text-[var(--color-danger)]">A valid email address is required.</span>
+      }
+    </div>
+
+    <div>
+      <label class="block text-sm font-medium text-[var(--color-text-secondary)] mb-1">
+        Phone Number
+      </label>
+      <input pInputText type="tel" formControlName="phoneNumber" class="w-full" placeholder="+1 555-0199" />
     </div>
 
     <p-button

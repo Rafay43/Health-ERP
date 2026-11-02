@@ -1,4 +1,4 @@
-<div class="flex h-screen w-screen max-w-full overflow-hidden bg-[#F8FAFC] font-sans antialiased text-[#1E293B]">
+<div [class.doctor-workspace-shell]="isDoctorWorkspace" class="flex h-screen w-screen max-w-full overflow-hidden bg-[#F8FAFC] font-sans antialiased text-[#1E293B]">
   
   <!-- Sidebar (220px Desktop Width) -->
   <aside
@@ -19,6 +19,7 @@
       <button
         type="button"
         class="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors cursor-pointer"
+        aria-label="Toggle sidebar"
         (click)="toggleSidebar()"
       >
         <i class="pi pi-bars text-base"></i>
@@ -33,6 +34,8 @@
         @for (item of clinicalNavItems; track item.route) {
           <a
             [routerLink]="item.route"
+            [attr.aria-label]="item.label"
+            [title]="item.label"
             routerLinkActive="!bg-teal-50/90 !text-[#0F766E] !font-semibold border-l-2 border-[#0F766E]"
             [routerLinkActiveOptions]="{ exact: false }"
             class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-xs font-medium text-[#475569] hover:bg-teal-50/60 hover:text-[#0F766E] transition-all duration-150"
@@ -50,6 +53,8 @@
         @for (item of operationsNavItems; track item.route) {
           <a
             [routerLink]="item.route"
+            [attr.aria-label]="item.label"
+            [title]="item.label"
             routerLinkActive="!bg-teal-50/90 !text-[#0F766E] !font-semibold border-l-2 border-[#0F766E]"
             [routerLinkActiveOptions]="{ exact: false }"
             class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-xs font-medium text-[#475569] hover:bg-teal-50/60 hover:text-[#0F766E] transition-all duration-150"
@@ -63,19 +68,23 @@
       </div>
 
       <!-- Bottom Admin Group -->
-      <div class="pt-3 border-t border-slate-100 mt-auto">
-        <a
-          routerLink="/admin"
-          routerLinkActive="!bg-teal-50/90 !text-[#0F766E] !font-semibold border-l-2 border-[#0F766E]"
-          [routerLinkActiveOptions]="{ exact: false }"
-          class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-xs font-medium text-[#475569] hover:bg-teal-50/60 hover:text-[#0F766E] transition-all duration-150"
-        >
-          <i class="pi pi-cog text-sm text-slate-400"></i>
-          @if (!sidebarCollapsed) {
-            <span>Admin</span>
-          }
-        </a>
-      </div>
+      @if (isAdminView) {
+        <div class="pt-3 border-t border-slate-100 mt-auto">
+          <a
+            routerLink="/admin"
+            aria-label="Admin"
+            title="Admin"
+            routerLinkActive="!bg-teal-50/90 !text-[#0F766E] !font-semibold border-l-2 border-[#0F766E]"
+            [routerLinkActiveOptions]="{ exact: false }"
+            class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-xs font-medium text-[#475569] hover:bg-teal-50/60 hover:text-[#0F766E] transition-all duration-150"
+          >
+            <i class="pi pi-cog text-sm text-slate-400"></i>
+            @if (!sidebarCollapsed) {
+              <span>Admin</span>
+            }
+          </a>
+        </div>
+      }
     </nav>
   </aside>
 
@@ -211,15 +220,15 @@
           </div>
         </div>
 
-        <!-- Administrator Profile -->
+        <!-- User Profile Header -->
         @if (currentUser()) {
           <div class="flex items-center gap-3 border-l border-[#E2E8F0] pl-4">
             <div class="w-9 h-9 rounded-full bg-[#0F766E] text-white font-bold text-xs flex items-center justify-center shadow-xs shrink-0">
               {{ userInitials }}
             </div>
             <div class="hidden sm:flex flex-col">
-              <span class="text-xs font-bold leading-tight text-[#0F172A]">System Administrator</span>
-              <span class="text-[11px] font-medium text-[#64748B]">{{ currentUser()?.email }}</span>
+              <span class="text-xs font-bold leading-tight text-[#0F172A]">{{ currentUser()?.firstName }} {{ currentUser()?.lastName }}</span>
+              <span class="text-[11px] font-medium text-[#64748B]">{{ primaryRoleDisplay }} &bull; {{ currentUser()?.email }}</span>
             </div>
             <button
               type="button"

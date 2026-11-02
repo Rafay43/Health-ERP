@@ -45,6 +45,16 @@ public class PatientConfiguration : IEntityTypeConfiguration<Patient>
         builder.Property(p => p.Email)
             .HasMaxLength(256);
 
+        builder.Property(p => p.UserId)
+            .IsRequired(false);
+
+        builder.HasIndex(p => p.UserId)
+            .IsUnique()
+            .HasFilter("\"UserId\" IS NOT NULL");
+
+        builder.Property<uint>("xmin")
+            .IsRowVersion();
+
         builder.Property(p => p.CreatedAtUtc)
             .IsRequired();
 

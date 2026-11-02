@@ -1,46 +1,69 @@
-import { Injectable, signal } from '@angular/core';
+import { Injectable, signal, inject, effect } from '@angular/core';
 import * as signalR from '@microsoft/signalr';
 import { Subject } from 'rxjs';
+import { AuthService } from './auth.service';
 
 @Injectable({
   providedIn: 'root',
 })
 export class AppointmentSignalRService {
+  private auth = inject(AuthService);
   private hubConnection: signalR.HubConnection | null = null;
+  private sessionToken: string | null = null;
   public appointmentUpdated$ = new Subject<void>();
   public isConnected = signal(false);
 
+  constructor() {
+    effect(() => {
+      const token = this.auth.token();
+      if (!this.auth.isAuthenticated() || this.auth.isPatient() || (this.sessionToken && this.sessionToken !== token)) {
+        this.stopConnection();
+      }
+    });
+  }
+
   public startConnection(): void {
-    if (this.hubConnection && this.hubConnection.state === signalR.HubConnectionState.Connected) {
+    if (!this.auth.isAuthenticated() || this.auth.isPatient()) return;
+    if (this.hubConnection) {
       return;
     }
 
-    this.hubConnection = new signalR.HubConnectionBuilder()
+    const token = this.auth.getToken();
+    this.sessionToken = token;
+    const connection = new signalR.HubConnectionBuilder()
       .withUrl('/hubs/appointments', {
-        withCredentials: true,
+        accessTokenFactory: () => this.auth.getToken() ?? '',
       })
       .withAutomaticReconnect()
+      .configureLogging(signalR.LogLevel.None)
       .build();
+    this.hubConnection = connection;
 
-    this.hubConnection
+    connection
       .start()
       .then(() => {
-        this.isConnected.set(true);
+        if (this.hubConnection === connection && this.auth.getToken() === token) this.isConnected.set(true);
       })
-      .catch((err) => {
-        this.isConnected.set(false);
-        console.warn('SignalR connection warning:', err);
+      .catch(() => {
+        if (this.hubConnection === connection) {
+          this.hubConnection = null;
+          this.isConnected.set(false);
+        }
       });
 
-    this.hubConnection.on('AppointmentUpdated', () => {
-      this.appointmentUpdated$.next();
+    connection.on('AppointmentUpdated', () => {
+      if (this.hubConnection === connection && this.auth.getToken() === token && this.auth.isAuthenticated() && !this.auth.isPatient()) {
+        this.appointmentUpdated$.next();
+      }
     });
   }
 
   public stopConnection(): void {
     if (this.hubConnection) {
-      this.hubConnection.stop();
+      void this.hubConnection.stop().catch(() => {});
+      this.hubConnection = null;
       this.isConnected.set(false);
     }
+    this.sessionToken = null;
   }
 }

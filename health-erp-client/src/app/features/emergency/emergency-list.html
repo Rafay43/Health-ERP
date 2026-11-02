@@ -12,6 +12,7 @@
     <div class="flex flex-wrap items-center gap-3">
       <!-- Restrained Emergency Primary Action: Rapid ER Intake -->
       <button
+        *ngIf="canIntake"
         type="button"
         (click)="openAddTriageModal()"
         class="inline-flex items-center justify-center gap-2 px-4 h-[42px] rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs sm:text-sm font-bold shadow-2xs hover:shadow-xs transition-all shrink-0 cursor-pointer"
@@ -348,6 +349,7 @@
               <td class="py-3 px-4 text-center">
                 <div *ngIf="rec.statusName !== 'DischargedFromED' && rec.statusName !== 'TransferredToInpatient'" class="flex items-center justify-center gap-1.5">
                   <button
+                    *ngIf="canAssignBay"
                     type="button"
                     (click)="openAssignBayModal(rec)"
                     title="Assign Bay / Doctor"
@@ -356,6 +358,7 @@
                     <i class="pi pi-map-marker text-[11px] text-[#0F766E]"></i>
                   </button>
                   <button
+                    *ngIf="canTransferInpatient"
                     type="button"
                     (click)="openTransferModal(rec)"
                     title="Transfer to Ward Bed"
@@ -364,6 +367,7 @@
                     <i class="pi pi-building text-[11px] text-[#0F766E]"></i>
                   </button>
                   <button
+                    *ngIf="canDischarge"
                     type="button"
                     (click)="dischargeFromER(rec)"
                     title="Discharge from ER"

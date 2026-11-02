@@ -8,6 +8,8 @@ import { PatientService } from '../patients/data-access/patient.service';
 import { Patient } from '../patients/data-access/patient.model';
 import { StaffService } from '../staff/data-access/staff.service';
 import { Staff } from '../staff/data-access/staff.model';
+import { AuthService } from '../../core/services/auth.service';
+import { Roles } from '../../core/constants/roles';
 import Swal from 'sweetalert2';
 
 @Component({
@@ -24,7 +26,24 @@ export class InpatientListComponent implements OnInit {
   private inpatientService = inject(InpatientService);
   private patientService = inject(PatientService);
   private staffService = inject(StaffService);
+  private authService = inject(AuthService);
   private fb = inject(FormBuilder);
+
+  get canAddBed(): boolean {
+    return this.authService.hasAnyRole([Roles.Admin, Roles.Nurse]);
+  }
+
+  get canAdmit(): boolean {
+    return this.authService.hasAnyRole([Roles.Admin, Roles.Doctor, Roles.Nurse]);
+  }
+
+  get canTransfer(): boolean {
+    return this.authService.hasAnyRole([Roles.Admin, Roles.Doctor, Roles.Nurse]);
+  }
+
+  get canDischarge(): boolean {
+    return this.authService.hasAnyRole([Roles.Admin, Roles.Doctor]);
+  }
 
   // Global Math for template expressions
   Math = Math;
@@ -190,6 +209,10 @@ export class InpatientListComponent implements OnInit {
     this.inpatientService.getAdmissions(undefined, this.activeOnlyFilter()).subscribe({
       next: (data) => {
         this.admissions.set(data || []);
+        const transferId = this.selectedAdmissionForTransfer()?.id;
+        const dischargeId = this.selectedAdmissionForDischarge()?.id;
+        if (transferId) this.selectedAdmissionForTransfer.set(data?.find(a => a.id === transferId) || null);
+        if (dischargeId) this.selectedAdmissionForDischarge.set(data?.find(a => a.id === dischargeId) || null);
       },
     });
   }
@@ -350,7 +373,7 @@ export class InpatientListComponent implements OnInit {
   }
 
   submitAdmitPatient(): void {
-    if (this.admitForm.invalid) return;
+    if (this.admitForm.invalid || this.submitting()) return;
 
     this.submitting.set(true);
     this.admitError.set(null);
@@ -384,6 +407,8 @@ export class InpatientListComponent implements OnInit {
           this.submitting.set(false);
           const msg = err.error?.detail || err.error?.message || 'Failed to admit patient to bed.';
           this.admitError.set(msg);
+          this.loadBeds();
+          this.loadAdmissions();
         },
       });
   }
@@ -423,7 +448,7 @@ export class InpatientListComponent implements OnInit {
 
   submitDischargePatient(): void {
     const adm = this.selectedAdmissionForDischarge();
-    if (!adm || this.dischargeForm.invalid) return;
+    if (!adm || this.dischargeForm.invalid || this.submitting()) return;
 
     this.submitting.set(true);
     const summary = this.dischargeForm.value.dischargeSummary!.trim();
@@ -454,6 +479,8 @@ export class InpatientListComponent implements OnInit {
           icon: 'error',
           confirmButtonColor: '#E11D48',
         });
+        this.loadBeds();
+        this.loadAdmissions();
       },
     });
   }
@@ -487,7 +514,7 @@ export class InpatientListComponent implements OnInit {
 
   submitTransferPatient(): void {
     const adm = this.selectedAdmissionForTransfer();
-    if (!adm || this.transferForm.invalid) return;
+    if (!adm || this.transferForm.invalid || this.submitting()) return;
 
     this.submitting.set(true);
     const val = this.transferForm.value;
@@ -523,6 +550,8 @@ export class InpatientListComponent implements OnInit {
             icon: 'error',
             confirmButtonColor: '#E11D48',
           });
+          this.loadBeds();
+          this.loadAdmissions();
         },
       });
   }

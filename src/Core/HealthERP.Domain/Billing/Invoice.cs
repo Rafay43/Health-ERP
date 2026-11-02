@@ -80,10 +80,14 @@ public class Invoice : BaseEntity<InvoiceId>, IAuditable
 
     public Payment RecordPayment(decimal amount, PaymentMethod paymentMethod, string? referenceNumber = null, string? notes = null)
     {
-        if (amount > BalanceDue)
-            throw new InvalidOperationException($"Payment amount exceeds balance due.");
-
         var payment = new Payment(Id, amount, paymentMethod, referenceNumber, notes);
+        if (Status == InvoiceStatus.Cancelled)
+            throw new InvalidOperationException("A cancelled invoice cannot receive payments.");
+        if (Status == InvoiceStatus.Paid || BalanceDue <= 0)
+            throw new InvalidOperationException("This invoice is already fully paid.");
+        if (amount > BalanceDue)
+            throw new InvalidOperationException("Payment amount exceeds balance due. Refresh the invoice before retrying.");
+
         _payments.Add(payment);
 
         PaidAmount += amount;

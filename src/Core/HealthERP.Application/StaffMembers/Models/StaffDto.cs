@@ -9,5 +9,7 @@ public record StaffDto(
     string Specialty,
     string LicenseNumber,
     string Department,
-    bool IsActive
+    bool IsActive,
+    string StaffKind = "Unspecified",
+    StaffLinkedAccountDto? LinkedAccount = null
 );

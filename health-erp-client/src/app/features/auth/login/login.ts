@@ -9,6 +9,7 @@ import { ButtonModule } from 'primeng/button';
 import { MessageModule } from 'primeng/message';
 
 import { AuthService } from '../../../core/services/auth.service';
+import { PatientAccountService } from '../../../core/services/patient-account.service';
 import Swal from 'sweetalert2';
 
 @Component({
@@ -110,7 +111,7 @@ import Swal from 'sweetalert2';
                 />
                 <span class="text-sm font-medium text-[#64748B]">Remember me</span>
               </label>
-              <a href="javascript:void(0)" class="text-sm font-semibold text-[#0F766E] hover:text-[#0D665F] hover:underline transition-colors">
+              <a routerLink="/forgot-password" class="text-sm font-semibold text-[#0F766E] hover:text-[#0D665F] hover:underline transition-colors">
                 Forgot password?
               </a>
             </div>
@@ -314,6 +315,7 @@ export class Login {
 
   private fb = inject(FormBuilder);
   private authService = inject(AuthService);
+  private patientAccountService = inject(PatientAccountService);
   private router = inject(Router);
 
   isLoading = signal(false);
@@ -348,7 +350,20 @@ export class Login {
           timer: 2000,
           timerProgressBar: true
         });
-        this.router.navigate(['/dashboard']);
+        if (this.authService.isPatient()) {
+          this.patientAccountService.getStatus().subscribe({
+            next: (status) => {
+              if (status.isLinked) {
+                this.router.navigate(['/portal']);
+              } else {
+                this.router.navigate(['/portal-activation']);
+              }
+            },
+            error: () => this.router.navigate(['/portal-activation']),
+          });
+        } else {
+          this.router.navigate([this.authService.getStaffHomeRoute()]);
+        }
       },
       error: (err) => {
         this.isLoading.set(false);

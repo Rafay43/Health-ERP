@@ -11,7 +11,7 @@ public static class ReportsEndpoints
     {
         var group = app.MapGroup("/api/v1/reports")
             .WithTags("Reports")
-            .RequireAuthorization();
+            .RequireAuthorization(HealthERP.Application.Common.Security.Policies.CanViewExecutiveReports);
 
         group.MapGet("/dashboard", async (IMediator mediator) =>
         {

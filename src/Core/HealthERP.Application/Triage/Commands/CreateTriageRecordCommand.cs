@@ -3,6 +3,7 @@ using HealthERP.Domain.Patients;
 using HealthERP.Domain.Triage;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
+using HealthERP.Application.Notifications;
 
 namespace HealthERP.Application.Triage.Commands;
 
@@ -22,10 +23,14 @@ public record CreateTriageRecordCommand(
 public class CreateTriageRecordCommandHandler : IRequestHandler<CreateTriageRecordCommand, Guid>
 {
     private readonly IApplicationDbContext _context;
+    private readonly ICurrentUserService _currentUser;
+    private readonly IPrivateNotificationPublisher _publisher;
 
-    public CreateTriageRecordCommandHandler(IApplicationDbContext context)
+    public CreateTriageRecordCommandHandler(IApplicationDbContext context, ICurrentUserService currentUser, IPrivateNotificationPublisher publisher)
     {
         _context = context;
+        _currentUser = currentUser;
+        _publisher = publisher;
     }
 
     public async Task<Guid> Handle(CreateTriageRecordCommand request, CancellationToken cancellationToken)
@@ -53,20 +58,20 @@ public class CreateTriageRecordCommandHandler : IRequestHandler<CreateTriageReco
 
         _context.TriageRecords.Add(triageRecord);
 
-        var patient = await _context.Patients.FirstOrDefaultAsync(p => p.Id == patientId, cancellationToken);
-        var patientName = patient != null ? $"{patient.FirstName} {patient.LastName}" : "Emergency Patient";
         var isCritical = request.Severity == TriageSeverity.Level1_Resuscitation || request.Severity == TriageSeverity.Level2_Emergent;
 
         var notification = HealthERP.Domain.Notifications.Notification.Create(
             $"Emergency Triage Alert (ESI Level {(int)request.Severity})",
-            $"{patientName} arrived with '{request.ChiefComplaint}' (SpO2: {request.OxygenSaturationSpO2}%, HR: {request.HeartRateBpm} BPM).",
+            "A new emergency triage record requires attention. Open emergency for details.",
             HealthERP.Domain.Notifications.NotificationType.EmergencyAlert,
             isCritical ? HealthERP.Domain.Notifications.NotificationSeverity.Critical : HealthERP.Domain.Notifications.NotificationSeverity.Warning,
-            "/emergency"
+            "/emergency",
+            targetUserId: _currentUser.GetRequiredId()
         );
         _context.Notifications.Add(notification);
 
         await _context.SaveChangesAsync(cancellationToken);
+        await _publisher.PublishAsync(notification, cancellationToken);
 
         return triageRecord.Id.Value;
     }

@@ -25,43 +25,24 @@ public class GetBedGridQueryHandler : IRequestHandler<GetBedGridQuery, List<BedD
             query = query.Where(b => b.WardName.ToLower().Contains(request.WardName.ToLower()));
         }
 
-        var beds = await query
-            .OrderBy(b => b.WardName)
-            .ThenBy(b => b.RoomNumber)
-            .ThenBy(b => b.BedNumber)
-            .ToListAsync(cancellationToken);
+        // Beds, active owners and patient details must come from one SQL statement/snapshot.
+        var rows = await (
+            from bed in query
+            join admission in _context.Admissions.AsNoTracking().Where(a => !a.IsDischarged)
+                on bed.Id equals admission.BedId into occupants
+            from admission in occupants.DefaultIfEmpty()
+            orderby bed.WardName, bed.RoomNumber, bed.BedNumber
+            select new { Bed = bed, Admission = admission, Patient = admission == null ? null : admission.Patient }
+        ).ToListAsync(cancellationToken);
 
-        var activeAdmissions = await _context.Admissions
-            .AsNoTracking()
-            .Include(a => a.Patient)
-            .Where(a => !a.IsDischarged)
-            .ToListAsync(cancellationToken);
+        if (rows.GroupBy(r => r.Bed.Id).Any(g => g.Count() > 1))
+            throw new HealthERP.Application.Inpatient.InpatientConflictException("Bed occupancy requires reconciliation. Refresh and contact staff support.");
 
-        var admissionMap = activeAdmissions.ToDictionary(a => a.BedId);
-
-        var result = beds.Select(b =>
-        {
-            admissionMap.TryGetValue(b.Id, out var admission);
-            var patientName = admission != null && admission.Patient != null
-                ? $"{admission.Patient.FirstName} {admission.Patient.LastName}"
-                : null;
-            var patientMrn = admission?.Patient?.MedicalRecordNumber;
-
-            return new BedDto(
-                b.Id.Value,
-                b.WardName,
-                b.RoomNumber,
-                b.BedNumber,
-                b.BedType,
-                b.DailyRate,
-                b.Status.ToString(),
-                (int)b.Status,
-                admission?.Id.Value,
-                patientName,
-                patientMrn
-            );
-        }).ToList();
-
-        return result;
+        return rows.Select(r => new BedDto(
+            r.Bed.Id.Value, r.Bed.WardName, r.Bed.RoomNumber, r.Bed.BedNumber, r.Bed.BedType,
+            r.Bed.DailyRate, r.Bed.Status.ToString(), (int)r.Bed.Status, r.Admission?.Id.Value,
+            r.Patient is null ? null : $"{r.Patient.FirstName} {r.Patient.LastName}",
+            r.Patient?.MedicalRecordNumber
+        )).ToList();
     }
 }

@@ -12,6 +12,7 @@
     <div class="flex flex-wrap items-center gap-3">
       <!-- Primary Action: Add Staff Member -->
       <button
+        *ngIf="canAddStaff"
         type="button"
         (click)="openAddStaffModal()"
         class="inline-flex items-center justify-center gap-2 px-4 h-[42px] rounded-xl bg-[#0F766E] hover:bg-[#0D655E] text-white text-xs sm:text-sm font-bold shadow-2xs hover:shadow-xs transition-all shrink-0 cursor-pointer"
@@ -520,7 +521,8 @@
         </div>
         <button
           type="button"
-          (click)="showDetailModal.set(false)"
+          (click)="closeStaffDetails()"
+          [disabled]="accountPending()"
           class="w-8 h-8 rounded-full hover:bg-slate-100 flex items-center justify-center text-slate-400 hover:text-slate-600 transition-colors cursor-pointer"
         >
           <i class="pi pi-times text-sm"></i>
@@ -555,6 +557,20 @@
           </div>
         </div>
 
+        <section *ngIf="canAddStaff" class="rounded-xl border border-slate-200 p-4 space-y-3 text-sm">
+          <h4 class="font-semibold">Account: {{ selectedStaffForDetail()?.linkedAccount ? 'Linked' : 'Not Linked' }}</h4>
+          <p class="text-slate-600">Classification: {{ selectedStaffForDetail()?.staffKind || 'Unspecified' }}</p>
+          <div *ngIf="selectedStaffForDetail()?.linkedAccount as account" class="text-slate-600 break-words">
+            <p>{{ account.firstName }} {{ account.lastName }}</p><p>{{ account.email || 'Email not recorded' }}</p>
+          </div>
+          <p *ngIf="accountError()" role="alert" class="text-rose-700">{{ accountError() }}</p>
+          <button *ngIf="!selectedStaffForDetail()?.linkedAccount" type="button" (click)="openAccountDialog()"
+            [disabled]="accountPending() || !selectedStaffForDetail()?.isActive" class="rounded-lg bg-teal-700 text-white px-3 py-2 disabled:opacity-50">Link Account</button>
+          <button *ngIf="selectedStaffForDetail()?.linkedAccount" type="button" (click)="unlinkAccount()"
+            [disabled]="accountPending()" class="rounded-lg border border-rose-300 text-rose-700 px-3 py-2 disabled:opacity-50">{{ accountPending() ? 'Please wait...' : 'Unlink Account' }}</button>
+          <p *ngIf="!selectedStaffForDetail()?.isActive" class="text-slate-500">Inactive Staff cannot receive a new account link.</p>
+        </section>
+
         <!-- Info Grid -->
         <div class="grid grid-cols-2 gap-4 text-xs">
           <div class="p-3 rounded-xl bg-slate-50/60 border border-slate-100">
@@ -588,7 +604,8 @@
       <div class="p-4 sm:p-5 border-t border-[#E2E8F0] bg-slate-50/80 flex items-center justify-end shrink-0">
         <button
           type="button"
-          (click)="showDetailModal.set(false)"
+          (click)="closeStaffDetails()"
+          [disabled]="accountPending()"
           class="px-4 py-2 rounded-xl border border-slate-200 hover:bg-slate-100 text-slate-700 text-xs sm:text-sm font-semibold transition-all cursor-pointer"
         >
           Close Profile
@@ -598,4 +615,50 @@
     </div>
   </div>
 
+  <div *ngIf="canAddStaff && showAccountDialog()" class="fixed inset-0 z-50 bg-slate-900/30 backdrop-blur-sm flex items-center justify-center p-4"
+    (click)="$event.target === $event.currentTarget && closeAccountDialog()">
+    <section role="dialog" aria-modal="true" aria-labelledby="staff-account-title" class="w-full max-w-xl max-h-[88vh] overflow-y-auto rounded-2xl bg-white border border-slate-200 shadow-xl p-5 space-y-4">
+      <header class="flex items-center justify-between gap-3">
+        <h2 id="staff-account-title" class="text-lg font-bold">Link Account — {{ selectedStaffForDetail()?.firstName }} {{ selectedStaffForDetail()?.lastName }}</h2>
+        <button type="button" aria-label="Close account dialog" (click)="closeAccountDialog()" [disabled]="accountPending()">✕</button>
+      </header>
+      <p class="text-sm text-slate-600">Select an existing account explicitly. Linking does not assign Identity roles. Existing sessions for the selected account will be signed out.</p>
+      <form (ngSubmit)="searchAccounts()" class="flex gap-2">
+        <input name="accountSearch" aria-label="Search accounts" maxlength="100" [ngModel]="accountSearch()" (ngModelChange)="accountSearch.set($event)"
+          [disabled]="accountPending()" placeholder="Search account name or email" class="flex-1 min-w-0 rounded-lg border border-slate-300 px-3 py-2 text-sm" />
+        <button type="submit" [disabled]="accountsLoading() || accountPending()" class="rounded-lg bg-slate-100 px-3 py-2 text-sm">Search</button>
+      </form>
+      <p *ngIf="accountsLoading()" role="status" class="text-sm text-slate-500">Loading accounts...</p>
+      <p *ngIf="!accountsLoading() && !accountError() && accounts().length === 0" class="text-sm text-slate-500">No accounts found.</p>
+      <div *ngIf="!accountsLoading()" class="space-y-2">
+        <button *ngFor="let account of accounts()" type="button" (click)="selectAccount(account)"
+          [disabled]="accountPending() || !account.isActive || account.isLinkedToStaff"
+          [class.border-teal-600]="selectedAccount()?.userId === account.userId"
+          class="w-full text-left rounded-xl border border-slate-200 px-3 py-2 text-sm disabled:opacity-60">
+          <span class="font-semibold block">{{ account.firstName }} {{ account.lastName }}</span>
+          <span class="block break-words text-slate-600">{{ account.email || 'Email not recorded' }}</span>
+          <span class="block text-xs text-slate-500">Roles: {{ account.roles.join(', ') || 'None' }}</span>
+          <span *ngIf="!account.isActive" class="text-xs text-rose-700">Inactive account</span>
+          <span *ngIf="account.isLinkedToStaff" class="text-xs text-amber-700">Already linked to Staff</span>
+        </button>
+      </div>
+      <div class="flex items-center justify-between text-sm">
+        <button type="button" (click)="searchAccounts(accountPage() - 1)" [disabled]="accountPage() <= 1 || accountsLoading() || accountPending()">Previous</button>
+        <span>Page {{ accountPage() }}</span>
+        <button type="button" (click)="searchAccounts(accountPage() + 1)" [disabled]="!accountsHasMore() || accountsLoading() || accountPending()">Next</button>
+      </div>
+      <label class="block text-sm font-semibold">Staff classification
+        <select aria-label="Staff classification" [ngModel]="selectedStaffKind()" (ngModelChange)="selectedStaffKind.set($event)" [disabled]="accountPending()" class="block w-full mt-1 rounded-lg border border-slate-300 px-3 py-2">
+          <option [ngValue]="StaffKind.Unspecified">Unspecified — no verified clinical role</option>
+          <option [ngValue]="StaffKind.Doctor" [disabled]="!selectedAccount()?.roles?.includes('Doctor')">Doctor</option>
+        </select>
+      </label>
+      <p *ngIf="selectedAccount() && !selectedAccount()?.roles?.includes('Doctor')" class="text-sm text-amber-700">This account lacks the Doctor role. It can only be linked as Unspecified; change Identity roles separately if appropriate.</p>
+      <p *ngIf="accountError()" role="alert" class="text-sm text-rose-700">{{ accountError() }}</p>
+      <footer class="flex justify-end gap-3">
+        <button type="button" (click)="closeAccountDialog()" [disabled]="accountPending()" class="rounded-lg border px-3 py-2 text-sm">Cancel</button>
+        <button type="button" (click)="submitAccountLink()" [disabled]="!canSubmitAccountLink" class="rounded-lg bg-teal-700 text-white px-3 py-2 text-sm disabled:opacity-50">{{ accountPending() ? 'Please wait...' : 'Link Account' }}</button>
+      </footer>
+    </section>
+  </div>
 </div>

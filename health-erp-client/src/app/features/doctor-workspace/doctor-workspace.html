@@ -1,0 +1,139 @@
+<div class="workspace max-w-[1280px] mx-auto pb-6">
+  <header class="workspace-header">
+    <div class="min-w-0">
+      <p class="eyebrow"><i class="pi pi-calendar-plus" aria-hidden="true"></i> YOUR CLINICAL DAY</p>
+      <h1>Doctor Workspace</h1>
+      @if (schedule(); as data) {
+        <p class="greeting break-words">{{ greeting }}, Dr. {{ data.doctor.displayName }}</p>
+        <p class="muted text-sm mt-1">{{ data.doctor.specialty }}@if (data.doctor.specialty && data.doctor.department) { <span aria-hidden="true"> · </span> }{{ data.doctor.department }}</p>
+      } @else {
+        <p class="muted text-sm mt-2">Your personal schedule and recorded patient information.</p>
+      }
+    </div>
+    <div class="date-controls" aria-label="Schedule date navigation">
+      <button type="button" class="icon-button" aria-label="Previous day" [disabled]="!selectedDate() || noteSaving()" (click)="moveDay(-1)"><i class="pi pi-chevron-left" aria-hidden="true"></i></button>
+      <button type="button" class="today-button" [disabled]="noteSaving()" (click)="loadSchedule()">Today</button>
+      <button type="button" class="icon-button" aria-label="Next day" [disabled]="!selectedDate() || noteSaving()" (click)="moveDay(1)"><i class="pi pi-chevron-right" aria-hidden="true"></i></button>
+    </div>
+  </header>
+
+  @if (loading()) {
+    <div class="space-y-5" role="status" aria-live="polite" [attr.aria-label]="selectedDate() ? 'Loading schedule for ' + selectedDate() : 'Loading Doctor Workspace'">
+      <p class="muted text-sm"><i class="pi pi-spin pi-spinner mr-2" aria-hidden="true"></i>Loading your schedule…</p>
+      <div class="grid grid-cols-2 xl:grid-cols-4 gap-4" aria-hidden="true">@for (i of [1, 2, 3, 4]; track i) { <div class="skeleton h-28"></div> }</div>
+      <div class="skeleton h-44" aria-hidden="true"></div><div class="skeleton h-60" aria-hidden="true"></div>
+    </div>
+  } @else if (error(); as message) {
+    <section class="surface empty-state" role="alert">
+      <i class="pi pi-exclamation-circle text-3xl text-amber-600" aria-hidden="true"></i>
+      <h2>Schedule unavailable</h2><p>{{ message }}</p>
+      <button type="button" class="primary-button" (click)="retrySchedule()"><i class="pi pi-refresh" aria-hidden="true"></i>Retry schedule</button>
+    </section>
+  } @else if (schedule(); as data) {
+    <div class="flex flex-wrap items-center justify-between gap-2 mb-5">
+      <p class="text-sm font-semibold text-slate-700" data-testid="schedule-date">{{ calendarDate(data.date) }} @if (data.date === facilityToday()) { <span class="ml-2 text-teal-700 text-xs">Today</span> }</p>
+      <p class="muted text-xs"><i class="pi pi-globe mr-1" aria-hidden="true"></i> All times in {{ data.timeZoneId }}</p>
+    </div>
+
+    <section class="grid grid-cols-2 xl:grid-cols-4 gap-3 sm:gap-4" aria-label="Appointment summary">
+      @for (card of [
+        {label: 'Total Appointments', value: data.summary.total, icon: 'pi-calendar'},
+        {label: 'Scheduled', value: data.summary.scheduled, icon: 'pi-clock'},
+        {label: 'Confirmed', value: data.summary.confirmed, icon: 'pi-check-circle'},
+        {label: 'Completed', value: data.summary.completed, icon: 'pi-check-square'}
+      ]; track card.label) {
+        <div class="surface metric" [attr.data-testid]="'metric-' + card.label">
+          <div class="flex items-center justify-between gap-2"><span class="text-xs font-medium text-slate-500 min-w-0 break-words">{{ card.label }}</span><i [class]="'pi ' + card.icon + ' text-teal-600 hidden sm:inline-block'" aria-hidden="true"></i></div>
+          <p class="metric-value">{{ card.value }}</p>
+        </div>
+      }
+    </section>
+
+    <section class="next-consultation mt-6" aria-labelledby="next-title">
+      <div class="flex items-center gap-3 mb-5"><span class="next-icon"><i class="pi pi-calendar-clock" aria-hidden="true"></i></span><div><p class="eyebrow mb-1">PLAN YOUR NEXT CONSULTATION</p><h2 id="next-title">Next Scheduled Consultation</h2></div></div>
+      @if (data.nextScheduledConsultation; as next) {
+        <div class="flex flex-wrap items-center justify-between gap-5" data-testid="next-consultation">
+          <div class="min-w-0"><p class="text-xl font-bold text-slate-900 break-words">{{ display(next.patientDisplayName) }}</p><p class="text-xs text-slate-500 mt-1">MRN {{ display(next.patientMedicalRecordNumber) }}</p><p class="text-sm text-slate-600 mt-3 break-words">{{ next.reason }}</p></div>
+          <div class="flex flex-wrap items-center gap-4"><div><p class="text-lg font-bold text-teal-900">{{ time(next.startDateTimeUtc) }}</p><span [class]="'status ' + statusClass(next.status)">{{ statusLabel(next.status) }}</span></div><button type="button" class="primary-button" (click)="openSnapshot(next)">View Patient Snapshot<i class="pi pi-arrow-right" aria-hidden="true"></i></button></div>
+        </div>
+      } @else {
+        <p class="text-sm text-slate-600 py-2">No upcoming scheduled consultation for this date.</p>
+      }
+    </section>
+
+    <section class="surface mt-6 overflow-hidden" aria-labelledby="schedule-title">
+      <div class="section-heading"><div><h2 id="schedule-title">Daily Schedule</h2><p class="muted text-xs mt-1">{{ calendarDate(data.date) }} · {{ data.summary.total }} appointments</p></div><div class="text-xs text-slate-500 flex flex-wrap gap-x-3 gap-y-1"><span>Cancelled <strong>{{ data.summary.cancelled }}</strong></span><span>No Show <strong>{{ data.summary.noShow }}</strong></span></div></div>
+      @if (data.appointments.length) {
+        <ol class="schedule-list">
+          @for (appointment of data.appointments; track appointment.appointmentId) {
+            <li class="schedule-row" data-testid="schedule-row">
+              <div class="appointment-time text-[13px]"><span class="block font-bold text-slate-800">{{ time(appointment.startDateTimeUtc) }}</span><span class="text-xs text-slate-500">to {{ time(appointment.endDateTimeUtc) }}</span></div>
+              <div class="min-w-0"><h3 class="font-semibold text-sm text-slate-900 break-words">{{ display(appointment.patientDisplayName) }}</h3><p class="text-xs text-slate-500 mt-1">MRN {{ display(appointment.patientMedicalRecordNumber) }}</p><p class="text-sm text-slate-600 mt-2 break-words">{{ appointment.reason }}</p></div>
+              <span [class]="'status ' + statusClass(appointment.status)">{{ statusLabel(appointment.status) }}</span>
+              <button type="button" class="text-button" [attr.aria-label]="'View Snapshot for ' + display(appointment.patientDisplayName)" (click)="openSnapshot(appointment)">View Snapshot<i class="pi pi-arrow-up-right text-xs" aria-hidden="true"></i></button>
+            </li>
+          }
+        </ol>
+      } @else {
+        <div class="empty-state"><i class="pi pi-calendar text-3xl text-teal-600" aria-hidden="true"></i><h3>No appointments scheduled</h3><p>Your schedule is clear for this facility calendar date.</p></div>
+      }
+    </section>
+  }
+</div>
+
+<p-drawer [visible]="snapshotOpen()" (visibleChange)="!$event && closeSnapshot()" position="right" appendTo="body"
+  [style]="{ width: 'min(760px, 100vw)' }" [modal]="true" [blockScroll]="true" [dismissible]="!noteSaving()" [closeOnEscape]="!noteSaving()" [showCloseIcon]="!noteSaving()" ariaCloseLabel="Close Patient Snapshot" header="Patient Snapshot">
+  <div class="snapshot-content">
+    <p class="readonly-label"><i class="pi pi-lock" aria-hidden="true"></i> Read-only clinical snapshot</p>
+    @if (noteSuccess(); as message) { <p class="text-sm text-teal-800 mt-3" role="status">{{ message }}</p> }
+    @if (snapshotLoading()) {
+      <div role="status" aria-live="polite" aria-label="Loading Patient Snapshot" class="space-y-4 mt-5"><p class="muted text-sm">Loading recorded patient information…</p><div class="skeleton h-28" aria-hidden="true"></div><div class="skeleton h-44" aria-hidden="true"></div></div>
+    } @else if (snapshotError(); as message) {
+      <div class="empty-state" role="alert"><i class="pi pi-info-circle text-3xl text-slate-400" aria-hidden="true"></i><h2>Snapshot unavailable</h2><p>{{ message }}</p><button type="button" class="primary-button" (click)="retrySnapshot()">Retry snapshot</button></div>
+    } @else if (snapshot(); as detail) {
+      @if (!noteFormOpen()) { <button type="button" class="primary-button mt-4" (click)="noteFormOpen.set(true); noteSuccess.set(null)">Add Clinical Note</button> }
+      @if (noteFormOpen()) { <app-doctor-clinical-note-form [patientId]="detail.patient.patientId" (savingChange)="noteSaving.set($event)" (cancelled)="noteFormOpen.set(false)" (saved)="onNoteSaved()" /> }
+      <header class="patient-identity"><p class="eyebrow">PATIENT</p><h2 class="text-2xl font-bold text-slate-900">{{ display(detail.patient.displayName) }}</h2><p class="text-sm text-teal-800 font-medium mt-1">MRN {{ display(detail.patient.medicalRecordNumber) }}</p><dl class="flex flex-wrap gap-x-8 gap-y-2 mt-4 text-sm"><div><dt class="muted text-xs">Date of birth</dt><dd>{{ calendarDate(detail.patient.dateOfBirth) }}</dd></div><div><dt class="muted text-xs">Gender</dt><dd>{{ display(detail.patient.gender) }}</dd></div></dl></header>
+      <section class="snapshot-section" aria-labelledby="vitals-heading">
+        <h3 id="vitals-heading"><i class="pi pi-heart" aria-hidden="true"></i>Latest Recorded Vitals</h3>
+        @if (detail.latestVitals; as vital) {
+          <p class="muted text-xs mb-3">Recorded {{ recorded(vital.recordedAtUtc) }}</p>
+          <dl class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <div class="vital"><dt>Blood pressure</dt><dd>{{ vital.bloodPressure?.trim() ? vital.bloodPressure + ' mmHg' : 'Not recorded' }}</dd></div>
+            <div class="vital"><dt>Heart rate</dt><dd>{{ vital.heartRateBpm !== null ? vital.heartRateBpm + ' bpm' : 'Not recorded' }}</dd></div>
+            <div class="vital"><dt>Temperature</dt><dd>{{ vital.temperatureCelsius !== null ? vital.temperatureCelsius + ' °C' : 'Not recorded' }}</dd></div>
+            <div class="vital"><dt>Weight</dt><dd>{{ vital.weightKg !== null ? vital.weightKg + ' kg' : 'Not recorded' }}</dd></div>
+          </dl>
+        } @else { <p class="missing">No recorded vitals available.</p> }
+      </section>
+      <section class="snapshot-section" aria-labelledby="notes-heading">
+        <h3 id="notes-heading"><i class="pi pi-file-edit" aria-hidden="true"></i>Recent Clinical Notes</h3>
+        @for (note of detail.recentNotes; track note.noteId) {
+          <details class="record"><summary>{{ recorded(note.recordedAtUtc) }}<span class="block text-sm font-normal text-slate-600 mt-1">{{ note.chiefComplaint }}</span></summary><p class="text-xs text-slate-500 mt-2">{{ note.recordedByDisplayName ? 'Recorded by ' + note.recordedByDisplayName : 'Author unavailable' }}</p><dl class="mt-3 text-sm"><dt class="muted text-xs">Diagnosis</dt><dd class="mb-3">{{ note.diagnosis }}</dd><dt class="muted text-xs">Recorded notes</dt><dd class="whitespace-pre-wrap">{{ note.notes }}</dd></dl></details>
+        } @empty { <p class="missing">No recent clinical notes.</p> }
+      </section>
+      <section class="snapshot-section" aria-labelledby="prescriptions-heading">
+        <h3 id="prescriptions-heading"><i class="pi pi-heart-fill" aria-hidden="true"></i>Recent Prescriptions</h3>
+        @for (rx of detail.recentPrescriptions; track rx.prescriptionId) {
+          <article class="record"><div class="flex flex-wrap justify-between gap-2"><h4 class="font-semibold">{{ rx.medicationName }}</h4><span class="status">{{ rx.status }}</span></div><p class="muted text-xs mt-1">Prescribed {{ recorded(rx.prescribedDateUtc) }}</p><p class="text-sm mt-3">{{ rx.dosage }} · {{ rx.frequency }} · {{ rx.durationDays }} days</p><p class="text-xs text-slate-500 mt-1">Refills: {{ rx.refills }}</p>@if (rx.instructions) { <p class="text-sm mt-2 whitespace-pre-wrap">{{ rx.instructions }}</p> }@if (rx.dispensedDateUtc) { <p class="muted text-xs mt-2">Dispensed {{ recorded(rx.dispensedDateUtc) }}</p> }</article>
+        } @empty { <p class="missing">No recent prescriptions.</p> }
+      </section>
+      <section class="snapshot-section" aria-labelledby="labs-heading">
+        <h3 id="labs-heading"><i class="pi pi-list" aria-hidden="true"></i>Recent Lab Orders / Results</h3>
+        @for (lab of detail.recentLabOrders; track lab.labOrderId) {
+          <article class="record"><div class="flex flex-wrap justify-between gap-2"><h4 class="font-semibold">{{ lab.testName }}</h4><span class="status">{{ statusLabel(lab.status) }}</span></div><p class="muted text-xs mt-1">{{ lab.testCode }} · {{ lab.priority }} · Ordered {{ recorded(lab.orderedDateUtc) }}</p>
+            @if (lab.result; as result) {
+              <div class="lab-result"><p class="font-semibold">Result: {{ display(result.value) }} {{ result.unit }}</p>@if (result.referenceRange) { <p class="text-xs mt-1">Reference range: {{ result.referenceRange }}</p> }@if (result.isAbnormal) { <p class="text-xs text-amber-800 font-semibold mt-2">Recorded abnormal flag</p> }@if (result.completedDateUtc) { <p class="muted text-xs mt-2">Completed {{ recorded(result.completedDateUtc) }}</p> }@if (result.remarks) { <p class="text-sm mt-2 whitespace-pre-wrap">{{ result.remarks }}</p> }</div>
+            } @else { <p class="missing mt-3">No recorded result available.</p> }
+          </article>
+        } @empty { <p class="missing">No recent lab activity.</p> }
+      </section>
+      <section class="snapshot-section" aria-labelledby="admission-heading">
+        <h3 id="admission-heading"><i class="pi pi-building" aria-hidden="true"></i>Current Admission</h3>
+        @if (detail.currentAdmission; as admission) { <article class="record"><p class="muted text-xs">Admitted {{ recorded(admission.admissionDateUtc) }}</p><p class="text-sm mt-2 whitespace-pre-wrap">{{ admission.chiefComplaint }}</p></article> }
+        @else { <p class="missing">No current admission.</p> }
+      </section>
+      <p class="muted text-xs pb-4">Recorded times shown in {{ schedule()?.timeZoneId }}. This snapshot shows recent records, not a complete medical history.</p>
+    }
+  </div>
+</p-drawer>

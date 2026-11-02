@@ -13,6 +13,8 @@ public class StaffMembers : BaseEntity<StaffId>, IAuditable
     public string Department { get; private set; } = default!;
     public bool IsActive { get; private set; } = true;
     public bool IsDeleted { get; private set; } = false;
+    public Guid? UserId { get; private set; }
+    public StaffKind StaffKind { get; private set; } = StaffKind.Unspecified;
 
     // IAuditable
     public DateTime CreatedAtUtc { get; set; }
@@ -85,4 +87,20 @@ public class StaffMembers : BaseEntity<StaffId>, IAuditable
 
     public void Deactivate() => IsActive = false;
     public void Activate() => IsActive = true;
+
+    public void LinkUserId(Guid userId)
+    {
+        if (userId == Guid.Empty) throw new ArgumentException("Identity account is required.", nameof(userId));
+        if (UserId.HasValue && UserId != userId)
+            throw new InvalidOperationException("Staff is already linked to an Identity account.");
+        UserId = userId;
+    }
+
+    public void UnlinkUserId() => UserId = null;
+
+    public void AssignStaffKind(StaffKind kind)
+    {
+        if (!Enum.IsDefined(kind)) throw new ArgumentOutOfRangeException(nameof(kind), "Invalid staff classification.");
+        StaffKind = kind;
+    }
 }

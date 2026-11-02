@@ -3,7 +3,6 @@ using HealthERP.Application.Notifications.Commands;
 using HealthERP.Application.Notifications.Models;
 using HealthERP.Application.Notifications.Queries;
 using MediatR;
-using Microsoft.AspNetCore.SignalR;
 
 namespace HealthERP.Api.Endpoints;
 
@@ -13,7 +12,7 @@ public static class NotificationEndpoints
     {
         var group = app.MapGroup("/api/v1/notifications")
             .WithTags("Notifications")
-            .RequireAuthorization();
+            .RequireAuthorization(NotificationSecurity.OwnerPolicy);
 
         group.MapGet("/", async (IMediator mediator, bool unreadOnly = false) =>
         {
@@ -25,27 +24,25 @@ public static class NotificationEndpoints
 
         group.MapPost("/", async (
             SendNotificationCommand command,
-            IMediator mediator,
-            IHubContext<NotificationHub> hubContext) =>
+            IMediator mediator) =>
         {
             var dto = await mediator.Send(command);
-
-            // Broadcast in real-time via SignalR WebSocket!
-            await hubContext.Clients.All.SendAsync("ReceiveNotification", dto);
 
             return Results.Created($"/api/v1/notifications/{dto.Id}", dto);
         })
         .WithName("SendNotification")
+        .RequireAuthorization(HealthERP.Application.Common.Security.Policies.CanEditPatients)
         .Produces<NotificationDto>(201)
         .Produces(400);
 
         group.MapPost("/{id:guid}/read", async (Guid id, IMediator mediator) =>
         {
             var success = await mediator.Send(new MarkNotificationAsReadCommand(id));
-            return Results.Ok(new { success });
+            return success ? Results.Ok(new { success }) : Results.NotFound();
         })
         .WithName("MarkNotificationAsRead")
-        .Produces<object>(200);
+        .Produces<object>(200)
+        .Produces(404);
 
         group.MapPost("/read-all", async (IMediator mediator) =>
         {

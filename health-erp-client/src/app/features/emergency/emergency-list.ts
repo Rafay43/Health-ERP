@@ -10,6 +10,8 @@ import { InpatientService } from '../inpatient/data-access/inpatient.service';
 import { Bed } from '../inpatient/data-access/inpatient.model';
 import { StaffService } from '../staff/data-access/staff.service';
 import { Staff } from '../staff/data-access/staff.model';
+import { AuthService } from '../../core/services/auth.service';
+import { Roles } from '../../core/constants/roles';
 import Swal from 'sweetalert2';
 
 @Component({
@@ -27,7 +29,24 @@ export class EmergencyListComponent implements OnInit {
   private patientService = inject(PatientService);
   private inpatientService = inject(InpatientService);
   private staffService = inject(StaffService);
+  private authService = inject(AuthService);
   private fb = inject(FormBuilder);
+
+  get canIntake(): boolean {
+    return this.authService.hasAnyRole([Roles.Admin, Roles.Doctor, Roles.Nurse, Roles.Receptionist]);
+  }
+
+  get canAssignBay(): boolean {
+    return this.authService.hasAnyRole([Roles.Admin, Roles.Doctor, Roles.Nurse, Roles.Receptionist]);
+  }
+
+  get canTransferInpatient(): boolean {
+    return this.authService.hasAnyRole([Roles.Admin, Roles.Nurse, Roles.Receptionist]);
+  }
+
+  get canDischarge(): boolean {
+    return this.authService.hasAnyRole([Roles.Admin, Roles.Doctor, Roles.Nurse, Roles.Receptionist]);
+  }
 
   // Global Math for template expressions
   Math = Math;
@@ -405,7 +424,7 @@ export class EmergencyListComponent implements OnInit {
 
   submitTransfer(): void {
     const rec = this.selectedTriageForTransfer();
-    if (!rec || this.transferForm.invalid) return;
+    if (!rec || this.transferForm.invalid || this.submitting()) return;
 
     this.submitting.set(true);
     const val = this.transferForm.value;
@@ -434,7 +453,14 @@ export class EmergencyListComponent implements OnInit {
             timerProgressBar: true,
           });
         },
-        error: () => this.submitting.set(false),
+        error: (err) => {
+          this.submitting.set(false);
+          Swal.fire({ title: 'Transfer Failed',
+            text: err.error?.detail || err.error?.message || 'Unable to confirm transfer. Refresh the queue and beds before retrying.',
+            icon: 'error', confirmButtonColor: '#E11D48' });
+          this.loadEmergencyQueue();
+          this.loadBeds();
+        },
       });
   }
 

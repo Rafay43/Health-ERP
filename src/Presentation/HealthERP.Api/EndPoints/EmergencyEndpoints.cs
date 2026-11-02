@@ -10,8 +10,7 @@ public static class EmergencyEndpoints
     public static void MapEmergencyEndpoints(this IEndpointRouteBuilder app)
     {
         var group = app.MapGroup("/api/v1/emergency")
-            .WithTags("Emergency")
-            .RequireAuthorization();
+            .WithTags("Emergency");
 
         group.MapGet("/queue", async (IMediator mediator, bool activeOnly = true) =>
         {
@@ -19,6 +18,7 @@ public static class EmergencyEndpoints
             return Results.Ok(result);
         })
         .WithName("GetEmergencyQueue")
+        .RequireAuthorization(HealthERP.Application.Common.Security.Policies.CanViewPatients)
         .Produces<List<TriageRecordDto>>(200);
 
         group.MapPost("/triage", async (CreateTriageRecordCommand command, IMediator mediator) =>
@@ -27,6 +27,7 @@ public static class EmergencyEndpoints
             return Results.Created($"/api/v1/emergency/triage/{id}", new { id });
         })
         .WithName("CreateTriageRecord")
+        .RequireAuthorization(HealthERP.Application.Common.Security.Policies.CanEditPatients)
         .Produces<object>(201)
         .Produces(400);
 
@@ -36,21 +37,25 @@ public static class EmergencyEndpoints
             return Results.Ok(new { success });
         })
         .WithName("AssignEmergencyBay")
+        .RequireAuthorization(HealthERP.Application.Common.Security.Policies.CanEditPatients)
         .Produces<object>(200)
         .Produces(400);
 
-        group.MapPost("/triage/{id:guid}/transfer-inpatient", async (Guid id, TransferInpatientRequest request, IMediator mediator) =>
+        group.MapPost("/triage/{id:guid}/transfer-inpatient", async (Guid id, TransferInpatientRequest request, IMediator mediator, CancellationToken cancellationToken) =>
         {
             var admissionId = await mediator.Send(new TransferToInpatientCommand(
                 id,
                 request.BedId,
                 request.AdmittingDoctorName,
-                request.AdmissionNotes));
+                request.AdmissionNotes), cancellationToken);
             return Results.Ok(new { admissionId });
         })
         .WithName("TransferToInpatient")
+        .RequireAuthorization(HealthERP.Application.Common.Security.Policies.CanManageAdmissions)
         .Produces<object>(200)
-        .Produces(400);
+        .Produces(400)
+        .Produces(404)
+        .Produces(409);
 
         group.MapPost("/triage/{id:guid}/discharge", async (Guid id, IMediator mediator) =>
         {
@@ -58,6 +63,7 @@ public static class EmergencyEndpoints
             return Results.Ok(new { success });
         })
         .WithName("DischargeFromEmergency")
+        .RequireAuthorization(HealthERP.Application.Common.Security.Policies.CanEditPatients)
         .Produces<object>(200)
         .Produces(400);
     }

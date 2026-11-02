@@ -14,6 +14,9 @@ public class Patient : BaseEntity<PatientId>, IAuditable
     public string? Email { get; private set; }
     public bool IsDeleted { get; private set; }
 
+    // Relationship to ASP.NET Core Identity ApplicationUser (nullable for unlinked patients)
+    public Guid? UserId { get; private set; }
+
     // IAuditable
     public DateTime CreatedAtUtc { get; set; }
     public string? CreatedBy { get; set; }
@@ -36,34 +39,74 @@ public class Patient : BaseEntity<PatientId>, IAuditable
         DateOfBirth = dateOfBirth;
     }
 
-   public static Patient Register(
-    string medicalRecordNumber,
-    string firstName,
-    string lastName,
-    DateOnly dateOfBirth)
-{
-    if (string.IsNullOrWhiteSpace(medicalRecordNumber))
-        throw new ArgumentException("Medical record number is required.", nameof(medicalRecordNumber));
+    public static Patient Register(
+        string medicalRecordNumber,
+        string firstName,
+        string lastName,
+        DateOnly dateOfBirth,
+        string? gender = null,
+        string? email = null,
+        string? phoneNumber = null)
+    {
+        if (string.IsNullOrWhiteSpace(medicalRecordNumber))
+            throw new ArgumentException("Medical record number is required.", nameof(medicalRecordNumber));
 
-    if (string.IsNullOrWhiteSpace(firstName))
-        throw new ArgumentException("First name is required.", nameof(firstName));
+        if (string.IsNullOrWhiteSpace(firstName))
+            throw new ArgumentException("First name is required.", nameof(firstName));
 
-    if (string.IsNullOrWhiteSpace(lastName))
-        throw new ArgumentException("Last name is required.", nameof(lastName));
+        if (string.IsNullOrWhiteSpace(lastName))
+            throw new ArgumentException("Last name is required.", nameof(lastName));
 
-    if (dateOfBirth > DateOnly.FromDateTime(DateTime.UtcNow))
-        throw new ArgumentException("Date of birth cannot be in the future.", nameof(dateOfBirth));
+        if (dateOfBirth > DateOnly.FromDateTime(DateTime.UtcNow))
+            throw new ArgumentException("Date of birth cannot be in the future.", nameof(dateOfBirth));
 
-    var patient = new Patient(PatientId.New(), medicalRecordNumber, firstName, lastName, dateOfBirth);
+        var patient = new Patient(PatientId.New(), medicalRecordNumber, firstName, lastName, dateOfBirth);
+        patient.Gender = NormalizeGender(gender);
+        patient.Email = email?.Trim();
+        patient.PhoneNumber = phoneNumber?.Trim();
 
-    patient.AddDomainEvent(new PatientRegisteredEvent(patient.Id, patient.MedicalRecordNumber));
+        patient.AddDomainEvent(new PatientRegisteredEvent(patient.Id, patient.MedicalRecordNumber));
 
-    return patient;
-}
+        return patient;
+    }
 
     public void UpdateContactInfo(string? phoneNumber, string? email)
     {
-        PhoneNumber = phoneNumber;
-        Email = email;
+        PhoneNumber = phoneNumber?.Trim();
+        Email = email?.Trim();
+    }
+
+    public void UpdateDetails(string firstName, string lastName, string? gender, string? email, string? phoneNumber)
+    {
+        if (string.IsNullOrWhiteSpace(firstName))
+            throw new ArgumentException("First name is required.", nameof(firstName));
+        if (string.IsNullOrWhiteSpace(lastName))
+            throw new ArgumentException("Last name is required.", nameof(lastName));
+
+        FirstName = firstName.Trim();
+        LastName = lastName.Trim();
+        Gender = NormalizeGender(gender);
+        Email = email?.Trim();
+        PhoneNumber = phoneNumber?.Trim();
+    }
+
+    public void LinkUserId(Guid userId)
+    {
+        UserId = userId;
+    }
+
+    private static string? NormalizeGender(string? gender)
+    {
+        if (string.IsNullOrWhiteSpace(gender)) return null;
+
+        var normalized = gender.Trim();
+        return normalized.ToLowerInvariant() switch
+        {
+            "male" => "Male",
+            "female" => "Female",
+            "other" => "Other",
+            "prefer not to say" or "prefernotosay" => "Prefer not to say",
+            _ => normalized
+        };
     }
 }

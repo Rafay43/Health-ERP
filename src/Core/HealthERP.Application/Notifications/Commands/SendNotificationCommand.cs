@@ -10,18 +10,20 @@ public record SendNotificationCommand(
     string Message,
     NotificationType Type,
     NotificationSeverity Severity,
-    string? LinkUrl = null,
-    Guid? TargetUserId = null,
-    string TargetRole = "All"
+    string? LinkUrl = null
 ) : IRequest<NotificationDto>;
 
 public class SendNotificationCommandHandler : IRequestHandler<SendNotificationCommand, NotificationDto>
 {
     private readonly IApplicationDbContext _context;
+    private readonly ICurrentUserService _currentUser;
+    private readonly IPrivateNotificationPublisher _publisher;
 
-    public SendNotificationCommandHandler(IApplicationDbContext context)
+    public SendNotificationCommandHandler(IApplicationDbContext context, ICurrentUserService currentUser, IPrivateNotificationPublisher publisher)
     {
         _context = context;
+        _currentUser = currentUser;
+        _publisher = publisher;
     }
 
     public async Task<NotificationDto> Handle(SendNotificationCommand request, CancellationToken cancellationToken)
@@ -32,27 +34,13 @@ public class SendNotificationCommandHandler : IRequestHandler<SendNotificationCo
             request.Type,
             request.Severity,
             request.LinkUrl,
-            request.TargetUserId,
-            request.TargetRole
+            _currentUser.GetRequiredId()
         );
 
         _context.Notifications.Add(notification);
         await _context.SaveChangesAsync(cancellationToken);
+        await _publisher.PublishAsync(notification, cancellationToken);
 
-        return new NotificationDto(
-            notification.Id.Value,
-            notification.TargetUserId,
-            notification.TargetRole,
-            notification.Title,
-            notification.Message,
-            notification.LinkUrl,
-            notification.Type.ToString(),
-            (int)notification.Type,
-            notification.Severity.ToString(),
-            (int)notification.Severity,
-            notification.IsRead,
-            notification.ReadAtUtc,
-            notification.CreatedAtUtc
-        );
+        return NotificationDto.FromEntity(notification);
     }
 }

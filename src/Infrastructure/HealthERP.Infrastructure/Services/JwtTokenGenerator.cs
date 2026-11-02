@@ -5,6 +5,7 @@ using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using HealthERP.Application.Common.Interfaces;
 using HealthERP.Application.Common.Configurations;
+using HealthERP.Application.Common.Security;
 
 namespace HealthERP.Infrastructure.Services;
 
@@ -17,7 +18,7 @@ public class JwtTokenGenerator : IJwtTokenGenerator
         _jwtSettings = jwtSettings.Value;
     }
 
-    public string GenerateToken(string userId, string email, string firstName, string lastName, IEnumerable<string> roles)
+    public string GenerateToken(string userId, string email, string firstName, string lastName, IEnumerable<string> roles, string securityStamp)
     {
         var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_jwtSettings.Secret));
         var credentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
@@ -28,12 +29,14 @@ public class JwtTokenGenerator : IJwtTokenGenerator
             new(JwtRegisteredClaimNames.Email, email),
             new(JwtRegisteredClaimNames.GivenName, firstName),
             new(JwtRegisteredClaimNames.FamilyName, lastName),
-            new(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
+            new(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
+            new(JwtSessionVersion.ClaimName, JwtSessionVersion.FromSecurityStamp(securityStamp))
         };
 
         foreach (var role in roles)
         {
             claims.Add(new Claim(ClaimTypes.Role, role));
+            claims.Add(new Claim("role", role));
         }
 
         var token = new JwtSecurityToken(

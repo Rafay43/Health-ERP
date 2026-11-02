@@ -12,6 +12,7 @@
     <div class="flex flex-wrap items-center gap-3">
       <!-- Primary: Add Medication -->
       <button
+        *ngIf="canManageInventory"
         type="button"
         (click)="openAddDrugDialog()"
         class="inline-flex items-center justify-center gap-2 px-4 h-[42px] rounded-xl bg-[#0F766E] hover:bg-[#0D665F] text-white text-xs sm:text-sm font-semibold shadow-2xs hover:shadow-xs transition-all shrink-0 cursor-pointer"
@@ -22,6 +23,7 @@
 
       <!-- Secondary Outlined: New Prescription -->
       <button
+        *ngIf="canPrescribe"
         type="button"
         (click)="openAddPrescriptionDialog()"
         class="inline-flex items-center justify-center gap-2 px-4 h-[42px] rounded-xl bg-white border border-[#CBD5E1] hover:bg-slate-50 text-[#334155] text-xs sm:text-sm font-semibold shadow-2xs hover:shadow-xs transition-all shrink-0 cursor-pointer"
@@ -98,6 +100,7 @@
     <!-- Tab Navigation Bar -->
     <div class="flex items-center gap-2 border-b border-[#E2E8F0] px-4 sm:px-6 pt-4 bg-slate-50/50">
       <button
+        *ngIf="canManageInventory"
         type="button"
         (click)="setActiveTab('inventory')"
         [ngClass]="{
@@ -221,14 +224,14 @@
               <th class="py-3.5 px-4">Expiry Date</th>
               <th class="py-3.5 px-4">Unit Price</th>
               <th class="py-3.5 px-4">Status</th>
-              <th class="py-3.5 px-4 text-center">Action</th>
+              <th class="py-3.5 px-4 text-center" *ngIf="canManageInventory">Action</th>
             </tr>
           </thead>
           <tbody class="divide-y divide-slate-100 text-xs sm:text-sm text-[#0F172A]">
             
             <!-- Loading State -->
             <tr *ngIf="loading()">
-              <td colspan="8" class="text-center py-10 text-[#64748B]">
+              <td [attr.colspan]="canManageInventory ? 8 : 7" class="text-center py-10 text-[#64748B]">
                 <div class="inline-flex items-center gap-2 font-medium">
                   <i class="pi pi-spin pi-spinner text-[#0F766E]"></i>
                   <span>Loading inventory records...</span>
@@ -238,7 +241,7 @@
 
             <!-- Empty State -->
             <tr *ngIf="!loading() && filteredDrugs().length === 0">
-              <td colspan="8" class="text-center py-12 text-[#64748B]">
+              <td [attr.colspan]="canManageInventory ? 8 : 7" class="text-center py-12 text-[#64748B]">
                 <div class="flex flex-col items-center justify-center gap-2 max-w-sm mx-auto">
                   <div class="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center text-slate-400">
                     <i class="pi pi-box text-xl"></i>
@@ -341,7 +344,7 @@
               </td>
 
               <!-- Action -->
-              <td class="py-2.5 px-4 text-center">
+              <td class="py-2.5 px-4 text-center" *ngIf="canManageInventory">
                 <button
                   type="button"
                   (click)="openAdjustStockDialog(drug)"
@@ -449,14 +452,14 @@
               <th class="py-3.5 px-4">Directions</th>
               <th class="py-3.5 px-4">Prescribed</th>
               <th class="py-3.5 px-4">Status</th>
-              <th class="py-3.5 px-4 text-center">Fulfillment Action</th>
+              <th class="py-3.5 px-4 text-center" *ngIf="canDispense">Fulfillment Action</th>
             </tr>
           </thead>
           <tbody class="divide-y divide-slate-100 text-xs sm:text-sm text-[#0F172A]">
             
             <!-- Loading -->
             <tr *ngIf="loading()">
-              <td colspan="7" class="text-center py-10 text-[#64748B]">
+              <td [attr.colspan]="canDispense ? 7 : 6" class="text-center py-10 text-[#64748B]">
                 <div class="inline-flex items-center gap-2 font-medium">
                   <i class="pi pi-spin pi-spinner text-[#0F766E]"></i>
                   <span>Loading prescriptions...</span>
@@ -466,7 +469,7 @@
 
             <!-- Empty -->
             <tr *ngIf="!loading() && filteredPrescriptions().length === 0">
-              <td colspan="7" class="text-center py-12 text-[#64748B]">
+              <td [attr.colspan]="canDispense ? 7 : 6" class="text-center py-12 text-[#64748B]">
                 <div class="flex flex-col items-center justify-center gap-2 max-w-sm mx-auto">
                   <div class="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center text-slate-400">
                     <i class="pi pi-file-edit text-xl"></i>
@@ -529,7 +532,7 @@
               </td>
 
               <!-- Fulfillment Action -->
-              <td class="py-3 px-4 text-center">
+              <td class="py-3 px-4 text-center" *ngIf="canDispense">
                 <button
                   *ngIf="rx.status === 'Pending'"
                   type="button"

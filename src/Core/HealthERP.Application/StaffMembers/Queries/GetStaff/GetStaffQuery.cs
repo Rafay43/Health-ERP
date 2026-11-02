@@ -10,15 +10,17 @@ public record GetStaffQuery : IRequest<List<StaffDto>>;
 public class GetStaffQueryHandler : IRequestHandler<GetStaffQuery, List<StaffDto>>
 {
     private readonly IApplicationDbContext _context;
+    private readonly IStaffAccountService _accounts;
 
-    public GetStaffQueryHandler(IApplicationDbContext context)
+    public GetStaffQueryHandler(IApplicationDbContext context, IStaffAccountService accounts)
     {
         _context = context;
+        _accounts = accounts;
     }
 
     public async Task<List<StaffDto>> Handle(GetStaffQuery request, CancellationToken cancellationToken)
     {
-        return await _context.Staff
+        var staff = await _context.Staff
             .AsNoTracking()
             .Where(s => !s.IsDeleted)
             .Select(s => new StaffDto(
@@ -30,7 +32,11 @@ public class GetStaffQueryHandler : IRequestHandler<GetStaffQuery, List<StaffDto
                 s.Specialty,
                 s.LicenseNumber,
                 s.Department,
-                s.IsActive))
+                s.IsActive,
+                s.StaffKind.ToString(),
+                null))
             .ToListAsync(cancellationToken);
+        var accounts = await _accounts.GetLinkedAccountsAsync(staff.Select(s => s.Id), cancellationToken);
+        return staff.Select(s => s with { LinkedAccount = accounts.GetValueOrDefault(s.Id) }).ToList();
     }
 }

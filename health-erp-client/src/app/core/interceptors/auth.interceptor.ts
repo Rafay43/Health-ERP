@@ -17,7 +17,8 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
 
   return next(authReq).pipe(
     catchError((error: HttpErrorResponse) => {
-      if (error.status === 401) {
+      // Ignore anonymous failures and late responses from a replaced/logged-out session.
+      if (error.status === 401 && token && authService.getToken() === token) {
         authService.logout();
       }
       return throwError(() => error);

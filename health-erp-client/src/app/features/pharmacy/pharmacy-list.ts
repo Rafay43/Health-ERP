@@ -8,6 +8,8 @@ import { PatientService } from '../patients/data-access/patient.service';
 import { Patient } from '../patients/data-access/patient.model';
 import { StaffService } from '../staff/data-access/staff.service';
 import { Staff } from '../staff/data-access/staff.model';
+import { AuthService } from '../../core/services/auth.service';
+import { Roles } from '../../core/constants/roles';
 import Swal from 'sweetalert2';
 
 @Component({
@@ -24,7 +26,20 @@ export class PharmacyListComponent implements OnInit {
   private pharmacyService = inject(PharmacyService);
   private patientService = inject(PatientService);
   private staffService = inject(StaffService);
+  private authService = inject(AuthService);
   private fb = inject(FormBuilder);
+
+  get canManageInventory(): boolean {
+    return this.authService.hasAnyRole([Roles.Admin, Roles.Pharmacist]);
+  }
+
+  get canPrescribe(): boolean {
+    return this.authService.hasAnyRole([Roles.Admin, Roles.Doctor]);
+  }
+
+  get canDispense(): boolean {
+    return this.authService.hasAnyRole([Roles.Admin, Roles.Pharmacist]);
+  }
 
   // Global Math for template expressions
   Math = Math;
@@ -175,6 +190,9 @@ export class PharmacyListComponent implements OnInit {
   });
 
   ngOnInit(): void {
+    if (!this.canManageInventory) {
+      this.activeTab.set('prescriptions');
+    }
     this.loadData();
   }
 
@@ -188,13 +206,17 @@ export class PharmacyListComponent implements OnInit {
 
   loadData(): void {
     this.loading.set(true);
-    this.pharmacyService.getInventory().subscribe({
-      next: (inventory) => {
-        this.drugs.set(inventory || []);
-        this.loading.set(false);
-      },
-      error: () => this.loading.set(false),
-    });
+    if (this.canManageInventory) {
+      this.pharmacyService.getInventory().subscribe({
+        next: (inventory) => {
+          this.drugs.set(inventory || []);
+          this.loading.set(false);
+        },
+        error: () => this.loading.set(false),
+      });
+    } else {
+      this.loading.set(false);
+    }
 
     this.pharmacyService.getPrescriptions().subscribe({
       next: (rxs) => {
@@ -463,6 +485,7 @@ export class PharmacyListComponent implements OnInit {
 
   // Dispense Action
   dispensePrescription(rx: Prescription): void {
+    if (this.submitting() || rx.status !== 'Pending') return;
     this.submitting.set(true);
     this.pharmacyService.dispensePrescription(rx.id).subscribe({
       next: (dispensedRx) => {
@@ -481,7 +504,17 @@ export class PharmacyListComponent implements OnInit {
           timerProgressBar: true,
         });
       },
-      error: () => this.submitting.set(false),
+      error: (error) => {
+        this.submitting.set(false);
+        if (error.status === 401) return;
+        Swal.fire({
+          title: 'Dispensing Failed',
+          text: error.error?.detail || 'Unable to dispense this prescription. Refresh and retry.',
+          icon: 'error',
+          confirmButtonColor: '#0F766E',
+        });
+        if (error.status === 409) this.loadData();
+      },
     });
   }
 

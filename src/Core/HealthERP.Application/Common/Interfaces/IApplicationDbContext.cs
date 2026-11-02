@@ -26,5 +26,6 @@ public interface IApplicationDbContext
     DbSet<Admission> Admissions { get; }
     DbSet<TriageRecord> TriageRecords { get; }
     DbSet<Notification> Notifications { get; }
+    DbSet<PatientActivationChallenge> PatientActivationChallenges { get; }
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }

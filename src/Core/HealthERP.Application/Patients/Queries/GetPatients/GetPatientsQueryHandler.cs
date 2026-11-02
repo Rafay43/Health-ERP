@@ -24,7 +24,11 @@ public class GetPatientsQueryHandler : IRequestHandler<GetPatientsQuery, List<Pa
                 p.MedicalRecordNumber,
                 p.FirstName,
                 p.LastName,
-                p.DateOfBirth))
+                p.DateOfBirth,
+                p.Gender,
+                p.Email,
+                p.PhoneNumber,
+                p.UserId != null))
             .ToListAsync(cancellationToken);
     }
 }

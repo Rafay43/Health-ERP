@@ -158,6 +158,10 @@ export class BillingList implements OnInit {
     this.billingService.getInvoices().subscribe({
       next: (data) => {
         this.invoices.set(data || []);
+        const paymentId = this.selectedInvoiceForPayment()?.id;
+        const detailId = this.selectedInvoiceForDetail()?.id;
+        if (paymentId) this.selectedInvoiceForPayment.set(data?.find(i => i.id === paymentId) || null);
+        if (detailId) this.selectedInvoiceForDetail.set(data?.find(i => i.id === detailId) || null);
         this.loading.set(false);
       },
       error: () => this.loading.set(false),
@@ -236,7 +240,7 @@ export class BillingList implements OnInit {
 
   submitPayment(): void {
     const inv = this.selectedInvoiceForPayment();
-    if (!inv || this.paymentForm.invalid) return;
+    if (!inv || this.paymentForm.invalid || this.submittingPayment()) return;
 
     this.submittingPayment.set(true);
     this.paymentError.set(null);
@@ -269,6 +273,8 @@ export class BillingList implements OnInit {
         this.submittingPayment.set(false);
         const msg = err.error?.detail || err.error?.message || 'Failed to record payment receipt.';
         this.paymentError.set(msg);
+        // Reload authoritative totals/history after rejection or an uncertain network outcome.
+        this.loadInvoices();
       },
     });
   }

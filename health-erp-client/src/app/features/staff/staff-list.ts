@@ -1,10 +1,12 @@
 // StaffListComponent — Health ERP Doctors & Staff Directory Module
-import { Component, inject, OnInit, signal, computed, HostListener } from '@angular/core';
+import { Component, inject, OnInit, OnDestroy, signal, computed, HostListener } from '@angular/core';
+import { Subscription } from 'rxjs';
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 
 import { StaffService } from './data-access/staff.service';
-import { Staff, CreateStaffRequest } from './data-access/staff.model';
+import { Staff, CreateStaffRequest, StaffAccountCandidate, StaffAccountLink, StaffKind } from './data-access/staff.model';
+import { AuthService } from '../../core/services/auth.service';
 import Swal from 'sweetalert2';
 
 @Component({
@@ -17,9 +19,113 @@ import Swal from 'sweetalert2';
   ],
   templateUrl: './staff-list.html',
 })
-export class StaffList implements OnInit {
+export class StaffList implements OnInit, OnDestroy {
   private staffService = inject(StaffService);
+  private authService = inject(AuthService);
   private fb = inject(FormBuilder);
+
+  get canAddStaff(): boolean {
+    return this.authService.isAdmin();
+  }
+
+  readonly StaffKind = StaffKind;
+  showAccountDialog = signal(false);
+  accountPending = signal(false);
+  accountsLoading = signal(false);
+  accountError = signal<string | null>(null);
+  accountSearch = signal('');
+  accounts = signal<StaffAccountCandidate[]>([]);
+  accountPage = signal(1);
+  accountsHasMore = signal(false);
+  selectedAccount = signal<StaffAccountCandidate | null>(null);
+  selectedStaffKind = signal<StaffKind>(StaffKind.Doctor);
+  private accountSearchRequest?: Subscription;
+
+  get canSubmitAccountLink(): boolean {
+    const staff = this.selectedStaffForDetail(); const account = this.selectedAccount(); const kind = this.selectedStaffKind();
+    return this.canAddStaff && !!staff?.isActive && !staff.linkedAccount && !!account?.isActive && !account.isLinkedToStaff
+      && (kind === StaffKind.Unspecified || (kind === StaffKind.Doctor && account.roles.includes('Doctor')))
+      && !this.accountPending() && !this.accountsLoading();
+  }
+
+  openAccountDialog(): void {
+    if (!this.canAddStaff || this.accountPending() || this.submitting() || !this.selectedStaffForDetail()?.isActive || this.selectedStaffForDetail()?.linkedAccount) return;
+    this.accountError.set(null); this.accountSearch.set(''); this.selectedAccount.set(null);
+    this.selectedStaffKind.set(StaffKind.Doctor); this.showDetailModal.set(false); this.showAccountDialog.set(true);
+    document.body.style.overflow = 'hidden'; this.searchAccounts();
+  }
+
+  closeAccountDialog(): void {
+    if (this.accountPending()) return;
+    this.accountSearchRequest?.unsubscribe(); this.accountsLoading.set(false);
+    this.showAccountDialog.set(false); this.showDetailModal.set(true);
+  }
+
+  searchAccounts(page = 1): void {
+    if (!this.canAddStaff || !this.showAccountDialog() || this.accountPending()) return;
+    this.accountSearchRequest?.unsubscribe(); this.accountsLoading.set(true); this.accountError.set(null); this.selectedAccount.set(null);
+    this.accountSearchRequest = this.staffService.lookupAccounts(this.accountSearch().trim(), page).subscribe({
+      next: result => { this.accounts.set(result.items); this.accountPage.set(result.page); this.accountsHasMore.set(result.hasMore); this.accountsLoading.set(false); },
+      error: err => { this.accounts.set([]); this.accountsLoading.set(false); this.accountError.set(err.error?.detail || 'Unable to load accounts.'); }
+    });
+  }
+
+  selectAccount(account: StaffAccountCandidate): void {
+    if (this.accountPending() || this.accountsLoading() || !account.isActive || account.isLinkedToStaff) return;
+    this.selectedAccount.set(account);
+    if (!account.roles.includes('Doctor')) this.selectedStaffKind.set(StaffKind.Unspecified);
+  }
+
+  async submitAccountLink(): Promise<void> {
+    if (!this.canSubmitAccountLink) return;
+    const staff = this.selectedStaffForDetail()!; const account = this.selectedAccount()!; const kind = this.selectedStaffKind();
+    this.accountPending.set(true); this.accountError.set(null);
+    try {
+      const confirmation = await Swal.fire({ title: 'Link this account?', text: `${account.firstName} ${account.lastName} (${account.email || 'No email'}). Existing account sessions will be signed out.`,
+        icon: 'warning', showCancelButton: true, confirmButtonText: 'Link Account', confirmButtonColor: '#0F766E' });
+      if (!confirmation.isConfirmed) { this.accountPending.set(false); return; }
+      this.staffService.linkAccount(staff.id, account.userId, kind).subscribe({
+        next: result => { this.applyAccountState(result); this.accountPending.set(false); this.closeAccountDialog();
+          Swal.fire({ title: 'Account Linked', text: 'Association saved. Existing account sessions were invalidated.', icon: 'success', timer: 2200 }); },
+        error: err => this.accountFailure(err)
+      });
+    } catch { this.accountPending.set(false); this.accountError.set('Unable to confirm the account link.'); }
+  }
+
+  async unlinkAccount(): Promise<void> {
+    const staff = this.selectedStaffForDetail();
+    if (!this.canAddStaff || this.accountPending() || this.submitting() || !staff?.linkedAccount) return;
+    this.accountPending.set(true); this.accountError.set(null);
+    try {
+      const confirmation = await Swal.fire({ title: 'Unlink this account?', text: 'The association will be removed, classification reset to Unspecified, and existing account sessions signed out. Staff and account records will be kept.',
+        icon: 'warning', showCancelButton: true, confirmButtonText: 'Unlink Account', confirmButtonColor: '#0F766E' });
+      if (!confirmation.isConfirmed) { this.accountPending.set(false); return; }
+      this.staffService.unlinkAccount(staff.id).subscribe({
+        next: () => { this.applyAccountState({ staffId: staff.id, staffKind: 'Unspecified', linkedAccount: null }); this.accountPending.set(false);
+          Swal.fire({ title: 'Account Unlinked', text: 'Association removed. Existing account sessions were invalidated.', icon: 'success', timer: 2200 }); },
+        error: err => this.accountFailure(err)
+      });
+    } catch { this.accountPending.set(false); this.accountError.set('Unable to confirm account unlinking.'); }
+  }
+
+  private applyAccountState(result: StaffAccountLink): void {
+    const update = (staff: Staff) => staff.id === result.staffId ? { ...staff, staffKind: result.staffKind, linkedAccount: result.linkedAccount } : staff;
+    this.staffMembers.update(rows => rows.map(update));
+    if (this.selectedStaffForDetail()) this.selectedStaffForDetail.update(staff => staff ? update(staff) : null);
+  }
+
+  private accountFailure(err: any): void {
+    this.accountPending.set(false);
+    this.accountError.set(err.error?.detail || err.error?.message || 'Unable to confirm the account change. Refresh staff and accounts before retrying.');
+    this.loadStaff(); // Refresh persisted state, never retry the mutation.
+  }
+
+  closeStaffDetails(): void {
+    if (this.accountPending()) return;
+    this.showDetailModal.set(false); document.body.style.overflow = '';
+  }
+
+  ngOnDestroy(): void { this.accountSearchRequest?.unsubscribe(); document.body.style.overflow = ''; }
 
   // Global Math for template calculations
   Math = Math;
@@ -137,6 +243,8 @@ export class StaffList implements OnInit {
 
   @HostListener('window:keydown.escape')
   onEscapeKey(): void {
+    if (this.accountPending()) return;
+    if (this.showAccountDialog()) { this.closeAccountDialog(); return; }
     if (this.showAddStaffModal()) this.showAddStaffModal.set(false);
     if (this.showDetailModal()) this.showDetailModal.set(false);
     document.body.style.overflow = '';
@@ -147,6 +255,8 @@ export class StaffList implements OnInit {
     this.staffService.getStaff().subscribe({
       next: (data) => {
         this.staffMembers.set(data || []);
+        const selectedId = this.selectedStaffForDetail()?.id;
+        if (selectedId) this.selectedStaffForDetail.set(data.find(s => s.id === selectedId) || null);
         this.loading.set(false);
       },
       error: () => this.loading.set(false),
@@ -187,6 +297,7 @@ export class StaffList implements OnInit {
   }
 
   onBackdropClick(event: MouseEvent, modalType: 'add' | 'detail'): void {
+    if (this.accountPending()) return;
     if ((event.target as HTMLElement).classList.contains('modal-backdrop')) {
       if (modalType === 'add') this.showAddStaffModal.set(false);
       if (modalType === 'detail') this.showDetailModal.set(false);
@@ -196,6 +307,7 @@ export class StaffList implements OnInit {
 
   // Modal 1: Add Staff Member
   openAddStaffModal(): void {
+    if (this.accountPending()) return;
     this.createError.set(null);
     this.staffForm.reset({
       firstName: '',
@@ -256,6 +368,8 @@ export class StaffList implements OnInit {
 
   // Modal 2: View Details
   openStaffDetailModal(staff: Staff): void {
+    if (this.accountPending()) return;
+    this.accountError.set(null);
     this.selectedStaffForDetail.set(staff);
     this.showDetailModal.set(true);
     document.body.style.overflow = 'hidden';
