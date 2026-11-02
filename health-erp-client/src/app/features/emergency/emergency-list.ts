@@ -101,7 +101,7 @@ export class EmergencyListComponent implements OnInit {
 
   transferForm = this.fb.group({
     bedId: ['', Validators.required],
-    admittingDoctorName: ['Dr. Sarah Connor', Validators.required],
+    admittingDoctorName: ['Demo Clinician', Validators.required],
     admissionNotes: ['Direct ER transfer for inpatient care', Validators.required],
   });
 

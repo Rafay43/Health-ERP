@@ -73,7 +73,7 @@ import Swal from 'sweetalert2';
                   type="email"
                   pInputText
                   formControlName="email"
-                  placeholder="name@hospital.com"
+                  placeholder="demo.user@example.com"
                   class="w-full !h-[50px] !pl-11 !py-3 !pr-4 text-sm font-medium rounded-[10px] border border-slate-300 focus:border-[#0F766E] focus:ring-2 focus:ring-[#0F766E]/20 transition-all duration-200 text-[#0F172A] bg-white"
                 />
               </div>

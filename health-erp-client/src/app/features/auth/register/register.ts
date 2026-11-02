@@ -125,7 +125,7 @@ function passwordMatchValidator(control: AbstractControl): ValidationErrors | nu
                   pInputText
                   formControlName="email"
                   autocomplete="email"
-                  placeholder="name@hospital.com"
+                  placeholder="demo.user@example.com"
                   class="w-full !h-[46px] !pl-10 !py-2.5 !pr-3 text-sm font-medium rounded-[10px] border border-slate-300 focus:border-[#0F766E] focus:ring-2 focus:ring-[#0F766E]/20 transition-all duration-200 text-[#0F172A] bg-white"
                 />
               </div>

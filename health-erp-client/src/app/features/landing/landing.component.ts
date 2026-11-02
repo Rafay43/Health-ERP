@@ -103,7 +103,6 @@ export class LandingComponent implements OnInit {
 
     // TODO: Connect this form submission to backend contact/support API endpoint when available (/api/v1/contact)
     const val = this.contactForm.value;
-    console.log('Health ERP Customer Support Form Payload:', val);
 
     // Simulate clean network dispatch
     setTimeout(() => {

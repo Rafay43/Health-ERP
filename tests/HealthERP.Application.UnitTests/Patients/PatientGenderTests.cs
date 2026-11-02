@@ -108,7 +108,7 @@ public class PatientGenderTests
     public async Task UpdatePatient_WithValidGenderAndContact_UpdatesPatientRecord()
     {
         // Arrange
-        var existingPatient = Patient.Register("MRN-2001", "David", "Miller", new DateOnly(1988, 3, 10), "Male", "david@old.com", "+1-111");
+        var existingPatient = Patient.Register("MRN-2001", "David", "Miller", new DateOnly(1988, 3, 10), "Male", "previous.patient@example.org", "+1-111");
         var patientsList = new List<Patient> { existingPatient };
         var patientsDbSet = patientsList.BuildMockDbSet();
         _contextMock.Setup(c => c.Patients).Returns(patientsDbSet.Object);

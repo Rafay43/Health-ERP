@@ -4,7 +4,7 @@
 
 Built with **ASP.NET Core 10, PostgreSQL, and Angular 22**, Health ERP explores how clinical and administrative workflows fit together in one application. Its most developed engineering areas include verified staff identity, scoped doctor access, patient account activation, and transaction handling for competing writes.
 
-This is an actively developed portfolio application, not a certified clinical system. Shared workflows have broader permissions than the dedicated Doctor Workspace, and the general dashboard contains demonstration fallbacks. See the [publication review](docs/PUBLICATION_REVIEW.md) for limitations and issues to resolve before public hosting.
+This is an actively developed portfolio application, not a certified clinical system. Shared workflows have broader permissions than the dedicated Doctor Workspace, and the general dashboard contains demonstration fallbacks. See the [security and operational notes](docs/security.md) before hosting a demo.
 
 [Features](#main-features) · [Architecture](#architecture) · [Local setup](#local-setup) · [Tests and CI](#tests-and-ci) · [Screenshots](#screenshots)
 
@@ -162,7 +162,7 @@ Relevant serialization/deadlock failures become conflict responses; transaction 
 - .NET SDK **10.0.x**.
 - Node.js **24.15.0+ within 24.x** and npm; `package.json` declares npm 11.17.0. Use a Node release satisfying Angular's package engine constraints.
 - PostgreSQL; **17** is used in CI. Create a dedicated development database and a user able to apply migrations.
-- SMTP for real activation/password-reset delivery. Development activation supports log simulation.
+- SMTP for real activation/password-reset delivery. Development activation supports simulation without exposing codes.
 
 Run from a clone of this repository. PowerShell examples use `npm.cmd` to avoid Windows script execution-policy issues.
 
@@ -248,11 +248,11 @@ npm.cmd test -- --watch=false
 npm.cmd run build
 ```
 
-The fixture requires a loopback connection to maintenance database `postgres` and permission to create/drop databases. It creates uniquely named databases and drops them afterward. Never use a shared/production server. See [integration test instructions](tests/HealthERP.Api.IntegrationTests/PHARMACY_TESTS.md).
+The fixture requires a loopback connection to maintenance database `postgres` and permission to create/drop databases. It creates uniquely named databases and drops them afterward. Never use a shared/production server. See [testing guide](docs/testing.md).
 
 [GitHub Actions CI](.github/workflows/ci.yml) restores, builds, and tests .NET against PostgreSQL 17. A separate job installs locked Angular dependencies, builds production assets, and runs frontend tests. Permissions are read-only; no deployment or production credentials are configured.
 
-**Current verification (2 November 2026):** .NET Release build and all **485 backend tests** pass (122 unit/functional; 363 PostgreSQL integration). Clean npm ci, the Angular production build, and all **170 frontend tests** pass. Details are recorded in the [publication review](docs/PUBLICATION_REVIEW.md). Historical report counts are not coverage percentages. GitHub-hosted CI has not been run; publication remains blocked on historical credential cleanup and rotation.
+**Validation:** the solution includes backend unit/functional tests, PostgreSQL integration tests, and Angular component/service tests. Run the commands above or the CI workflow to verify your checkout; see the [testing guide](docs/testing.md) for isolated database setup.
 
 ## Screenshots
 
@@ -276,8 +276,12 @@ Application screenshots have not been added. Existing login images are decorativ
 
 ## Security considerations and future work
 
-The current working files have had credential defaults, raw authentication logging, fixed demo passwords, and tracked test output removed. The [publication review](docs/PUBLICATION_REVIEW.md) distinguishes resolved issues from manual history cleanup/credential rotation and remaining production-readiness gaps. Do not publish until the historical exposure is handled. No regulatory-compliance claim is made.
+Credentials belong in private configuration. Demo accounts require explicit Development-only opt-in, and generated results stay outside version control. The [security and operational notes](docs/security.md) explain deployment limitations; no regulatory-compliance claim is made.
 
 Authentication state currently uses localStorage, making XSS prevention particularly important. Shared APIs do not provide uniform patient-level authorization. Keep development databases/logs separate from real patient information.
 
 Clearly labeled **future work**: strengthen OTP hashing/rate limiting; review shared access/policy consistency; replace dashboard demonstration fallbacks; add browser-level end-to-end tests; evaluate booking constraints and write idempotency. Deployment automation and healthcare interoperability/certification are not implemented features.
+
+## Licensing
+
+This application uses **PrimeNG 22**, which is governed by the current **PrimeUI licensing model**, not the older PrimeNG MIT releases. Developers must comply with the applicable [Community](https://primeui.dev/licenses/community) or [Commercial](https://primeui.dev/licenses/commercial) terms. This repository does not grant a separate license to PrimeNG or relicense third-party dependencies. See [dependency licensing](docs/licensing.md).

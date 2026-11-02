@@ -1,160 +1,48 @@
-# Architecture Document
-## Health ERP System
+# Architecture
 
-> Companion to `TRD.md`. Text-based diagrams (Mermaid-compatible where noted) since this repo doesn't yet have a dedicated diagramming tool wired in.
+Health ERP is a layered modular monolith: an Angular client, one ASP.NET Core Minimal API, and PostgreSQL persistence shared by clinical and administrative modules.
 
----
+## Request flow and boundaries
 
-## 1. High-Level System Diagram
+Angular feature components call typed data-access services. API endpoint classes apply authentication/policies, translate HTTP contracts, and dispatch MediatR requests. Application handlers and FluentValidation enforce use-case rules. Domain entities contain state transitions and typed identifiers. Infrastructure implements persistence, Identity, email, and transactional services.
 
-```
-                        ┌─────────────────────────┐
-                        │      Angular Client       │
-                        │  (health-erp-client, :4200)│
-                        │  PrimeNG v21 + Tailwind    │
-                        └────────────┬───────────────┘
-                                     │ HTTPS / JSON (REST)
-                                     │ CORS: AllowAngularDev policy
-                                     ▼
-                        ┌─────────────────────────┐
-                        │   HealthERP.Api (:5268)   │
-                        │  ASP.NET Core Minimal API │
-                        │  Global Exception MW      │
-                        │  (JWT auth — in progress) │
-                        └────────────┬───────────────┘
-                                     │ MediatR (in-process)
-                                     ▼
-                        ┌─────────────────────────┐
-                        │  HealthERP.Application    │
-                        │  CQRS Commands/Queries     │
-                        │  FluentValidation pipeline │
-                        └────────────┬───────────────┘
-                                     │
-                                     ▼
-                        ┌─────────────────────────┐
-                        │    HealthERP.Domain        │
-                        │  Aggregates, Value Objects  │
-                        │  Domain Events               │
-                        └────────────┬───────────────┘
-                                     ▲
-                                     │ implements interfaces defined here
-                        ┌────────────┴───────────────┐
-                        │ HealthERP.Infrastructure     │
-                        │  EF Core (ApplicationDbContext)│
-                        │  Identity (Auth — in progress) │
-                        │  Audit Interceptor              │
-                        └────────────┬───────────────┘
-                                     │ Npgsql
-                                     ▼
-                        ┌─────────────────────────┐
-                        │   PostgreSQL (healtherp)   │
-                        │  Schemas: patients, identity│
-                        │  (planned: billing, pharmacy,│
-                        │   lab, scheduling, audit)    │
-                        └─────────────────────────┘
-```
+Domain references SharedKernel rather than Application/Infrastructure/API. The application exposes IApplicationDbContext DbSets; handlers use EF Core directly, without a repository abstraction. The Contracts project is a scaffold, not an established independent public contract layer.
 
----
+## Source map
 
-## 2. Component Breakdown
+| Location | Responsibility |
+| --- | --- |
+| src/Core/HealthERP.Domain | Entities, typed identifiers, domain rules/events |
+| src/Core/HealthERP.Application | Feature commands/queries, validation, DTOs and interfaces |
+| src/Infrastructure/HealthERP.Infrastructure | EF configurations/migrations, Identity and workflow services |
+| src/Presentation/HealthERP.Api | Minimal API endpoints, authentication, policies, middleware and SignalR hubs |
+| src/SharedKernel/HealthERP.SharedKernel | Shared entity, audit and event primitives |
+| health-erp-client/src/app/core | Authentication, guards, interceptors and shared services |
+| health-erp-client/src/app/features | Feature screens, models and data access |
+| tests | Domain/application, functional and real PostgreSQL integration suites |
 
-### 2.1 Frontend (`health-erp-client`)
-```
-src/app/
-├── core/            # auth interceptors, singleton services (planned)
-├── shared/          # reusable components/pipes/directives (planned)
-├── layout/shell/     # ✅ built — sidebar nav, top bar, router outlet host
-├── features/
-│   ├── dashboard/     # ✅ placeholder
-│   └── patients/       # ✅ built
-│       ├── data-access/   # PatientService, models
-│       ├── feature-registration/  # registration form
-│       └── patient-list.ts/.html  # list screen
-├── app.routes.ts     # ✅ routing config
-└── app.config.ts     # ✅ providers: router, HttpClient, PrimeNG theme
-```
+## Identity and authorization
 
-### 2.2 Backend (`HealthERP.sln`)
-```
-src/
-├── Core/
-│   ├── HealthERP.Domain/
-│   │   └── Patients/                 # ✅ Patient aggregate, PatientId, events
-│   └── HealthERP.Application/
-│       ├── Common/
-│       │   ├── Interfaces/            # ✅ IApplicationDbContext
-│       │   └── Behaviors/              # ✅ ValidationBehavior (MediatR pipeline)
-│       └── Patients/
-│           ├── Commands/RegisterPatient/  # ✅
-│           └── Queries/GetPatients, GetNextMrn/  # ✅
-├── Infrastructure/
-│   └── HealthERP.Infrastructure/
-│       ├── Persistence/
-│       │   ├── ApplicationDbContext.cs    # ✅ (becoming IdentityDbContext)
-│       │   ├── Configurations/             # ✅ PatientConfiguration
-│       │   ├── Interceptors/                # ✅ AuditableEntitySaveChangesInterceptor
-│       │   └── Migrations/                   # ✅ InitialCreate
-│       └── Identity/                          # 🚧 ApplicationUser, ApplicationRole
-├── Presentation/
-│   └── HealthERP.Api/
-│       ├── Endpoints/PatientEndpoints.cs  # ✅
-│       ├── Middleware/GlobalExceptionHandlingMiddleware.cs  # ✅
-│       └── Program.cs                       # ✅ DI wiring, CORS, middleware pipeline
-└── SharedKernel/
-    └── HealthERP.SharedKernel/         # ✅ BaseEntity, IDomainEvent, IAuditable
-```
+Identity accounts and hospital Staff records are separate. Admin explicitly links them; matching names or emails do not establish identity. Doctor Workspace resolves an active Doctor-kind Staff record from the authenticated account and checks qualifying appointments before patient snapshots or note writes. Clinical authorship is persisted by staff ID.
 
----
+Patient Portal resolves the linked patient server-side from the signed-in account. JWT authentication validates token settings and the live account/session version. Security-stamp changes invalidate existing sessions.
 
-## 3. Data Flow — Patient Registration (Implemented Example)
+Shared patient/staff workflows retain broader named role policies. Doctor Workspace scoping must not be presented as universal patient-level authorization across the application. The [README policy table](../README.md#roles-and-policies) records current role mappings.
 
-```
-1. User fills form in Angular (patient-registration.ts)
-2. On submit → PatientService.registerPatient() → HttpClient POST
-3. Request crosses CORS boundary (AllowAngularDev policy validates origin)
-4. Minimal API endpoint (PatientEndpoints.MapPost) receives RegisterPatientCommand
-5. MediatR dispatches to ValidationBehavior pipeline
-6.   → FluentValidation validates command (RegisterPatientCommandValidator)
-7.   → On failure: ValidationException thrown → caught by GlobalExceptionHandlingMiddleware → 400 response
-8. RegisterPatientCommandHandler invoked
-9.   → Patient.Register() factory method enforces domain invariants, raises PatientRegisteredEvent
-10.  → _context.Patients.Add(patient)
-11.  → SaveChangesAsync() triggers AuditableEntitySaveChangesInterceptor
-12.     → stamps CreatedAtUtc / CreatedBy on the entity before it hits the database
-13.  → EF Core issues INSERT via Npgsql to PostgreSQL
-14.     → unique index on MedicalRecordNumber enforced at DB level
-15.     → On violation: DbUpdateException → caught by middleware → 409 Conflict response
-16. On success: 201 Created returned with new patient's Id
-17. Angular navigates to /patients, which triggers GetPatientsQuery → table repopulates
-```
+## Persistence and competing writes
 
----
+EF Core configurations and migrations map Identity and clinical entities to PostgreSQL. Audit interception records actor/timestamps, and soft-delete filtering applies where implemented. Patient xmin mapping and unique account-link constraints support concurrency control.
 
-## 4. Integration Points
+Dispensing and inpatient transitions use Serializable transactions. Payments lock the invoice and re-evaluate its balance. Activation coordinates account/patient/challenge locks and consumes the code atomically. Relevant serialization/deadlock errors become conflict responses. These are workflow-specific protections: booking overlap checks are not a database exclusion constraint, and note writes have no idempotency key.
 
-| Integration | Status | Notes |
-|---|---|---|
-| PostgreSQL | ✅ Live | Local native install, port 5432 |
-| DBeaver (dev tooling) | ✅ Live | Manual inspection/verification during development |
-| Angular ↔ API (CORS) | ✅ Live | `localhost:4200` → `localhost:5268`, dev-only policy |
-| ASP.NET Core Identity | 🚧 In progress | Tables being added to `identity` schema |
-| JWT issuance | ⏳ Planned | Next step after Identity tables are confirmed working |
-| SignalR (real-time scheduling) | ⏳ Planned | Not yet started |
-| Hangfire (background jobs) | ⏳ Planned | Reminders, report generation |
-| Email/SMS (Notifications) | ⏳ Planned | Provider not yet selected — candidates: SendGrid (email), Twilio (SMS) |
-| Stripe (payments) | ⏳ Planned | Phase 4 per `PRD.md` roadmap |
-| HL7/FHIR | ⏳ Planned | Phase 4, integration stub only |
-| Docker / CI-CD | ⏳ Planned | Docker Desktop not yet installed in dev environment; deferred |
+## Client behavior
 
----
+Standalone Angular components use signals, reactive forms and lazy routes. Route guards guide navigation; backend checks remain authoritative. SignalR services follow authentication lifecycle and reject stale account responses. Doctor Workspace also guards against stale schedule/snapshot requests.
 
-## 5. Known Architectural Debt / Deferred Decisions
+## Further reading
 
-- **MRN generation** is count-based, not using a DB sequence — flagged as a race-condition risk under concurrent load (see `TRD.md` §3.1 and `memory.md`).
-- **`CreatedBy` audit field** is hardcoded to `"system"` — depends on JWT auth being completed to resolve to a real authenticated user.
-- **CORS policy** is currently wide-open for `localhost:4200` only, appropriate for dev but must be revisited before any staging/production deployment.
-- **No global exception logging sink** beyond console output yet — Serilog/Seq integration planned but not implemented.
-
----
-
-*Related documents: `PRD.md`, `TRD.md`, `design.md`, `rules.md`, `task.md`, `memory.md`.*
+- [Features and local setup](../README.md)
+- [Testing and transaction scenarios](testing.md)
+- [Security and operational limitations](security.md)
+- [UI conventions](design.md)
+- [Third-party licensing](licensing.md)

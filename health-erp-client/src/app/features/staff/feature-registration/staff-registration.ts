@@ -51,11 +51,11 @@ import Swal from 'sweetalert2';
           <div class="grid grid-cols-2 gap-4">
             <div class="flex flex-col gap-1">
               <label for="email" class="text-sm font-medium text-[var(--color-text-primary)]">Email Address *</label>
-              <input id="email" type="email" pInputText formControlName="email" placeholder="sarah.connor@healtherp.com" />
+              <input id="email" type="email" pInputText formControlName="email" placeholder="demo.user@example.com" />
             </div>
             <div class="flex flex-col gap-1">
               <label for="phoneNumber" class="text-sm font-medium text-[var(--color-text-primary)]">Phone Number</label>
-              <input id="phoneNumber" pInputText formControlName="phoneNumber" placeholder="+1 555-0192" />
+              <input id="phoneNumber" pInputText formControlName="phoneNumber" placeholder="Enter phone number" />
             </div>
           </div>
 

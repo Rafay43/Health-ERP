@@ -41,7 +41,7 @@ public sealed class PharmacyPostgresFixture : IAsyncLifetime
     public async Task InitializeAsync()
     {
         _maintenance = Environment.GetEnvironmentVariable("HEALTHERP_PHARMACY_TEST_CONNECTION")
-            ?? throw new InvalidOperationException("Set HEALTHERP_PHARMACY_TEST_CONNECTION to an isolated local PostgreSQL maintenance connection; see tests/HealthERP.Api.IntegrationTests/PHARMACY_TESTS.md.");
+            ?? throw new InvalidOperationException("Set HEALTHERP_PHARMACY_TEST_CONNECTION to an isolated local PostgreSQL maintenance connection; see docs/testing.md.");
         var connection = new NpgsqlConnectionStringBuilder(_maintenance);
         if (connection.Host is not ("127.0.0.1" or "localhost" or "::1") || connection.Database != "postgres")
             throw new InvalidOperationException("Pharmacy tests require an explicit loopback postgres maintenance connection, never the ERP database.");

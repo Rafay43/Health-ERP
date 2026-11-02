@@ -172,7 +172,7 @@ public class ApplicationDbContextInitialiser
             _logger.LogInformation("Initial hospital beds catalog seeded successfully.");
         }
 
-        // 6. Seed Initial Emergency Triage Cases
+        // 6. Explicitly fictional triage scenarios for disposable development data only.
         if (!await _context.TriageRecords.AnyAsync())
         {
             var firstPatient = await _context.Patients.FirstOrDefaultAsync();
@@ -189,7 +189,7 @@ public class ApplicationDbContextInitialiser
                         37.5m,
                         22,
                         HealthERP.Domain.Triage.TriageSeverity.Level1_Resuscitation,
-                        "Nurse Clara Barton",
+                        "Demo Nurse",
                         "Trauma Bay 01"),
                     HealthERP.Domain.Triage.TriageRecord.Create(
                         firstPatient.Id,
@@ -200,7 +200,7 @@ public class ApplicationDbContextInitialiser
                         38.1m,
                         24,
                         HealthERP.Domain.Triage.TriageSeverity.Level2_Emergent,
-                        "Nurse Clara Barton",
+                        "Demo Nurse",
                         "ER Bay 03")
                 };
 
